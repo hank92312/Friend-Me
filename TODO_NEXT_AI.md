@@ -1,25 +1,48 @@
 # NEXT AI SESSION HANDOFF (進度交接與後續待辦)
 
 Hello 接下來接手的 AI：
-請先閱讀本目錄下的 `APP.md` 了解本專案 **Friends & Me (異步社交探索桌遊)** 的核心願景與遊戲狀態機。
+請先閱讀本目錄下的 `APP.md` 了解本專案 **Friends & Me (異步社交探索桌遊)** 的核心願景、遊戲狀態機，以及目前已完成的前端架構。
 
 ## 專案目前進度 (Current Progress)
 - **Godot 專案已建立**：位於 `friend&me/` 目錄下 (Godot 4.6)。
-- **視窗配置完成**：已設定為直立式手機版解析度 (`1080x1920`)，並支援 `expand` 響應式縮放。
-- **基礎狀態機實作完成**：`main.tscn` 中已佈局好 Phase 0 到 Phase 4 的五個 Control 容器，並透過 `main.gd` 實作了切換顯示的基礎邏輯。目前執行能正常顯示全螢幕黑底白字的階段標題。
-- **需求更新**：User 剛剛在 `APP.md` 更新了「社交等級層次 (Level 1~5)」的情境化時間線（如：日話家常、下午茶閒聊等），請務必將此概念融入後續的 UI 設計中。
+- **視窗配置完成**：Viewport `1080x1920` (直式)，開發視窗覆寫 `540x960`，stretch mode = `canvas_items`，aspect = `expand`。
+- **主視覺風格已建立**：深色穩重背景 + 溫暖橘棕色按鈕，詳見 `APP.md` 第 6~7 節的 StyleBox 資源表。
+- **Phase 0~3 UI 與邏輯已完成**：
+    - Phase 0 (大廳)：4 個功能按鈕 (創立圈圈/加入圈圈/遊戲說明/選項)。
+    - Phase 1 (選題)：6 個 LV 選擇按鈕 (雙行排版：主標題+副標題) + 回首頁按鈕。
+    - Phase 2 (答題)：上方大型題目卡 + 下方 LineEdit 輸入框 + 送出按鈕 + 外框風格「不回答」按鈕。
+    - Phase 3 (猜測配對)：上下分區 pill 方塊，點擊答案高亮 → 點擊參與者完成配對 → 全部配完才出現送出按鈕。
+- **題庫 JSON 已建立**：`friend&me/data/question_bank.json`，5 級共 95 題 (LV1: 25, LV2: 25, LV3~5: 各 15)。
+- **題庫載入邏輯已實作**：`main.gd` 在 `_ready()` 時載入 JSON，選完等級後隨機抽題顯示在 Phase 2。
 
 ## 接下來未完成的工作事項 (Pending Tasks)
 
-### 1. 實作 Godot UI 介面 (優先事項)
-- 根據先前的討論，UI 應採用 **現代感暗黑模式 (Dark Mode)** 搭配 **毛玻璃 (Glassmorphism)** 與霓虹漸變元素。
-- **Phase 0 (Waiting for Captain)**：需建立大廳介面，包含「好友清單佔位區塊」以及「等待房主開始」的提示。
-- **Phase 1 (Question Selection)**：需實作一個可滾動的卡片列表，列出 Level 1 到 Level 5 的題目標題與情境（請參考 `APP.md` 中新設定的層次），讓隊長可以點擊選擇。
-- **Phase 2 (Answering)**：設計中央答題卡與文字輸入框，並且**必須**包含一個獨立且視覺上無壓力的「不回答」按鈕（符合心理安全機制）。
-- **Phase 3 & 4 (Guessing & Revelation)**：設計連連看拖曳 (Drag & Drop) 介面與結算畫面。
+### 1. Phase 4 結算畫面 (Revelation Stage) — 高優先
+- 設計結算畫面 UI，顯示配對結果（正確/錯誤）。
+- 呈現每位玩家的統計數據（猜中率、被猜中率）。
+- 加入「再來一局」或「返回大廳」的按鈕。
 
-### 2. 資料結構與連線測試
-- 設計 Godot 前端內部暫存的假資料結構 (Mock Data)，以便在未串接後端前，能獨立測試 Phase 1 ~ Phase 4 的完整流程轉換。
+### 2. Phase 2 → Phase 3 答案傳遞 — 高優先
+- 目前 Phase 3 的答案 pill 方塊還是寫死的佔位文字 ("吃拉麵"、"不回答")。
+- 需要把 Phase 2 中玩家輸入的答案（或選擇「不回答」）動態傳遞到 Phase 3 的答案區。
+- 搭配 Mock Data (假玩家) 模擬多人場景。
+
+### 3. Mock Data 假資料系統 — 中優先
+- 建立一份假的玩家名單 (3~5 人，含名字)。
+- 模擬每位玩家的答案（或不回答），使 Phase 3 能有完整的多人配對體驗。
+- 建議在 `main.gd` 中用 Dictionary/Array 管理，或獨立為 `mock_data.gd`。
+
+### 4. UI 動效與轉場 — 低優先
+- Phase 切換時加入淡入淡出或滑動的 Tween 動畫。
+- Phase 3 配對成功時加入小動效 (如放大縮小彈跳)。
+
+### 5. 後端串接準備 — 未來
+- 設計 API 介面規格 (REST endpoints)。
+- 將目前 Mock Data 邏輯抽象為可替換的資料層，以便未來無縫切換到真實後端。
+
+### 6. 題庫擴充 — 持續
+- LV3~5 目前各 15 題，可持續新增。
+- 原始設計文件在根目錄 `Friends&Me_Question_Bank.md`，新增後需同步更新 `friend&me/data/question_bank.json`。
 
 ---
-**接手建議**：請先從 `main.tscn` 的 `Phase0_Lobby` 與 `Phase1_Selection` 開始，加入 Godot 內建的 UI 節點 (如 `VBoxContainer`, `PanelContainer`, `Button` 等) 將畫面刻出來，並與 User 確認視覺效果。
+**接手建議**：建議先實作 Mock Data + 答案傳遞 (Task 2+3)，讓 Phase 2→3→4 的完整流程可以跑通，再處理 Phase 4 結算畫面。
