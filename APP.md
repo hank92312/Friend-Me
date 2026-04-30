@@ -44,18 +44,23 @@
     - 異步狀態同步：需能處理離線與重新登入後的畫面恢復。
 - **推播系統**：透過 Godot 插件串接 Firebase Cloud Messaging (FCM) & APNs — 待實作。
 
-### B. 後端 (Backend) — 尚未實作
-- **語言/框架**：FastAPI (Python) 或 Node.js。
-- **資料庫**：PostgreSQL (主要存儲)、Redis (暫存遊戲狀態與加速查詢)。
+### B. 後端 (Backend) — [已實作基礎架構]
+- **語言/框架**：FastAPI (Python)。
+- **即時通訊**：WebSockets (用於全體同步遊戲狀態)。
+- **虛擬環境**：使用 `venv` 管理套件 (`backend/venv`)。
+- **核心組件**：
+    - `main.py`：API 進入點與 WebSocket 路由。
+    - `room_manager.py`：處理房間連線管理、玩家名單同步與狀態廣播。
 - **API 邏輯**：
-    - `POST /submit_answer`：隱藏真實答案直到 Guessing Stage 結束，防止前端抓包。
-    - `GET /get_guessing_payload`：隨機打亂答案順序提供前端連連看。
+    - `POST /create_room`：建立房間並生成 6 位數房間碼。
+    - `POST /join_room`：加入指定房間。
+    - `WS /ws/{room_id}/{player_name}`：即時同步玩家進入大廳、選題與換關。
 
 ### C. 數據模型 (Data Model)
-- **Users**: ID, Name, PrivacySettings, GlobalStats(GuessRate, GuessedRate).
-- **Rooms**: RoomID, Members[], CurrentRoundID, CurrentCaptainID.
-- **QuestionBank**: LevelID, Topic, SubQuestions[] — 已建立 JSON 題庫 (見下方)。
-- **RoundRecords**: RoundID, UserID, SubQuestionID, Answer, IsPassed(Bool), Guesses(JSON), Timestamp.
+- **Users**: ID, Name, PrivacySettings.
+- **Rooms**: RoomID, Members[], CurrentPhase, CurrentCaptain.
+- **QuestionBank**: LevelID, Topic, SubQuestions[] — 已建立 JSON 題庫。
+- **RoundRecords**: (未來實作) 儲存配對正確率與歷史紀錄。
 
 ## 5. 擴展設計 (Scalability)
 - **題庫擴充接口**：預留 CSV/JSON 導入機制，支援未來「使用者自定義題庫」與「AI 動態題庫」。
@@ -95,13 +100,18 @@ Main (Control)
 ```
 
 ### 腳本邏輯 (main.gd)
-- **GamePhase 枚舉**：WAITING → SELECTION → ANSWERING → GUESSING → REVELATION
-- **switch_phase()**：統一切換所有 Phase 節點的 visible 屬性
-- **題庫系統**：`_load_question_bank()` 從 `res://data/question_bank.json` 載入，選完等級後 `_get_random_question()` 隨機抽題
+- **GamePhase 枚舉**：WAITING → WAIT_LOBBY → SELECTION → ANSWERING → GUESSING → REVELATION → SELECTION_WAITING
+- **NetworkManager (Autoload)**：全域單例，封裝 HTTP 與 WebSocket 通訊。
+- **大廳同步**：創立/加入房間後進入 `Phase0_WaitLobby`，透過伺服器推播 `player_list_updated` 同步名單。
 - **Phase 3 點擊配對**：
-    - `_on_answer_btn_pressed()` → 高亮答案 (金黃色)
-    - `_on_participant_btn_pressed()` → 完成配對 (雙方變溫暖綠) + disabled
-    - 全部配對完成 → 顯示右下角「完成配對」按鈕
+    - 支援「反悔功能」：點擊已配對按鈕可解除配對。
+    - 多彩識別：每一對配對使用不同顏色（綠、藍、紫、紅等）辨識。
+    - 智慧自動配對：自動將玩家自己的答案設為已配對，且能處理多人選擇相同答案（如「不回答」）的重複狀況。
+
+### 結算與統計 (Phase 4)
+- **單輪正確率**：顯示「你猜對幾個隊友」。
+- **累計統計**：跨輪次紀錄「你的答案被隊友猜中率」與「你猜中隊友答案率」。
+- **自適應 UI**：結算清單具備卷軸與字體自動縮放功能，因應人數多寡自動調整。
 
 ### 題庫 (question_bank.json)
 - **格式**：`levels.{1~5}.questions[]`，每題有 `id`、`tag`、`text`

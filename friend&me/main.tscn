@@ -143,7 +143,7 @@ layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 54
 text = "創立圈圈"
 
 [node name="BtnJoin" type="Button" parent="Phases/Phase0_Lobby/VBoxContainer"]
@@ -151,7 +151,7 @@ layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 54
 text = "加入圈圈"
 
 [node name="BtnInstructions" type="Button" parent="Phases/Phase0_Lobby/VBoxContainer"]
@@ -159,7 +159,7 @@ layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 54
 text = "遊戲說明"
 
 [node name="BtnOptions" type="Button" parent="Phases/Phase0_Lobby/VBoxContainer"]
@@ -167,8 +167,127 @@ layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 54
 text = "選項"
+
+[node name="Phase0_WaitLobby" type="Control" parent="Phases"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Phases/Phase0_WaitLobby"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -400.0
+offset_right = 400.0
+offset_bottom = 400.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="RoomIDHBox" type="HBoxContainer" parent="Phases/Phase0_WaitLobby/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="RoomIDLabel" type="Label" parent="Phases/Phase0_WaitLobby/VBox/RoomIDHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.82, 0.2, 1)
+theme_override_font_sizes/font_size = 72
+text = "房間碼: ABC123"
+horizontal_alignment = 1
+
+[node name="BtnCopyID" type="Button" parent="Phases/Phase0_WaitLobby/VBox/RoomIDHBox"]
+custom_minimum_size = Vector2(100, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "複製"
+
+[node name="PlayerListLabel" type="Label" parent="Phases/Phase0_WaitLobby/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "已加入玩家:
+- 我"
+horizontal_alignment = 1
+
+[node name="BtnStartGame" type="Button" parent="Phases/Phase0_WaitLobby/VBox"]
+visible = false
+custom_minimum_size = Vector2(400, 120)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_font_sizes/font_size = 54
+text = "開始遊戲"
+
+[node name="WaitingHint" type="Label" parent="Phases/Phase0_WaitLobby/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 32
+text = "(等待房主開始...)"
+horizontal_alignment = 1
+
+[node name="JoinPanel" type="PanelContainer" parent="Phases/Phase0_Lobby"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -200.0
+offset_right = 350.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Phases/Phase0_Lobby/JoinPanel"]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="Label" type="Label" parent="Phases/Phase0_Lobby/JoinPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "輸入房間代碼"
+horizontal_alignment = 1
+
+[node name="RoomIDInput" type="LineEdit" parent="Phases/Phase0_Lobby/JoinPanel/VBox"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+placeholder_text = "例如: 0B3152"
+alignment = 1
+max_length = 6
+
+[node name="HBox" type="HBoxContainer" parent="Phases/Phase0_Lobby/JoinPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="BtnCancelJoin" type="Button" parent="Phases/Phase0_Lobby/JoinPanel/VBox/HBox"]
+custom_minimum_size = Vector2(200, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "取消"
+
+[node name="BtnConfirmJoin" type="Button" parent="Phases/Phase0_Lobby/JoinPanel/VBox/HBox"]
+custom_minimum_size = Vector2(300, 80)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_font_sizes/font_size = 32
+text = "加入"
 
 [node name="Phase1_Selection" type="Control" parent="Phases"]
 visible = false
@@ -215,14 +334,14 @@ alignment = 1
 [node name="Title" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel1/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 48
 text = "LV 1：日話家常"
 horizontal_alignment = 1
 
 [node name="SubTitle" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel1/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 34
 text = "(觀察得到的表層習慣，如：食衣住行)"
 horizontal_alignment = 1
 
@@ -247,14 +366,14 @@ alignment = 1
 [node name="Title" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel2/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 48
 text = "LV 2：下午茶閒聊"
 horizontal_alignment = 1
 
 [node name="SubTitle" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel2/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 34
 text = "(輕鬆、適合公開討論的話題，帶有一點個人色彩)"
 horizontal_alignment = 1
 
@@ -279,14 +398,14 @@ alignment = 1
 [node name="Title" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel3/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 48
 text = "LV 3：居酒屋微醺"
 horizontal_alignment = 1
 
 [node name="SubTitle" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel3/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 34
 text = "(稍微放鬆戒備，會聊到感情觀或生活抱怨)"
 horizontal_alignment = 1
 
@@ -311,14 +430,14 @@ alignment = 1
 [node name="Title" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel4/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 48
 text = "LV 4：深夜真心話"
 horizontal_alignment = 1
 
 [node name="SubTitle" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel4/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 34
 text = "(只在夜深人靜、面對極少數人時才會吐露的秘密)"
 horizontal_alignment = 1
 
@@ -343,14 +462,14 @@ alignment = 1
 [node name="Title" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel5/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 48
 text = "LV 5：靈魂拷問"
 horizontal_alignment = 1
 
 [node name="SubTitle" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel5/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 34
 text = "(核心自我、挑戰底線的極端情境)"
 horizontal_alignment = 1
 
@@ -375,14 +494,14 @@ alignment = 1
 [node name="Title" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnRandom/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 48
 text = "LV ?? 隨機"
 horizontal_alignment = 1
 
 [node name="SubTitle" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnRandom/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 34
 text = "(讓命運決定話題的深度)"
 horizontal_alignment = 1
 
@@ -401,6 +520,52 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")
 theme_override_font_sizes/font_size = 48
 text = "回首頁"
+
+[node name="Phase1_Waiting" type="Control" parent="Phases"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Phases/Phase1_Waiting"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -200.0
+offset_right = 400.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="WaitingLabel" type="Label" parent="Phases/Phase1_Waiting/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 60
+text = "等待隊長選題..."
+horizontal_alignment = 1
+
+[node name="CaptainInfoLabel" type="Label" parent="Phases/Phase1_Waiting/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
+theme_override_font_sizes/font_size = 44
+text = "目前隊長：小明"
+horizontal_alignment = 1
+
+[node name="HintLabel" type="Label" parent="Phases/Phase1_Waiting/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 40
+text = "隊長隨機輪流擔任"
+horizontal_alignment = 1
 
 [node name="Phase2_Answering" type="Control" parent="Phases"]
 visible = false
@@ -510,30 +675,16 @@ theme_override_font_sizes/font_size = 38
 text = "選擇一個答案"
 horizontal_alignment = 1
 
-[node name="FlowAnswers" type="HFlowContainer" parent="Phases/Phase3_Guessing/OuterVBox/AnswerPanel/InnerVBox"]
+[node name="ScrollAnswers" type="ScrollContainer" parent="Phases/Phase3_Guessing/OuterVBox/AnswerPanel/InnerVBox"]
 layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FlowAnswers" type="HFlowContainer" parent="Phases/Phase3_Guessing/OuterVBox/AnswerPanel/InnerVBox/ScrollAnswers"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/h_separation = 20
 theme_override_constants/v_separation = 20
 
-[node name="Ans1" type="Button" parent="Phases/Phase3_Guessing/OuterVBox/AnswerPanel/InnerVBox/FlowAnswers"]
-layout_mode = 2
-size_flags_horizontal = 0
-custom_minimum_size = Vector2(0, 80)
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pill_hover")
-theme_override_font_sizes/font_size = 34
-text = "吃拉麵"
-
-[node name="Ans2" type="Button" parent="Phases/Phase3_Guessing/OuterVBox/AnswerPanel/InnerVBox/FlowAnswers"]
-layout_mode = 2
-size_flags_horizontal = 0
-custom_minimum_size = Vector2(0, 80)
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pill_hover")
-theme_override_font_sizes/font_size = 34
-text = "不回答"
 
 [node name="ParticipantPanel" type="PanelContainer" parent="Phases/Phase3_Guessing/OuterVBox"]
 layout_mode = 2
@@ -552,30 +703,16 @@ theme_override_font_sizes/font_size = 38
 text = "配對給誰？"
 horizontal_alignment = 1
 
-[node name="FlowParticipants" type="HFlowContainer" parent="Phases/Phase3_Guessing/OuterVBox/ParticipantPanel/InnerVBox"]
+[node name="ScrollParticipants" type="ScrollContainer" parent="Phases/Phase3_Guessing/OuterVBox/ParticipantPanel/InnerVBox"]
 layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FlowParticipants" type="HFlowContainer" parent="Phases/Phase3_Guessing/OuterVBox/ParticipantPanel/InnerVBox/ScrollParticipants"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/h_separation = 20
 theme_override_constants/v_separation = 20
 
-[node name="P1" type="Button" parent="Phases/Phase3_Guessing/OuterVBox/ParticipantPanel/InnerVBox/FlowParticipants"]
-layout_mode = 2
-size_flags_horizontal = 0
-custom_minimum_size = Vector2(0, 80)
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill_participant")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_participant")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pill_participant")
-theme_override_font_sizes/font_size = 34
-text = "玩家 A"
-
-[node name="P2" type="Button" parent="Phases/Phase3_Guessing/OuterVBox/ParticipantPanel/InnerVBox/FlowParticipants"]
-layout_mode = 2
-size_flags_horizontal = 0
-custom_minimum_size = Vector2(0, 80)
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill_participant")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_participant")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pill_participant")
-theme_override_font_sizes/font_size = 34
-text = "玩家 B"
 
 [node name="BtnSubmitMatch" type="Button" parent="Phases/Phase3_Guessing"]
 visible = false
@@ -606,15 +743,55 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="Phases/Phase4_Revelation"]
+[node name="VBox" type="VBoxContainer" parent="Phases/Phase4_Revelation"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 60.0
+offset_right = -40.0
+offset_bottom = -60.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 24
+
+[node name="TitleLabel" type="Label" parent="Phases/Phase4_Revelation/VBox"]
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 48
-text = "Phase 4: Revelation Stage"
+theme_override_font_sizes/font_size = 52
+text = "結果揭曉"
 horizontal_alignment = 1
-vertical_alignment = 1
+
+[node name="QuestionLabel" type="Label" parent="Phases/Phase4_Revelation/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
+theme_override_font_sizes/font_size = 32
+text = "(問題會顯示在這裡)"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Phases/Phase4_Revelation/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+
+[node name="ResultsVBox" type="VBoxContainer" parent="Phases/Phase4_Revelation/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="ScoreLabel" type="Label" parent="Phases/Phase4_Revelation/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.82, 0.20, 1)
+theme_override_font_sizes/font_size = 48
+text = "猜對 0 / 0 題"
+horizontal_alignment = 1
+
+[node name="BtnNextRound" type="Button" parent="Phases/Phase4_Revelation/VBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")
+theme_override_font_sizes/font_size = 44
+text = "再玩一輪"

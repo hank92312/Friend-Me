@@ -1,0 +1,14 @@
+# Godot
+.godot/
+*.import
+export_presets.godot
+
+# Python
+**/venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# System
+.DS_Store
+Thumbs.db
