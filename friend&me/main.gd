@@ -100,6 +100,8 @@ var answer_btn_map: Dictionary = {}     # { Button: answer_text }
 var participant_btn_map: Dictionary = {} # { Button: player_name }
 var partner_map: Dictionary = {}        # { Button: Button } (配對對象)
 var partner_color_map: Dictionary = {}  # { Button: Color } (記住配對時用的顏色)
+var pending_room_id := ""
+var all_room_guesses := {}
 
 # 累計統計（跨輪次）
 var cumul_guessed_by_others := 0  # 你的答案被隊友猜中的總次數
@@ -123,6 +125,8 @@ func _ready() -> void:
 	$Phases/Phase0_Lobby/VBoxContainer/BtnJoin.pressed.connect(_on_btn_join_pressed)
 	$Phases/Phase0_Lobby/JoinPanel/VBox/HBox/BtnCancelJoin.pressed.connect(_on_btn_cancel_join_pressed)
 	$Phases/Phase0_Lobby/JoinPanel/VBox/HBox/BtnConfirmJoin.pressed.connect(_on_btn_confirm_join)
+	$Phases/Phase0_Lobby/NamePanel/VBox/HBox/BtnCancelName.pressed.connect(_on_btn_cancel_name_pressed)
+	$Phases/Phase0_Lobby/NamePanel/VBox/HBox/BtnConfirmName.pressed.connect(_on_btn_confirm_name)
 
 	# --- 網路單例訊號連接 ---
 	NetworkManager.room_created.connect(_on_network_room_created)
@@ -195,9 +199,10 @@ func switch_phase(new_phase: GamePhase) -> void:
 
 # ── Phase 0 ───────────────────────────────────────────────────────────────────
 func _on_btn_create_pressed() -> void:
-	print("Requesting room creation...")
 	is_host = true
-	NetworkManager.create_room(mock_self_name)
+	pending_room_id = ""
+	$Phases/Phase0_Lobby/NamePanel.visible = true
+	$Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.grab_focus()
 
 func _on_btn_join_pressed() -> void:
 	is_host = false
@@ -211,10 +216,32 @@ func _on_btn_cancel_join_pressed() -> void:
 func _on_btn_confirm_join() -> void:
 	var room_id = $Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput.text.strip_edges().to_upper()
 	if room_id.length() == 6:
-		print("Attempting to join room: ", room_id)
-		NetworkManager.join_room(room_id, mock_self_name)
+		pending_room_id = room_id
+		$Phases/Phase0_Lobby/JoinPanel.visible = false
+		$Phases/Phase0_Lobby/NamePanel.visible = true
+		$Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.grab_focus()
 	else:
 		print("Invalid Room ID")
+
+func _on_btn_cancel_name_pressed() -> void:
+	$Phases/Phase0_Lobby/NamePanel.visible = false
+
+func _on_btn_confirm_name() -> void:
+	var player_name = $Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.text.strip_edges()
+	if player_name == "":
+		return
+	
+	mock_self_name = player_name
+	NetworkManager.my_player_name = player_name
+	
+	$Phases/Phase0_Lobby/NamePanel.visible = false
+	
+	if is_host:
+		print("Requesting room creation for: ", player_name)
+		NetworkManager.create_room(player_name)
+	else:
+		print("Attempting to join room ", pending_room_id, " as: ", player_name)
+		NetworkManager.join_room(pending_room_id, player_name)
 
 func _on_network_room_created(room_id: String) -> void:
 	print("Room joined/created successfully: ", room_id)
@@ -259,11 +286,18 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 	print("Network Sync: Switching to ", new_phase)
 	
 	if new_phase == "SELECTION":
-		# 全體進入選題階段（隊長會看到按鈕，其他人看到等待）
-		current_captain = mock_self_name # MVP: 房主永遠是第一個隊長
+		# 接收伺服器指定的隊長
+		current_captain = data.get("captain", "")
+		print("New Captain: ", current_captain)
+		
+		# 重置一下按鈕狀態（以防是上一輪留下的殘留）
+		$Phases/Phase3_Guessing/BtnSubmitMatch.disabled = false
+		$Phases/Phase3_Guessing/BtnSubmitMatch.text = "送出配對結果"
+		
 		if current_captain == mock_self_name:
 			switch_phase(GamePhase.SELECTION)
 		else:
+			$Phases/Phase1_Waiting/VBox/CaptainInfoLabel.text = "目前隊長：" + current_captain
 			switch_phase(GamePhase.SELECTION_WAITING)
 			
 	elif new_phase == "ANSWERING":
@@ -272,12 +306,26 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		$Phases/Phase2_Answering/VBox/QuestionCard/Label.text = current_question
 		($Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit).text = ""
 		
-		# 送出按鈕預設停用
+		# 重置送出按鈕
 		var submit_btn := $Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit
 		submit_btn.disabled = true
+		submit_btn.text = "送出答案"
 		_set_btn_color(submit_btn, COLOR_BTN_DISABLED)
 		
 		switch_phase(GamePhase.ANSWERING)
+
+	elif new_phase == "GUESSING":
+		var remote_answers = data.get("answers", {})
+		_setup_real_round(remote_answers)
+		switch_phase(GamePhase.GUESSING)
+
+	elif new_phase == "REVELATION":
+		all_room_guesses = data.get("all_guesses", {})
+		# 同步一下答案，確保揭曉時數據一致
+		var remote_answers = data.get("all_answers", {})
+		if remote_answers.size() > 0:
+			round_answers = remote_answers
+		switch_phase(GamePhase.REVELATION)
 
 # ── Phase 1 ───────────────────────────────────────────────────────────────────
 func _on_btn_level_pressed(level: int) -> void:
@@ -331,17 +379,43 @@ func _on_btn_submit_answer() -> void:
 	self_answer = line_edit.text.strip_edges()
 	if self_answer == "":
 		self_answer = "(空白)"
-	print("Answer submitted: ", self_answer)
-	_setup_mock_round()
-	switch_phase(GamePhase.GUESSING)
+	
+	print("Submitting real answer: ", self_answer)
+	NetworkManager.send_game_event("answer_submitted", {"answer": self_answer})
+	
+	# 視覺回饋：進入等待狀態
+	var submit_btn := $Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit
+	submit_btn.disabled = true
+	submit_btn.text = "已提交，等待其他玩家..."
+	_set_btn_color(submit_btn, COLOR_BTN_DISABLED)
 
 func _on_btn_no_answer() -> void:
 	self_answer = "不回答"
-	print("Player chose: No Answer")
-	_setup_mock_round()
-	switch_phase(GamePhase.GUESSING)
+	print("Submitting No Answer")
+	NetworkManager.send_game_event("answer_submitted", {"answer": self_answer})
+	
+	# 視覺回饋
+	var submit_btn := $Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit
+	submit_btn.disabled = true
+	submit_btn.text = "已提交，等待其他玩家..."
+	_set_btn_color(submit_btn, COLOR_BTN_DISABLED)
 
-# ── Mock Data 準備 ────────────────────────────────────────────────────────────
+# ── 實體數據同步 ────────────────────────────────────────────────────────────
+func _setup_real_round(remote_answers: Dictionary) -> void:
+	round_answers = remote_answers
+	correct_map.clear()
+	player_guesses.clear()
+
+	# 建立正確對應表
+	for player_name in round_answers:
+		var ans: String = round_answers[player_name]
+		correct_map[ans] = player_name
+
+	print("=== Real Round Setup ===")
+	for player_name in round_answers:
+		print("  ", player_name, ": ", round_answers[player_name])
+
+# ── Mock Data 準備 (保留作為測試或 fallback) ──────────────────────────────────
 func _setup_mock_round() -> void:
 	round_answers.clear()
 	correct_map.clear()
@@ -419,7 +493,7 @@ func _generate_phase3_ui() -> void:
 	all_answers.shuffle()
 
 	# 收集所有參與者並打亂
-	var all_participants: Array = [mock_self_name] + mock_players.duplicate()
+	var all_participants: Array = round_answers.keys()
 	all_participants.shuffle()
 
 	var self_ans: String = round_answers[mock_self_name]
@@ -573,8 +647,13 @@ func _set_pill_style(btn: Button, color: Color) -> void:
 func _on_btn_submit_match() -> void:
 	var self_ans: String = round_answers[mock_self_name]
 	player_guesses[self_ans] = mock_self_name
-	print("Guesses submitted -> Phase 4")
-	switch_phase(GamePhase.REVELATION)
+	
+	print("Sending guesses to server...")
+	NetworkManager.send_game_event("guesses_submitted", {"guesses": player_guesses})
+	
+	# 視覺回饋：等待中
+	$Phases/Phase3_Guessing/BtnSubmitMatch.disabled = true
+	$Phases/Phase3_Guessing/BtnSubmitMatch.text = "等待其他玩家..."
 
 # ── Phase 4：結果揭曉與計分 ────────────────────────────────────────────────────
 func _generate_phase4_ui() -> void:
@@ -613,18 +692,22 @@ func _generate_phase4_ui() -> void:
 		var row := _create_result_row(ans_text, player_name, guessed_player, is_correct, font_size_ans, font_size_res)
 		results_vbox.add_child(row)
 
-	# ── 模擬「你的答案被幾個隊友猜中」（Mock 隨機）──
-	var self_ans: String = round_answers[mock_self_name]
+	# ── 計算「你的答案被幾個隊友猜中」（真實數據同步）──
 	var round_guessed_by := 0
-	var round_others_count: int = mock_players.size()  # 有幾位隊友在猜
-	if self_ans != "不回答":
-		for i in range(round_others_count):
-			# 模擬每位隊友有 40% 機率猜中你的答案
-			if randf() < 0.4:
-				round_guessed_by += 1
-	else:
-		# 你選了不回答，隊友無法猜中
-		round_guessed_by = 0
+	var round_others_count := 0
+	
+	var self_ans_text: String = round_answers.get(mock_self_name, "")
+	
+	# 遍歷所有人的猜測，看看有誰猜中了我的答案
+	for other_name in all_room_guesses:
+		if other_name == mock_self_name:
+			continue
+		
+		round_others_count += 1
+		var other_guesses: Dictionary = all_room_guesses[other_name]
+		# 如果那位隊友猜測「我的答案」屬於「我」
+		if other_guesses.get(self_ans_text) == mock_self_name:
+			round_guessed_by += 1
 
 	# ── 累計統計 ──
 	cumul_my_correct += correct_count
@@ -719,35 +802,5 @@ func _create_result_row(ans_text: String, correct_player: String, guessed_player
 
 # ── Phase 4：再玩一輪（更換隊長邏輯） ──────────────────────────────────────────
 func _on_btn_next_round() -> void:
-	print("Rotating captain...")
-	_rotate_captain()
-	
-	if current_captain == mock_self_name:
-		print("I am the new captain!")
-		switch_phase(GamePhase.SELECTION)
-	else:
-		print(current_captain, " is the new captain!")
-		$Phases/Phase1_Waiting/VBox/CaptainInfoLabel.text = "目前隊長：" + current_captain
-		switch_phase(GamePhase.SELECTION_WAITING)
-		# 模擬隊長選題
-		_simulate_mock_captain_selection()
-
-func _rotate_captain() -> void:
-	var idx = all_players.find(current_captain)
-	idx = (idx + 1) % all_players.size()
-	current_captain = all_players[idx]
-
-func _simulate_mock_captain_selection() -> void:
-	# 延遲 2 秒後進入回答階段
-	await get_tree().create_timer(2.0).timeout
-	
-	# 隨機選一個等級與題目
-	var rand_lv = (randi() % 5) + 1
-	current_level = rand_lv
-	current_question = _get_random_question(rand_lv)
-	
-	$Phases/Phase2_Answering/VBox/QuestionCard/Label.text = current_question
-	($Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit).text = ""
-	
-	# 所有人都進入回答階段
-	switch_phase(GamePhase.ANSWERING)
+	print("Requesting next round from server...")
+	NetworkManager.send_game_event("next_round", {})

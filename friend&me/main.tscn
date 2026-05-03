@@ -287,7 +287,61 @@ custom_minimum_size = Vector2(300, 80)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_font_sizes/font_size = 32
-text = "加入"
+text = "下一步"
+
+[node name="NamePanel" type="PanelContainer" parent="Phases/Phase0_Lobby"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -250.0
+offset_right = 400.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Phases/Phase0_Lobby/NamePanel"]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="Label" type="Label" parent="Phases/Phase0_Lobby/NamePanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+text = "打上圈圈裡你朋友會認得你的名字"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="PlayerNameInput" type="LineEdit" parent="Phases/Phase0_Lobby/NamePanel/VBox"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+placeholder_text = "你的暱稱"
+alignment = 1
+max_length = 12
+
+[node name="HBox" type="HBoxContainer" parent="Phases/Phase0_Lobby/NamePanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="BtnCancelName" type="Button" parent="Phases/Phase0_Lobby/NamePanel/VBox/HBox"]
+custom_minimum_size = Vector2(200, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "取消"
+
+[node name="BtnConfirmName" type="Button" parent="Phases/Phase0_Lobby/NamePanel/VBox/HBox"]
+custom_minimum_size = Vector2(300, 80)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_font_sizes/font_size = 32
+text = "進入圈圈"
 
 [node name="Phase1_Selection" type="Control" parent="Phases"]
 visible = false
