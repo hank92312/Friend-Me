@@ -132,6 +132,7 @@ func _ready() -> void:
 	NetworkManager.room_created.connect(_on_network_room_created)
 	NetworkManager.player_list_updated.connect(_on_network_player_list_updated)
 	NetworkManager.phase_sync_requested.connect(_on_network_phase_sync)
+	NetworkManager.reconnect_status_received.connect(_on_reconnect_status)
 
 	# Phase 1
 	var p1 := $Phases/Phase1_Selection/VBoxContainer
@@ -185,17 +186,42 @@ func _get_random_question(level: int) -> String:
 	var q: Dictionary = questions[idx]
 	return q["text"]
 
-# ── 通用切換畫面 ──────────────────────────────────────────────────────────────
+# ── 通用切換畫面（含淡入淡出動畫） ────────────────────────────────────────────
 func switch_phase(new_phase: GamePhase) -> void:
+	var old_node = phase_nodes.get(current_phase)
 	current_phase = new_phase
-	for key in phase_nodes:
-		phase_nodes[key].visible = (key == current_phase)
+	var new_node = phase_nodes.get(new_phase)
 	print("Switched to phase: ", GamePhase.keys()[current_phase])
 
 	if new_phase == GamePhase.GUESSING:
 		_generate_phase3_ui()
 	elif new_phase == GamePhase.REVELATION:
 		_generate_phase4_ui()
+
+	if old_node == null or old_node == new_node:
+		for key in phase_nodes:
+			phase_nodes[key].visible = (key == current_phase)
+		return
+
+	# 淡出舊畫面 → 淡入新畫面
+	new_node.modulate.a = 0.0
+	new_node.visible = true
+	var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(old_node, "modulate:a", 0.0, 0.18)
+	tween.tween_callback(func():
+		old_node.visible = false
+		old_node.modulate.a = 1.0
+	)
+	tween.tween_property(new_node, "modulate:a", 1.0, 0.22)
+
+func _on_reconnect_status(data: Dictionary) -> void:
+	var phase_str = data.get("current_phase", "")
+	print("[重連] 目前房間階段：", phase_str, "，等待本輪結束後一起加入下一輪。")
+	# 顯示重連提示（若目前在大廳畫面則直接等待）
+	if current_phase == GamePhase.WAIT_LOBBY:
+		var hint := $Phases/Phase0_WaitLobby/VBox/WaitingHint
+		hint.text = "重連成功！等待本輪結束後加入..."  
+		hint.visible = true
 
 # ── Phase 0 ───────────────────────────────────────────────────────────────────
 func _on_btn_create_pressed() -> void:
@@ -554,22 +580,32 @@ func _generate_phase3_ui() -> void:
 
 # ── Phase 3：點擊配對邏輯 ─────────────────────────────────────────────────────
 func _on_answer_btn_pressed(btn: Button) -> void:
-	# 如果點擊已配對的，則解除配對（反悔功能）
 	if partner_map.has(btn):
 		_unmatch_pair(btn)
 		return
 
 	if selected_answer_btn != null and selected_answer_btn != btn:
-		# 如果之前有選別的答案，先復原它的顏色
 		if not partner_map.has(selected_answer_btn):
 			_set_pill_style(selected_answer_btn, COLOR_BTN_NORMAL)
-			
+			_anim_pill_deselect(selected_answer_btn)
+
 	selected_answer_btn = btn
 	_set_pill_style(btn, COLOR_HIGHLIGHT)
+	_anim_pill_select(btn)
 	print("Answer selected: ", btn.text)
 
+func _anim_pill_select(btn: Button) -> void:
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	btn.scale = Vector2(0.92, 0.92)
+	btn.pivot_offset = btn.size / 2.0
+	tw.tween_property(btn, "scale", Vector2(1.06, 1.06), 0.12)
+	tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.10)
+
+func _anim_pill_deselect(btn: Button) -> void:
+	var tw := create_tween().set_trans(Tween.TRANS_SINE)
+	tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.10)
+
 func _on_participant_btn_pressed(btn: Button) -> void:
-	# 如果點擊已配對的，則解除配對（反悔功能）
 	if partner_map.has(btn):
 		_unmatch_pair(btn)
 		return
@@ -581,13 +617,13 @@ func _on_participant_btn_pressed(btn: Button) -> void:
 	var p_name: String = participant_btn_map[btn]
 	player_guesses[ans_text] = p_name
 
-	# 取得配對顏色
 	var pair_color = PAIR_COLORS[paired_count % PAIR_COLORS.size()]
-	
 	_set_pill_style(selected_answer_btn, pair_color)
 	_set_pill_style(btn, pair_color)
-	
-	# 建立雙向對應
+	# 配對成功 bounce 動畫
+	_anim_pill_match(selected_answer_btn)
+	_anim_pill_match(btn)
+
 	partner_map[selected_answer_btn] = btn
 	partner_map[btn] = selected_answer_btn
 	partner_color_map[selected_answer_btn] = pair_color
@@ -599,7 +635,17 @@ func _on_participant_btn_pressed(btn: Button) -> void:
 	paired_count += 1
 
 	if paired_count >= total_pairs:
-		$Phases/Phase3_Guessing/BtnSubmitMatch.visible = true
+		var submit_btn := $Phases/Phase3_Guessing/BtnSubmitMatch
+		submit_btn.visible = true
+		submit_btn.modulate.a = 0.0
+		var tw := create_tween().set_trans(Tween.TRANS_SINE)
+		tw.tween_property(submit_btn, "modulate:a", 1.0, 0.3)
+
+func _anim_pill_match(btn: Button) -> void:
+	btn.pivot_offset = btn.size / 2.0
+	var tw := create_tween().set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(btn, "scale", Vector2(1.12, 1.12), 0.10)
+	tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.25)
 
 func _unmatch_pair(btn: Button) -> void:
 	var partner: Button = partner_map.get(btn)
@@ -655,9 +701,14 @@ func _on_btn_submit_match() -> void:
 	$Phases/Phase3_Guessing/BtnSubmitMatch.disabled = true
 	$Phases/Phase3_Guessing/BtnSubmitMatch.text = "等待其他玩家..."
 
-# ── Phase 4：結果揭曉與計分 ────────────────────────────────────────────────────
+# ── Phase 4：戲劇性結果揭曉與計分 ────────────────────────────────────────────
 func _generate_phase4_ui() -> void:
-	$Phases/Phase4_Revelation/VBox/QuestionLabel.text = "「" + current_question + "」"
+	# 標題淡入
+	var q_label := $Phases/Phase4_Revelation/VBox/QuestionLabel
+	q_label.text = "「" + current_question + "」"
+	q_label.modulate.a = 0.0
+	var title_tw := create_tween().set_trans(Tween.TRANS_SINE)
+	title_tw.tween_property(q_label, "modulate:a", 1.0, 0.4)
 
 	var results_vbox := $Phases/Phase4_Revelation/VBox/ScrollContainer/ResultsVBox
 	for child in results_vbox.get_children():
@@ -678,19 +729,30 @@ func _generate_phase4_ui() -> void:
 		font_size_ans = 36
 		font_size_res = 30
 
+	var stagger_delay := 0.0
 	for player_name in round_answers:
 		if player_name == mock_self_name:
 			continue
 		var ans_text: String = round_answers[player_name]
 		var guessed_player: String = player_guesses.get(ans_text, "?")
 		var is_correct: bool = (guessed_player == player_name)
-		
+
 		guess_total += 1
 		if is_correct:
 			correct_count += 1
-			
+
 		var row := _create_result_row(ans_text, player_name, guessed_player, is_correct, font_size_ans, font_size_res)
 		results_vbox.add_child(row)
+		# 飛入動畫：從右側滑入 + 淡入（錯開時間）
+		row.modulate.a = 0.0
+		row.position.x += 80.0
+		var d := stagger_delay
+		var stagger_tw := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		stagger_tw.tween_interval(d)
+		stagger_tw.tween_property(row, "modulate:a", 1.0, 0.35)
+		var row_ref := row
+		stagger_tw.parallel().tween_property(row_ref, "position:x", row_ref.position.x - 80.0, 0.35)
+		stagger_delay += 0.18
 
 	# ── 計算「你的答案被幾個隊友猜中」（真實數據同步）──
 	var round_guessed_by := 0

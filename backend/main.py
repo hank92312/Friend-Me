@@ -8,7 +8,7 @@ app = FastAPI()
 
 @app.post("/create_room")
 async def create_room(player_name: str):
-    # 隨機產生一個 6 位數房間 ID (簡化版)
+    # 隨機產生一個 6 位數房間 ID
     room_id = str(uuid.uuid4())[:6].upper()
     return {
         "status": "success",
@@ -18,7 +18,6 @@ async def create_room(player_name: str):
 
 @app.post("/join_room")
 async def join_room(room_id: str, player_name: str):
-    # 實際開發時這裡會檢查房間是否存在於資料庫或 Redis
     return {
         "status": "success",
         "room_id": room_id,
@@ -29,84 +28,152 @@ async def join_room(room_id: str, player_name: str):
 
 @app.websocket("/ws/{room_id}/{player_name}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: str):
-    await manager.connect(websocket, room_id, player_name)
-    
-    # 廣播更新後的完整玩家清單
+    # 嘗試重連（若為斷線重連，回傳 True）
+    is_reconnect = await manager.reconnect(websocket, room_id, player_name)
+
+    if not is_reconnect:
+        # 全新加入
+        await manager.connect(websocket, room_id, player_name)
+
+    # 廣播更新後的完整玩家清單（全員可見）
+    all_names = manager.room_players.get(room_id, [])
+    active_names = manager.get_active_player_names(room_id)
     await manager.broadcast_to_room(room_id, {
         "event": "player_list_updated",
-        "players": manager.room_players.get(room_id, [])
+        "players": active_names  # 只顯示連線中的玩家
     })
-    
+
+    if is_reconnect:
+        # 告知重連玩家目前的房間狀態
+        current_phase = manager.room_states.get(room_id, {}).get("phase", "WAITING")
+        captain = manager.room_captains.get(room_id, "")
+        await manager.send_to_player(room_id, player_name, {
+            "event": "reconnect_status",
+            "current_phase": current_phase,
+            "captain": captain,
+            "message": "重連成功！等待本輪結束後一起加入下一輪。"
+        })
+
     try:
         while True:
-            # 接收來自 Godot 的訊息
             data = await websocket.receive_json()
-            
-            # 範例：轉發隊長選題事件
-            if data.get("event") == "topic_selected":
-                if room_id in manager.room_answers: manager.room_answers[room_id] = {}
-                if room_id in manager.room_guesses: manager.room_guesses[room_id] = {}
+
+            # 房主開始遊戲
+            if data.get("event") == "start_game":
+                captain = manager.room_captains.get(room_id)
+                manager.room_states[room_id]["phase"] = "SELECTION"
+                await manager.broadcast_to_room(room_id, {
+                    "event": "phase_changed",
+                    "new_phase": "SELECTION",
+                    "captain": captain
+                })
+
+            # 隊長選題
+            elif data.get("event") == "topic_selected":
+                if room_id in manager.room_answers:
+                    manager.room_answers[room_id] = {}
+                if room_id in manager.room_guesses:
+                    manager.room_guesses[room_id] = {}
+                manager.room_states[room_id]["phase"] = "ANSWERING"
                 await manager.broadcast_to_room(room_id, {
                     "event": "phase_changed",
                     "new_phase": "ANSWERING",
                     "level": data.get("level"),
                     "question": data.get("question")
                 })
-            
-            # 範例：房主開始遊戲
-            elif data.get("event") == "start_game":
-                captain = manager.room_captains.get(room_id)
-                await manager.broadcast_to_room(room_id, {
-                    "event": "phase_changed",
-                    "new_phase": "SELECTION",
-                    "captain": captain
-                })
-            
-            # 實作：提交答案事件
+
+            # 提交答案
             elif data.get("event") == "answer_submitted":
                 answer = data.get("answer", "")
                 all_done = await manager.submit_answer(room_id, player_name, answer)
-                
-                # 廣播「某人已提交」
+
+                # 廣播提交狀態
+                active_names = manager.get_active_player_names(room_id)
+                waiting = manager.waiting_for_next_round.get(room_id, [])
+                eligible_count = len([n for n in active_names if n not in waiting])
                 await manager.broadcast_to_room(room_id, {
                     "event": "player_submitted_status",
                     "player": player_name,
-                    "count": len(manager.room_answers.get(room_id, {}))
+                    "submitted": len(manager.room_answers.get(room_id, {})),
+                    "total": eligible_count
                 })
 
                 if all_done:
+                    manager.room_states[room_id]["phase"] = "GUESSING"
                     await manager.broadcast_to_room(room_id, {
                         "event": "phase_changed",
                         "new_phase": "GUESSING",
                         "answers": manager.room_answers[room_id]
                     })
-            
-            # 實作：提交猜測結果
+
+            # 提交猜測結果
             elif data.get("event") == "guesses_submitted":
                 guesses = data.get("guesses", {})
                 all_done = await manager.submit_guesses(room_id, player_name, guesses)
-                
+
                 if all_done:
-                    # 全員完成配對，廣播進入揭曉階段
+                    manager.room_states[room_id]["phase"] = "REVELATION"
                     await manager.broadcast_to_room(room_id, {
                         "event": "phase_changed",
                         "new_phase": "REVELATION",
                         "all_guesses": manager.room_guesses[room_id],
                         "all_answers": manager.room_answers[room_id]
                     })
-            
-            # 實作：再玩一輪（換隊長）
+
+            # 再玩一輪（換隊長）
             elif data.get("event") == "next_round":
                 new_captain = manager.rotate_captain(room_id)
+                # rotate_captain 內部已清空 waiting_for_next_round
+                manager.room_states[room_id]["phase"] = "SELECTION"
+                active_names = manager.get_active_player_names(room_id)
                 await manager.broadcast_to_room(room_id, {
                     "event": "phase_changed",
                     "new_phase": "SELECTION",
-                    "captain": new_captain
+                    "captain": new_captain,
+                    "players": active_names  # 更新玩家名單（含重連的玩家）
                 })
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, room_id, player_name)
+        active_names = manager.get_active_player_names(room_id)
         await manager.broadcast_to_room(room_id, {
             "event": "player_list_updated",
-            "players": manager.room_players.get(room_id, [])
+            "players": active_names
         })
+        # 若該玩家是等待提交的一員，檢查是否可以繼續推進階段
+        await _check_phase_progress_after_disconnect(room_id)
+
+async def _check_phase_progress_after_disconnect(room_id: str):
+    """
+    玩家斷線後，重新檢查目前階段是否可以因人數減少而推進。
+    避免「某玩家斷線後，其他玩家全都卡在等待」的情況。
+    """
+    current_phase = manager.room_states.get(room_id, {}).get("phase", "WAITING")
+
+    if current_phase == "ANSWERING":
+        # 重新檢查是否全員已提交答案
+        active_names = manager.get_active_player_names(room_id)
+        waiting = manager.waiting_for_next_round.get(room_id, [])
+        eligible = [n for n in active_names if n not in waiting]
+        submitted = manager.room_answers.get(room_id, {})
+        if eligible and all(n in submitted for n in eligible):
+            manager.room_states[room_id]["phase"] = "GUESSING"
+            await manager.broadcast_to_room(room_id, {
+                "event": "phase_changed",
+                "new_phase": "GUESSING",
+                "answers": manager.room_answers[room_id]
+            })
+
+    elif current_phase == "GUESSING":
+        active_names = manager.get_active_player_names(room_id)
+        waiting = manager.waiting_for_next_round.get(room_id, [])
+        eligible = [n for n in active_names if n not in waiting]
+        submitted = manager.room_guesses.get(room_id, {})
+        if eligible and all(n in submitted for n in eligible):
+            manager.room_states[room_id]["phase"] = "REVELATION"
+            await manager.broadcast_to_room(room_id, {
+                "event": "phase_changed",
+                "new_phase": "REVELATION",
+                "all_guesses": manager.room_guesses[room_id],
+                "all_answers": manager.room_answers[room_id]
+            })
