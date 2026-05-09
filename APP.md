@@ -48,6 +48,10 @@
 - **語言/框架**：FastAPI (Python)。
 - **即時通訊**：WebSockets (用於全體同步遊戲狀態)。
 - **虛擬環境**：使用 `venv` 管理套件 (`backend/venv`)。
+**虛擬環境指令**
+cd backend
+.\venv\Scripts\Activate
+
 - **核心組件**：
     - `main.py`：API 進入點與 WebSocket 路由。
     - `room_manager.py`：處理房間連線管理、玩家名單同步與狀態廣播。
@@ -61,6 +65,16 @@
 - **Rooms**: RoomID, Members[], CurrentPhase, CurrentCaptain.
 - **QuestionBank**: LevelID, Topic, SubQuestions[] — 已建立 JSON 題庫。
 - **RoundRecords**: (未來實作) 儲存配對正確率與歷史紀錄。
+
+### D. 音效與 UI 系統 (Audio & UI Enhancements)
+- **音效系統 (Audio System)**：
+    - 使用 `audio_manager.gd` (Autoload) 統一管理。
+    - 所有 `.ogg` 音效檔已透過 `ffmpeg loudnorm` 正規化至標準音量 (-12 LUFS)。
+    - **動態音高 (Dynamic Pitching)**：難度選擇 (LV1~LV5) 共用同一音效，但透過調整 `pitch_scale` 與延遲回音 (Echo) 來營造不同深度的社交氛圍（LV1 輕快明亮 → LV5 低沉且帶有雙層殘響）。
+    - 支援全域靜音控制 (`is_muted`)。
+- **動態介面 (Dynamic UI)**：
+    - **遊戲說明 (Tutorial)**：在首頁點擊，透過程式動態生成滿版覆蓋層，提供分頁式的遊戲操作與流程教學。
+    - **設定選項 (Options)**：包含音效開關，以及「問題回饋」按鈕（點擊後自動複製開發者信箱並播放專屬音效）。
 
 ## 5. 擴展設計 (Scalability)
 - **題庫擴充接口**：預留 CSV/JSON 導入機制，支援未來「使用者自定義題庫」與「AI 動態題庫」。
@@ -104,11 +118,13 @@ Main (Control)
 - **NetworkManager (Autoload)**：全域單例，封裝 HTTP 與 WebSocket 通訊。
 - **名字輸入系統**：實作了彈出式視窗讓玩家輸入自訂暱稱，並同步至伺服器。
 - **大廳同步**：創立/加入房間後進入 `Phase0_WaitLobby`，透過伺服器推播 `player_list_updated` 同步名單。
+- **動態教學與選項 UI**：不依賴 tscn 節點，由腳本動態生成覆蓋層，避免破壞場景結構。
 - **Phase 3 聯網同步**：
     - **真實答案**：不再使用 Mock 資料，答案按鈕完全來自房間內真實玩家的提交內容。
     - **真實參與者**：名單同步顯示房間內真實玩家的名字。
 - **Phase 4 聯網結算**：
     - **真實統計**：根據伺服器彙整的所有玩家猜測數據，計算真實的「被隊友猜中率」。
+    - **動態結果飛入**：結合音效（猜對/猜錯）與 `tween` 動畫，實現結果卡片錯開飛入的揭曉感。
     - **循環遊玩**：支援由伺服器驅動的隊長輪替，可連續進行多輪遊戲。
 
 ### 結算與統計 (Phase 4)

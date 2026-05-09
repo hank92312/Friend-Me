@@ -1,6 +1,9 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from room_manager import manager
 import uuid
+from database import AsyncSessionLocal
+from sqlalchemy import select
+import models
 
 app = FastAPI()
 
@@ -23,6 +26,24 @@ async def join_room(room_id: str, player_name: str):
         "room_id": room_id,
         "player_name": player_name
     }
+
+@app.get("/player/{player_name}/stats")
+async def get_player_stats(player_name: str):
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(models.User).where(models.User.name == player_name))
+        user = result.scalars().first()
+        
+        if not user:
+            return {"status": "error", "message": "Player not found"}
+            
+        return {
+            "status": "success",
+            "name": user.name,
+            "total_guesses": user.total_guesses,
+            "correct_guesses": user.correct_guesses,
+            "total_disclosures": user.total_disclosures,
+            "recognized_disclosures": user.recognized_disclosures
+        }
 
 # --- WebSocket: 處理房間內的即時互動 ---
 
@@ -74,12 +95,19 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                     manager.room_answers[room_id] = {}
                 if room_id in manager.room_guesses:
                     manager.room_guesses[room_id] = {}
+                
+                # 在資料庫建立這一輪
+                question = data.get("question", "")
+                level = data.get("level", 1)
+                captain = manager.room_captains.get(room_id)
+                await manager.create_round(room_id, question, level, captain)
+
                 manager.room_states[room_id]["phase"] = "ANSWERING"
                 await manager.broadcast_to_room(room_id, {
                     "event": "phase_changed",
                     "new_phase": "ANSWERING",
-                    "level": data.get("level"),
-                    "question": data.get("question")
+                    "level": level,
+                    "question": question
                 })
 
             # 提交答案
@@ -113,11 +141,28 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
 
                 if all_done:
                     manager.room_states[room_id]["phase"] = "REVELATION"
+                    
+                    # 抓取目前連線中所有玩家的最新累計數據
+                    active_players = manager.get_active_player_names(room_id)
+                    all_stats = {}
+                    async with AsyncSessionLocal() as db:
+                        for name in active_players:
+                            res = await db.execute(select(models.User).where(models.User.name == name))
+                            u = res.scalars().first()
+                            if u:
+                                all_stats[name] = {
+                                    "total_guesses": u.total_guesses,
+                                    "correct_guesses": u.correct_guesses,
+                                    "total_disclosures": u.total_disclosures,
+                                    "recognized_disclosures": u.recognized_disclosures
+                                }
+
                     await manager.broadcast_to_room(room_id, {
                         "event": "phase_changed",
                         "new_phase": "REVELATION",
                         "all_guesses": manager.room_guesses[room_id],
-                        "all_answers": manager.room_answers[room_id]
+                        "all_answers": manager.room_answers[room_id],
+                        "player_stats": all_stats
                     })
 
             # 再玩一輪（換隊長）
@@ -132,6 +177,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                     "captain": new_captain,
                     "players": active_names  # 更新玩家名單（含重連的玩家）
                 })
+
+            # 離開房間
+            elif data.get("event") == "leave_room":
+                await manager.leave_room(room_id, player_name)
+                # 斷開 WebSocket
+                break
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, room_id, player_name)
@@ -171,9 +222,25 @@ async def _check_phase_progress_after_disconnect(room_id: str):
         submitted = manager.room_guesses.get(room_id, {})
         if eligible and all(n in submitted for n in eligible):
             manager.room_states[room_id]["phase"] = "REVELATION"
+            
+            # 同樣需要抓取累計數據
+            all_stats = {}
+            async with AsyncSessionLocal() as db:
+                for name in active_names:
+                    res = await db.execute(select(models.User).where(models.User.name == name))
+                    u = res.scalars().first()
+                    if u:
+                        all_stats[name] = {
+                            "total_guesses": u.total_guesses,
+                            "correct_guesses": u.correct_guesses,
+                            "total_disclosures": u.total_disclosures,
+                            "recognized_disclosures": u.recognized_disclosures
+                        }
+
             await manager.broadcast_to_room(room_id, {
                 "event": "phase_changed",
                 "new_phase": "REVELATION",
                 "all_guesses": manager.room_guesses[room_id],
-                "all_answers": manager.room_answers[room_id]
+                "all_answers": manager.room_answers[room_id],
+                "player_stats": all_stats
             })

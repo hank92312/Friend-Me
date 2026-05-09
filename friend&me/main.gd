@@ -1,6 +1,6 @@
 extends Control
 
-enum GamePhase { WAITING, WAIT_LOBBY, SELECTION, ANSWERING, GUESSING, REVELATION, SELECTION_WAITING }
+enum GamePhase { WAITING, WAIT_LOBBY, SELECTION, ANSWERING, GUESSING, REVELATION, SELECTION_WAITING, SUMMARY }
 
 # ── 顏色常數 ──────────────────────────────────────────────────────────────────
 const COLOR_BTN_NORMAL   := Color(0.815686, 0.505882, 0.235294, 1)  # 溫暖橘色
@@ -31,6 +31,7 @@ const PAIR_COLORS = [
 	GamePhase.GUESSING:   $Phases/Phase3_Guessing,
 	GamePhase.REVELATION: $Phases/Phase4_Revelation,
 	GamePhase.SELECTION_WAITING: $Phases/Phase1_Waiting,
+	GamePhase.SUMMARY:    $Phases/Phase5_Summary,
 }
 
 # ── Mock Data ─────────────────────────────────────────────────────────────────
@@ -108,6 +109,15 @@ var cumul_guessed_by_others := 0  # 你的答案被隊友猜中的總次數
 var cumul_others_attempts := 0    # 隊友猜你答案的總次數
 var cumul_my_correct := 0         # 你猜中隊友答案的總次數
 var cumul_my_attempts := 0        # 你猜隊友答案的總次數
+var game_history : Array = []     # 存放本局所有問答: [{"question": "...", "answer": "..."}]
+
+# ── Tutorial Slides ─────────────────────────────────────────────────────────────
+var tutorial_slides := [
+	"【如何創立房間】\n\n1. 點擊「創立圈圈」按鈕。\n2. 輸入一個朋友認得的暱稱。\n3. 系統會產生一組「6 位數房間碼」，將它分享給朋友！",
+	"【如何加入房間】\n\n1. 點擊「加入圈圈」按鈕。\n2. 輸入朋友給你的「6 位數房間碼」。\n3. 輸入你的專屬暱稱即可進入大廳，等待房主開始遊戲。",
+	"【遊戲流程說明】\n\n🔹 Step 1：房主選擇本次「話題深度」 (LV1~LV5)。\n🔹 Step 2：每人根據題目輸入答案，或選擇「不回答」。\n🔹 Step 3：配對階段！點擊上方答案，再點擊下方朋友名字，猜出誰寫了什麼。\n🔹 Step 4：結果揭曉，看看誰才是最懂你的人！"
+]
+var tutorial_current_slide := 0
 
 # ── 初始化 ────────────────────────────────────────────────────────────────────
 func _ready() -> void:
@@ -123,6 +133,8 @@ func _ready() -> void:
 	# Phase 0
 	$Phases/Phase0_Lobby/VBoxContainer/BtnCreate.pressed.connect(_on_btn_create_pressed)
 	$Phases/Phase0_Lobby/VBoxContainer/BtnJoin.pressed.connect(_on_btn_join_pressed)
+	$Phases/Phase0_Lobby/VBoxContainer/BtnInstructions.pressed.connect(_on_btn_instructions_pressed)
+	$Phases/Phase0_Lobby/VBoxContainer/BtnOptions.pressed.connect(_on_btn_options_pressed)
 	$Phases/Phase0_Lobby/JoinPanel/VBox/HBox/BtnCancelJoin.pressed.connect(_on_btn_cancel_join_pressed)
 	$Phases/Phase0_Lobby/JoinPanel/VBox/HBox/BtnConfirmJoin.pressed.connect(_on_btn_confirm_join)
 	$Phases/Phase0_Lobby/NamePanel/VBox/HBox/BtnCancelName.pressed.connect(_on_btn_cancel_name_pressed)
@@ -156,8 +168,12 @@ func _ready() -> void:
 	$Phases/Phase0_WaitLobby/VBox/BtnStartGame.pressed.connect(_on_btn_start_game)
 	$Phases/Phase0_WaitLobby/VBox/RoomIDHBox/BtnCopyID.pressed.connect(_on_btn_copy_id)
 
-	# Phase 4 ── 再玩一輪
+	# Phase 4 ── 再玩一輪 & 離開
 	$Phases/Phase4_Revelation/VBox/BtnNextRound.pressed.connect(_on_btn_next_round)
+	$Phases/Phase4_Revelation/BtnLeaveCircle.pressed.connect(_on_btn_leave_circle_pressed)
+
+	# Phase 5 ── 確定離開
+	$Phases/Phase5_Summary/VBox/BtnFinalLeave.pressed.connect(_on_btn_final_leave_pressed)
 
 	switch_phase(GamePhase.WAITING)
 
@@ -197,6 +213,8 @@ func switch_phase(new_phase: GamePhase) -> void:
 		_generate_phase3_ui()
 	elif new_phase == GamePhase.REVELATION:
 		_generate_phase4_ui()
+	elif new_phase == GamePhase.SUMMARY:
+		_generate_phase5_ui()
 
 	if old_node == null or old_node == new_node:
 		for key in phase_nodes:
@@ -225,23 +243,249 @@ func _on_reconnect_status(data: Dictionary) -> void:
 
 # ── Phase 0 ───────────────────────────────────────────────────────────────────
 func _on_btn_create_pressed() -> void:
+	AudioManager.play_tap()
 	is_host = true
 	pending_room_id = ""
 	$Phases/Phase0_Lobby/NamePanel.visible = true
 	$Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.grab_focus()
 
 func _on_btn_join_pressed() -> void:
+	AudioManager.play_tap()
 	is_host = false
 	$Phases/Phase0_Lobby/JoinPanel.visible = true
 	$Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput.text = ""
 	$Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput.grab_focus()
 
 func _on_btn_cancel_join_pressed() -> void:
+	AudioManager.play_cancel()
 	$Phases/Phase0_Lobby/JoinPanel.visible = false
+
+# ── 遊戲說明 (Tutorial) 邏輯 ──
+func _on_btn_instructions_pressed() -> void:
+	AudioManager.play_tap()
+	var lobby := $Phases/Phase0_Lobby
+	var panel = lobby.get_node_or_null("TutorialPanel")
+	if not panel:
+		panel = PanelContainer.new()
+		panel.name = "TutorialPanel"
+		panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+		
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.12, 0.11, 0.10, 0.98) # Dark almost solid background
+		panel.add_theme_stylebox_override("panel", style)
+		
+		var margin := MarginContainer.new()
+		margin.name = "MarginContainer"
+		margin.add_theme_constant_override("margin_left", 40)
+		margin.add_theme_constant_override("margin_right", 40)
+		margin.add_theme_constant_override("margin_top", 100)
+		margin.add_theme_constant_override("margin_bottom", 100)
+		panel.add_child(margin)
+		
+		var vbox := VBoxContainer.new()
+		vbox.name = "VBoxContainer"
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 40)
+		margin.add_child(vbox)
+		
+		var title := Label.new()
+		title.text = "遊戲說明"
+		title.add_theme_font_size_override("font_size", 48)
+		title.add_theme_color_override("font_color", COLOR_HIGHLIGHT)
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(title)
+		
+		var content := Label.new()
+		content.name = "ContentLabel"
+		content.text = tutorial_slides[0]
+		content.add_theme_font_size_override("font_size", 32)
+		content.autowrap_mode = TextServer.AUTOWRAP_WORD
+		content.custom_minimum_size = Vector2(400, 300)
+		vbox.add_child(content)
+		
+		var hbox := HBoxContainer.new()
+		hbox.name = "HBoxContainer"
+		hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		hbox.add_theme_constant_override("separation", 20)
+		vbox.add_child(hbox)
+		
+		var btn_prev := Button.new()
+		btn_prev.name = "BtnPrev"
+		btn_prev.text = "上一頁"
+		btn_prev.custom_minimum_size = Vector2(160, 70)
+		btn_prev.add_theme_font_size_override("font_size", 30)
+		_set_btn_color(btn_prev, COLOR_BTN_NORMAL)
+		btn_prev.pressed.connect(_on_tutorial_prev)
+		hbox.add_child(btn_prev)
+		
+		var btn_next := Button.new()
+		btn_next.name = "BtnNext"
+		btn_next.text = "下一頁"
+		btn_next.custom_minimum_size = Vector2(160, 70)
+		btn_next.add_theme_font_size_override("font_size", 30)
+		_set_btn_color(btn_next, COLOR_BTN_NORMAL)
+		btn_next.pressed.connect(_on_tutorial_next)
+		hbox.add_child(btn_next)
+		
+		var btn_close := Button.new()
+		btn_close.text = "關閉說明"
+		btn_close.custom_minimum_size = Vector2(340, 70)
+		btn_close.add_theme_font_size_override("font_size", 30)
+		_set_btn_color(btn_close, COLOR_BTN_DISABLED)
+		btn_close.pressed.connect(_on_tutorial_close)
+		
+		var spacer := Control.new()
+		spacer.custom_minimum_size = Vector2(0, 40)
+		vbox.add_child(spacer)
+		vbox.add_child(btn_close)
+		
+		lobby.add_child(panel)
+	
+	tutorial_current_slide = 0
+	_update_tutorial_ui()
+	panel.visible = true
+
+func _on_tutorial_prev() -> void:
+	AudioManager.play_tap()
+	if tutorial_current_slide > 0:
+		tutorial_current_slide -= 1
+		_update_tutorial_ui()
+
+func _on_tutorial_next() -> void:
+	AudioManager.play_tap()
+	if tutorial_current_slide < tutorial_slides.size() - 1:
+		tutorial_current_slide += 1
+		_update_tutorial_ui()
+
+func _on_tutorial_close() -> void:
+	AudioManager.play_cancel()
+	var panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
+	if panel:
+		panel.visible = false
+
+func _update_tutorial_ui() -> void:
+	var panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
+	if not panel: return
+	
+	var content: Label = panel.get_node("MarginContainer/VBoxContainer/ContentLabel")
+	content.text = tutorial_slides[tutorial_current_slide]
+	
+	var btn_prev: Button = panel.get_node("MarginContainer/VBoxContainer/HBoxContainer/BtnPrev")
+	var btn_next: Button = panel.get_node("MarginContainer/VBoxContainer/HBoxContainer/BtnNext")
+	
+	btn_prev.disabled = (tutorial_current_slide == 0)
+	btn_next.disabled = (tutorial_current_slide == tutorial_slides.size() - 1)
+	
+	_set_btn_color(btn_prev, COLOR_BTN_NORMAL if not btn_prev.disabled else COLOR_BTN_DISABLED)
+	_set_btn_color(btn_next, COLOR_BTN_NORMAL if not btn_next.disabled else COLOR_BTN_DISABLED)
+
+# ── 選項 (Options) 邏輯 ──
+func _on_btn_options_pressed() -> void:
+	AudioManager.play_tap()
+	var lobby := $Phases/Phase0_Lobby
+	var panel = lobby.get_node_or_null("OptionsPanel")
+	if not panel:
+		panel = PanelContainer.new()
+		panel.name = "OptionsPanel"
+		panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+		
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.12, 0.11, 0.10, 0.98) # Dark almost solid background
+		panel.add_theme_stylebox_override("panel", style)
+		
+		var margin := MarginContainer.new()
+		margin.name = "MarginContainer"
+		margin.add_theme_constant_override("margin_left", 40)
+		margin.add_theme_constant_override("margin_right", 40)
+		margin.add_theme_constant_override("margin_top", 100)
+		margin.add_theme_constant_override("margin_bottom", 100)
+		panel.add_child(margin)
+		
+		var vbox := VBoxContainer.new()
+		vbox.name = "VBoxContainer"
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 40)
+		margin.add_child(vbox)
+		
+		var title := Label.new()
+		title.text = "設定選項"
+		title.add_theme_font_size_override("font_size", 48)
+		title.add_theme_color_override("font_color", COLOR_HIGHLIGHT)
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(title)
+		
+		var btn_audio := Button.new()
+		btn_audio.name = "BtnAudio"
+		btn_audio.text = "音效：開啟" if not AudioManager.is_muted else "音效：關閉"
+		btn_audio.custom_minimum_size = Vector2(400, 80)
+		btn_audio.add_theme_font_size_override("font_size", 32)
+		_set_btn_color(btn_audio, COLOR_BTN_NORMAL)
+		btn_audio.pressed.connect(_on_options_audio_toggled)
+		vbox.add_child(btn_audio)
+		
+		var btn_feedback := Button.new()
+		btn_feedback.name = "BtnFeedback"
+		btn_feedback.text = "問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)"
+		btn_feedback.custom_minimum_size = Vector2(400, 100)
+		btn_feedback.add_theme_font_size_override("font_size", 28)
+		_set_btn_color(btn_feedback, COLOR_BTN_NORMAL)
+		btn_feedback.pressed.connect(_on_options_feedback_pressed)
+		vbox.add_child(btn_feedback)
+		
+		var spacer := Control.new()
+		spacer.custom_minimum_size = Vector2(0, 40)
+		vbox.add_child(spacer)
+		
+		var btn_close := Button.new()
+		btn_close.text = "關閉設定"
+		btn_close.custom_minimum_size = Vector2(340, 70)
+		btn_close.add_theme_font_size_override("font_size", 30)
+		_set_btn_color(btn_close, COLOR_BTN_DISABLED)
+		btn_close.pressed.connect(_on_options_close)
+		vbox.add_child(btn_close)
+		
+		lobby.add_child(panel)
+	
+	# 每次開啟時更新按鈕文字（防止在其他地方修改了靜音）
+	var btn_audio: Button = panel.get_node("MarginContainer/VBoxContainer/BtnAudio")
+	if btn_audio:
+		btn_audio.text = "音效：關閉" if AudioManager.is_muted else "音效：開啟"
+	
+	var btn_feedback: Button = panel.get_node("MarginContainer/VBoxContainer/BtnFeedback")
+	if btn_feedback:
+		btn_feedback.text = "問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)"
+	
+	panel.visible = true
+
+func _on_options_audio_toggled() -> void:
+	AudioManager.is_muted = not AudioManager.is_muted
+	AudioManager.play_tap() # 若開啟音效，就會播放一聲作為回饋
+	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
+	if panel:
+		var btn_audio: Button = panel.get_node("MarginContainer/VBoxContainer/BtnAudio")
+		btn_audio.text = "音效：關閉" if AudioManager.is_muted else "音效：開啟"
+
+func _on_options_feedback_pressed() -> void:
+	AudioManager.play_copy_id()
+	DisplayServer.clipboard_set("hank92312@gmail.com")
+	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
+	if panel:
+		var btn_feedback: Button = panel.get_node("MarginContainer/VBoxContainer/BtnFeedback")
+		btn_feedback.text = "已複製信箱！"
+		await get_tree().create_timer(1.5).timeout
+		if btn_feedback and is_instance_valid(btn_feedback):
+			btn_feedback.text = "問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)"
+
+func _on_options_close() -> void:
+	AudioManager.play_cancel()
+	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
+	if panel:
+		panel.visible = false
 
 func _on_btn_confirm_join() -> void:
 	var room_id = $Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput.text.strip_edges().to_upper()
 	if room_id.length() == 6:
+		AudioManager.play_tap()
 		pending_room_id = room_id
 		$Phases/Phase0_Lobby/JoinPanel.visible = false
 		$Phases/Phase0_Lobby/NamePanel.visible = true
@@ -250,12 +494,14 @@ func _on_btn_confirm_join() -> void:
 		print("Invalid Room ID")
 
 func _on_btn_cancel_name_pressed() -> void:
+	AudioManager.play_cancel()
 	$Phases/Phase0_Lobby/NamePanel.visible = false
 
 func _on_btn_confirm_name() -> void:
 	var player_name = $Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.text.strip_edges()
 	if player_name == "":
 		return
+	AudioManager.play_tap()
 	
 	mock_self_name = player_name
 	NetworkManager.my_player_name = player_name
@@ -271,6 +517,7 @@ func _on_btn_confirm_name() -> void:
 
 func _on_network_room_created(room_id: String) -> void:
 	print("Room joined/created successfully: ", room_id)
+	AudioManager.play_room_created()
 	$Phases/Phase0_Lobby/JoinPanel.visible = false
 	current_room_id = room_id
 	
@@ -286,11 +533,13 @@ func _on_network_room_created(room_id: String) -> void:
 	switch_phase(GamePhase.WAIT_LOBBY)
 
 func _on_btn_start_game() -> void:
+	AudioManager.play_game_start()
 	print("Host starting game...")
 	NetworkManager.send_game_event("start_game", {})
 
 func _on_btn_copy_id() -> void:
 	if current_room_id != "":
+		AudioManager.play_copy_id()
 		DisplayServer.clipboard_set(current_room_id)
 		# 簡單的視覺回饋
 		$Phases/Phase0_WaitLobby/VBox/RoomIDHBox/BtnCopyID.text = "已複製"
@@ -305,6 +554,9 @@ func _update_player_list_ui() -> void:
 
 func _on_network_player_list_updated(players: Array) -> void:
 	print("Room player list updated: ", players)
+	# 只在有新玩家加入時播放音效（排除初始化與玩家離開）
+	if players.size() > joined_players.size():
+		AudioManager.play_player_join()
 	joined_players = players
 	_update_player_list_ui()
 
@@ -359,6 +611,7 @@ func _on_btn_level_pressed(level: int) -> void:
 	var actual_level: int = level
 	if level == 0:
 		actual_level = (randi() % 5) + 1
+	AudioManager.play_level_select(actual_level)
 	
 	var selected_q = _get_random_question(actual_level)
 	
@@ -374,6 +627,7 @@ func _on_btn_level_pressed(level: int) -> void:
 	# 這樣能確保所有人（包括隊長自己）都在同一秒進入下一關。
 
 func _on_btn_back_pressed() -> void:
+	AudioManager.play_cancel()
 	switch_phase(GamePhase.WAITING)
 
 # ── Phase 2 ───────────────────────────────────────────────────────────────────
@@ -405,6 +659,7 @@ func _on_btn_submit_answer() -> void:
 	self_answer = line_edit.text.strip_edges()
 	if self_answer == "":
 		self_answer = "(空白)"
+	AudioManager.play_submit_answer()
 	
 	print("Submitting real answer: ", self_answer)
 	NetworkManager.send_game_event("answer_submitted", {"answer": self_answer})
@@ -414,17 +669,20 @@ func _on_btn_submit_answer() -> void:
 	submit_btn.disabled = true
 	submit_btn.text = "已提交，等待其他玩家..."
 	_set_btn_color(submit_btn, COLOR_BTN_DISABLED)
+	game_history.append({"question": current_question, "answer": self_answer})
 
 func _on_btn_no_answer() -> void:
 	self_answer = "不回答"
+	AudioManager.play_no_answer()
 	print("Submitting No Answer")
 	NetworkManager.send_game_event("answer_submitted", {"answer": self_answer})
 	
 	# 視覺回饋
-	var submit_btn := $Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit
-	submit_btn.disabled = true
-	submit_btn.text = "已提交，等待其他玩家..."
-	_set_btn_color(submit_btn, COLOR_BTN_DISABLED)
+	var submit_btn_no := $Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit
+	submit_btn_no.disabled = true
+	submit_btn_no.text = "已提交，等待其他玩家..."
+	_set_btn_color(submit_btn_no, COLOR_BTN_DISABLED)
+	game_history.append({"question": current_question, "answer": self_answer})
 
 # ── 實體數據同步 ────────────────────────────────────────────────────────────
 func _setup_real_round(remote_answers: Dictionary) -> void:
@@ -487,7 +745,9 @@ func _generate_phase3_ui() -> void:
 	partner_map.clear()
 	partner_color_map.clear()
 	player_guesses.clear()
-	$Phases/Phase3_Guessing/BtnSubmitMatch.visible = false
+	$Phases/Phase3_Guessing/BtnSubmitMatch.visible = true
+	$Phases/Phase3_Guessing/BtnSubmitMatch.disabled = false
+	$Phases/Phase3_Guessing/BtnSubmitMatch.text = "提交配對"
 
 	# 在頂部顯示題目
 	var outer_vbox := $Phases/Phase3_Guessing/OuterVBox
@@ -620,7 +880,8 @@ func _on_participant_btn_pressed(btn: Button) -> void:
 	var pair_color = PAIR_COLORS[paired_count % PAIR_COLORS.size()]
 	_set_pill_style(selected_answer_btn, pair_color)
 	_set_pill_style(btn, pair_color)
-	# 配對成功 bounce 動畫
+	# 配對成功 bounce 動畫 + 音效
+	AudioManager.play_pill_match()
 	_anim_pill_match(selected_answer_btn)
 	_anim_pill_match(btn)
 
@@ -633,13 +894,13 @@ func _on_participant_btn_pressed(btn: Button) -> void:
 
 	selected_answer_btn = null
 	paired_count += 1
-
+	
+	# 原本是全員配對才顯示，現在改為一直顯示，但可以做視覺提示
+	var submit_btn := $Phases/Phase3_Guessing/BtnSubmitMatch
 	if paired_count >= total_pairs:
-		var submit_btn := $Phases/Phase3_Guessing/BtnSubmitMatch
-		submit_btn.visible = true
-		submit_btn.modulate.a = 0.0
-		var tw := create_tween().set_trans(Tween.TRANS_SINE)
-		tw.tween_property(submit_btn, "modulate:a", 1.0, 0.3)
+		submit_btn.text = "完成配對！送出"
+	else:
+		submit_btn.text = "提交目前的配對"
 
 func _anim_pill_match(btn: Button) -> void:
 	btn.pivot_offset = btn.size / 2.0
@@ -651,6 +912,7 @@ func _unmatch_pair(btn: Button) -> void:
 	var partner: Button = partner_map.get(btn)
 	if partner == null: return
 	
+	AudioManager.play_pill_unmatch()
 	# 找出誰是答案按鈕，誰是參與者按鈕
 	var ans_btn: Button = btn if answer_btn_map.has(btn) else partner
 	var par_btn: Button = partner if answer_btn_map.has(btn) else btn
@@ -670,7 +932,11 @@ func _unmatch_pair(btn: Button) -> void:
 	partner_color_map.erase(par_btn)
 	
 	paired_count -= 1
-	$Phases/Phase3_Guessing/BtnSubmitMatch.visible = false
+	
+	var submit_btn := $Phases/Phase3_Guessing/BtnSubmitMatch
+	if paired_count < total_pairs:
+		submit_btn.text = "提交目前的配對"
+	
 	print("Unmatched pair: ", ans_text)
 
 func _set_pill_style(btn: Button, color: Color) -> void:
@@ -691,6 +957,7 @@ func _set_pill_style(btn: Button, color: Color) -> void:
 
 # ── Phase 3：送出配對 ──────────────────────────────────────────────────────────
 func _on_btn_submit_match() -> void:
+	AudioManager.play_tap()
 	var self_ans: String = round_answers[mock_self_name]
 	player_guesses[self_ans] = mock_self_name
 	
@@ -749,6 +1016,12 @@ func _generate_phase4_ui() -> void:
 		var d := stagger_delay
 		var stagger_tw := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		stagger_tw.tween_interval(d)
+		stagger_tw.tween_callback(func():
+			if is_correct:
+				AudioManager.play_result_correct()
+			else:
+				AudioManager.play_result_wrong()
+		)
 		stagger_tw.tween_property(row, "modulate:a", 1.0, 0.35)
 		var row_ref := row
 		stagger_tw.parallel().tween_property(row_ref, "position:x", row_ref.position.x - 80.0, 0.35)
@@ -864,5 +1137,64 @@ func _create_result_row(ans_text: String, correct_player: String, guessed_player
 
 # ── Phase 4：再玩一輪（更換隊長邏輯） ──────────────────────────────────────────
 func _on_btn_next_round() -> void:
+	AudioManager.play_next_round()
 	print("Requesting next round from server...")
 	NetworkManager.send_game_event("next_round", {})
+
+func _on_btn_leave_circle_pressed() -> void:
+	switch_phase(GamePhase.SUMMARY)
+
+# ── Phase 5：個人結算與確定離開 ──────────────────────────────────────────────
+func _generate_phase5_ui() -> void:
+	var vbox := $Phases/Phase5_Summary/VBox/PersonalResultPanel/VBox
+	vbox.get_node("NameLabel").text = "玩家：" + mock_self_name
+	
+	# 清除舊的歷史顯示
+	var history_vbox := vbox.get_node("HistoryScroll/HistoryVBox")
+	for child in history_vbox.get_children():
+		child.queue_free()
+	
+	# 生成所有歷史問答
+	for record in game_history:
+		var q_label := Label.new()
+		q_label.text = "問：" + record["question"]
+		q_label.add_theme_font_size_override("font_size", 32)
+		q_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1))
+		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		history_vbox.add_child(q_label)
+		
+		var a_label := Label.new()
+		a_label.text = "答：" + record["answer"]
+		a_label.add_theme_font_size_override("font_size", 36)
+		a_label.add_theme_color_override("font_color", Color(0.98, 0.82, 0.2, 1))
+		a_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		history_vbox.add_child(a_label)
+		
+		# 加入分隔線或間距
+		var spacer := Control.new()
+		spacer.custom_minimum_size.y = 10
+		history_vbox.add_child(spacer)
+	
+	# 計算累計百分比
+	var my_accuracy_pct := 0.0
+	if cumul_my_attempts > 0:
+		my_accuracy_pct = float(cumul_my_correct) / float(cumul_my_attempts) * 100.0
+	
+	vbox.get_node("StatsLabel").text = "累計猜中率：" + str(snapped(my_accuracy_pct, 0.1)) + "% (" + str(cumul_my_correct) + "/" + str(cumul_my_attempts) + ")"
+
+func _on_btn_final_leave_pressed() -> void:
+	print("Leaving circle definitively...")
+	NetworkManager.send_game_event("leave_room", {})
+	
+	# 重置本地累計數據與歷史
+	cumul_guessed_by_others = 0
+	cumul_others_attempts = 0
+	cumul_my_correct = 0
+	cumul_my_attempts = 0
+	game_history = []
+	
+	# 重置 NetworkManager 狀態
+	NetworkManager.current_room_id = ""
+	NetworkManager.socket.close()
+	
+	switch_phase(GamePhase.WAITING)

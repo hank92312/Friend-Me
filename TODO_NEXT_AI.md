@@ -17,10 +17,17 @@ Hello 接下來接手的 AI：
     - `backend/room_manager.py`：斷線玩家「標記保留」而非刪除，重連後可識別身份。
     - `backend/main.py`：重連玩家加入「等待下一輪」名單，遊戲繼續，不卡其他玩家。
     - 斷線後若其他玩家全數提交，伺服器自動推進階段（不因斷線者卡住）。
-- **UI 轉場動畫 (新完成)**：
+- **UI 轉場動畫與介面 (新完成)**：
     - 所有 Phase 切換採用 0.18s 淡出 + 0.22s 淡入的 Sine 緩動。
     - Phase 3 pill 選取：Back 彈跳 scale-up；配對成功：Elastic bounce。
     - Phase 4 揭幕：標題淡入 + 結果卡片 stagger（每張間隔 0.18s）從右滑入。
+    - **動態遊戲說明 (Tutorial)**：點擊後彈出深色覆蓋層，支援分頁觀看房間創建與遊戲流程。
+    - **設定選項 (Options)**：支援全域音效開關，並具備「點擊複製製作人信箱」功能。
+- **音效系統 (新完成)**：
+    - 建立 `audio_manager.gd` Autoload 單例。
+    - 導入 14 個 `.ogg` 音效並全部利用 `ffmpeg` 進行 loudness 正規化至 -12 LUFS。
+    - 實作 **動態音高與殘響**，同一選題音效在 LV1 (明亮) 到 LV5 (沉重且有兩次回音) 會呈現不同的社交情境氛圍。
+    - 成功綁定 UI 點擊、房間建立、難度選擇、成功配對、結果揭曉等觸發點。
 
 ## godot_ai 插件說明 (新增)
 - **位置**：`friend&me/addons/godot_ai/`
@@ -31,21 +38,47 @@ Hello 接下來接手的 AI：
 
 ## 接下來未完成的工作事項 (Pending Tasks)
 
-### 1. 音效系統
-- 目前無任何音效。
-- **任務**：建立 `audio_manager.gd` Autoload，實作按鈕點擊音、配對成功音、結果揭曉音。
-- **資源**：需準備 `.wav` 或 `.ogg` 音效檔。
-
-### 2. 數據持久化
+### 1. 數據持久化
 - 目前後端房間資料存放在記憶體，伺服器重啟後資料會消失。
 - **任務**：串接資料庫 (如 PostgreSQL/Redis) 以存儲歷史紀錄與個人累計正確率。
 
-### 3. Phase 4 結算 — 統計數字計數動畫
+### 2. Phase 4 結算 — 統計數字計數動畫
 - 猜中率百分比數字可加入計數 tween（從 0% 跳到實際數值），增加戲劇感。
 
 ---
+## 🚀 啟動後端伺服器 (測試前必做)
+
+在 Godot 雙開測試之前，**必須先讓後端 FastAPI 伺服器運行**。
+
+### Windows PowerShell 啟動步驟
+
+```powershell
+# 步驟 1：進入後端資料夾
+cd backend
+
+# 步驟 2：啟動虛擬環境 (venv)
+.\venv\Scripts\Activate
+
+# 步驟 3：啟動 FastAPI 伺服器（熱重載模式）
+uvicorn main:app --reload
+```
+
+> ⚠️ 若 PowerShell 顯示「無法執行指令碼」錯誤，請先執行：
+> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+
+### 伺服器啟動成功的標誌
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process
+```
+看到這行就代表後端就緒，可以開啟 Godot 測試。
+
+### 關閉伺服器
+在 PowerShell 視窗按 `Ctrl + C` 即可停止。
+
+---
 ## 測試指南 (How to Test)
-1. **啟動後端**：`cd backend` -> 啟動虛擬環境 -> `uvicorn main:app --reload`
+1. **啟動後端**：依照上方「啟動後端伺服器」步驟操作。
 2. **啟動 Godot**：同時開啟兩個 Godot 視窗 (F5) 進行「雙開測試」。
 3. **驗證流程**：
    - 視窗 A：創立房間 -> 輸入名字 -> 獲得房間碼。
