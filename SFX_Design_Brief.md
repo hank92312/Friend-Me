@@ -8,25 +8,25 @@
 
 ## 音效總覽表
 
-| # | 檔名（建議） | 觸發時機 | 建議時長 | 音調 | 情感 |
-|---|------------|---------|---------|------|------|
-| 1 | `sfx_btn_tap.ogg` | 所有一般按鈕點擊 | 50–80ms | 中音 | 輕快、乾淨 |
-| 2 | `sfx_btn_cancel.ogg` | 取消/返回按鈕 | 60–100ms | 低音 | 輕柔退場 |
-| 3 | `sfx_room_created.ogg` | 房間建立成功 | 300–500ms | 中高音 | 期待感、開場 |
-| 4 | `sfx_player_join.ogg` | 有玩家加入大廳 | 200–350ms | 中音 | 友善、歡迎 |
-| 5 | `sfx_copy_id.ogg` | 複製房間碼 | 80–120ms | 高音 | 清脆、即時反饋 |
-| 6 | `sfx_game_start.ogg` | 房主按下開始遊戲 | 600–900ms | 上揚曲線 | 儀式感、興奮 |
-| 7 | `sfx_level_select.ogg` | Phase 1 選擇難度等級 | 150–250ms | 依等級升高 | 謹慎、選擇感 |
-| 8 | `sfx_submit_answer.ogg` | Phase 2 送出答案 | 250–400ms | 中音下沉 | 篤定、落定 |
-| 9 | `sfx_no_answer.ogg` | Phase 2 選擇「不回答」 | 150–200ms | 低柔音 | 輕描淡寫、無壓力 |
-| 10 | `sfx_pill_select.ogg` | Phase 3 點擊答案 pill（選取） | 60–100ms | 中高音 | 清脆選中感 |
-| 11 | `sfx_pill_match.ogg` | Phase 3 配對成功（兩 pill 連線） | 200–350ms | 和弦/泛音 | 滿足、暖心 |
-| 12 | `sfx_pill_unmatch.ogg` | Phase 3 解除配對（反悔） | 100–150ms | 下滑音 | 輕微、不懲罰 |
-| 13 | `sfx_reveal_card.ogg` | Phase 4 每張結果卡片飛入 | 80–130ms | 輕敲聲 | 懸疑揭曉 |
-| 14 | `sfx_result_correct.ogg` | Phase 4 猜對結果出現 | 350–500ms | 大三度上揚 | 喜悅、成就感 |
-| 15 | `sfx_result_wrong.ogg` | Phase 4 猜錯結果出現 | 300–400ms | 小二度下滑 | 溫柔失落（不刺耳）|
-| 16 | `sfx_next_round.ogg` | 按下「再玩一輪」 | 400–600ms | 循環感旋律 | 活力、期待下一輪 |
-| 17 | `sfx_reconnect_ok.ogg` | 斷線後重連成功 | 300–400ms | 輕柔提示音 | 安心、靜默重回 |
+| # | 檔名（建議） | 觸發時機 | 建議時長 | 音調 | 情感 | 備註 |
+|---|------------|---------|---------|------|------|------|
+| 1 | `sfx_btn_tap.ogg` | 所有一般按鈕點擊 | 50–80ms | 中音 | 輕快、乾淨 | |
+| 2 | `sfx_btn_cancel.ogg` | 取消/返回按鈕 | 60–100ms | 低音 | 輕柔退場 | |
+| 3 | `sfx_room_created.ogg` | 房間建立成功 | 300–500ms | 中高音 | 期待感、開場 | |
+| 4 | `sfx_player_join.ogg` | 有玩家加入大廳 | 200–350ms | 中音 | 友善、歡迎 | |
+| 5 | `sfx_copy_id.ogg` | 複製房間碼 | 80–120ms | 高音 | 清脆、即時反饋 | |
+| 6 | `sfx_game_start.ogg` | 房主按下開始遊戲 | 600–900ms | 上揚曲線 | 儀式感、興奮 | |
+| 7 | `sfx_level_select.ogg` | Phase 1 選擇難度等級 | 150–250ms | 依等級升高 | 謹慎、選擇感 | |
+| 8 | `sfx_submit_answer.ogg` | Phase 2 送出答案 | 250–400ms | 中音下沉 | 篤定、落定 | |
+| 9 | `sfx_no_answer.ogg` | Phase 2 選擇「不回答」 | 150–200ms | 低柔音 | 輕描淡寫、無壓力 | |
+| 10 | `sfx_pill_select.ogg` | Phase 3 點擊答案 pill（選取） | 60–100ms | 中高音 | 清脆選中感 | 暫不使用（影響節奏） |
+| 11 | `sfx_pill_match.ogg` | Phase 3 配對成功（兩 pill 連線） | 200–350ms | 和弦/泛音 | 滿足、暖心 | |
+| 12 | `sfx_pill_unmatch.ogg` | Phase 3 解除配對（反悔） | 100–150ms | 下滑音 | 輕微、不懲罰 | |
+| 13 | `sfx_reveal_card.ogg` | Phase 4 每張結果卡片飛入 | 80–130ms | 輕敲聲 | 懸疑揭曉 | 暫不使用（影響節奏） |
+| 14 | `sfx_result_correct.ogg` | Phase 4 猜對結果出現 | 350–500ms | 大三度上揚 | 喜悅、成就感 | |
+| 15 | `sfx_result_wrong.ogg` | Phase 4 猜錯結果出現 | 300–400ms | 小二度下滑 | 溫柔失落（不刺耳）| |
+| 16 | `sfx_next_round.ogg` | 按下「再玩一輪」 | 400–600ms | 循環感旋律 | 活力、期待下一輪 | |
+| 17 | `sfx_reconnect_ok.ogg` | 斷線後重連成功 | 300–400ms | 輕柔提示音 | 安心、靜默重回 | 暫不使用（影響節奏） |
 
 ---
 

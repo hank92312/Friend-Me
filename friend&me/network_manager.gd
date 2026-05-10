@@ -8,9 +8,11 @@ signal connection_established
 signal connection_closed
 signal reconnect_status_received(data: Dictionary)
 
-# 設定後端網址 (測試時使用 127.0.0.1，部署後改為伺服器 IP)
-const BASE_URL = "http://127.0.0.1:8000"
-const WS_URL  = "ws://127.0.0.1:8000/ws"
+# 設定後端網址 (測試時使用 true，準備發布時改為 false)
+var USE_LOCAL := false
+
+var BASE_URL = "http://127.0.0.1:8000" if USE_LOCAL else "https://friends-and-me.fly.dev"
+var WS_URL   = "ws://127.0.0.1:8000/ws" if USE_LOCAL else "wss://friends-and-me.fly.dev/ws"
 
 var socket = WebSocketPeer.new()
 var http_client: HTTPRequest

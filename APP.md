@@ -44,17 +44,19 @@
     - 異步狀態同步：需能處理離線與重新登入後的畫面恢復。
 - **推播系統**：透過 Godot 插件串接 Firebase Cloud Messaging (FCM) & APNs — 待實作。
 
-### B. 後端 (Backend) — [已實作基礎架構]
+### B. 後端 (Backend) — [已部署至 Fly.io]
 - **語言/框架**：FastAPI (Python)。
 - **即時通訊**：WebSockets (用於全體同步遊戲狀態)。
+- **部署平台**：Fly.io (利用 Docker 容器與 Volume 持久化 SQLite 資料庫)。
+- **自動清理**：當房間最後一人離開時，資料庫會自動清除該房間的所有對話紀錄，節省空間。
 - **虛擬環境**：使用 `venv` 管理套件 (`backend/venv`)。
 **虛擬環境指令**
 cd backend
 .\venv\Scripts\Activate
 
 - **核心組件**：
-    - `main.py`：API 進入點與 WebSocket 路由。
-    - `room_manager.py`：處理房間連線管理、玩家名單同步與狀態廣播。
+    - `main.py`：API 進入點與 WebSocket 路由，加入 `lifespan` 自動建表邏輯。
+    - `room_manager.py`：處理房間連線管理、玩家名單同步、狀態廣播與資料庫清理。
 - **API 邏輯**：
     - `POST /create_room`：建立房間並生成 6 位數房間碼。
     - `POST /join_room`：加入指定房間。

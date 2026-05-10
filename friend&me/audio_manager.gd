@@ -24,7 +24,7 @@ var sfx_result_correct: AudioStream = preload("res://audio/sfx/sfx_result_correc
 var sfx_result_wrong:   AudioStream = preload("res://audio/sfx/sfx_result_wrong.ogg")
 var sfx_next_round:     AudioStream = preload("res://audio/sfx/sfx_next_round.ogg")
 
-# ── 暫時停用（佔位，避免 preload 報錯）──────────────────────────
+# ── 暫時停用（經測試會稍微打亂遊玩節奏，先暫時不使用） ─────────────
 # var sfx_pill_select:     AudioStream  # 暫時跳過
 # var sfx_reveal_card:     AudioStream  # 暫時跳過
 # var sfx_reconnect_ok:    AudioStream  # 暫時跳過

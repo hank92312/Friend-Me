@@ -1,11 +1,19 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from room_manager import manager
 import uuid
-from database import AsyncSessionLocal
+from database import AsyncSessionLocal, init_db
 from sqlalchemy import select
 import models
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 啟動時：自動建表
+    await init_db()
+    yield
+    # 關閉時：可以在此處清理資源
+
+app = FastAPI(lifespan=lifespan)
 
 # --- REST API: 處理房間建立與加入 ---
 

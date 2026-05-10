@@ -240,7 +240,6 @@ func _on_reconnect_status(data: Dictionary) -> void:
 		var hint := $Phases/Phase0_WaitLobby/VBox/WaitingHint
 		hint.text = "重連成功！等待本輪結束後加入..."  
 		hint.visible = true
-
 # ── Phase 0 ───────────────────────────────────────────────────────────────────
 func _on_btn_create_pressed() -> void:
 	AudioManager.play_tap()
@@ -970,9 +969,10 @@ func _on_btn_submit_match() -> void:
 
 # ── Phase 4：戲劇性結果揭曉與計分 ────────────────────────────────────────────
 func _generate_phase4_ui() -> void:
-	# 標題淡入
+	# ── 調整字體大小 ──
 	var q_label := $Phases/Phase4_Revelation/VBox/QuestionLabel
 	q_label.text = "「" + current_question + "」"
+	q_label.add_theme_font_size_override("font_size", 33) # 題目加大 1 單位 (原本 32)
 	q_label.modulate.a = 0.0
 	var title_tw := create_tween().set_trans(Tween.TRANS_SINE)
 	title_tw.tween_property(q_label, "modulate:a", 1.0, 0.4)
@@ -987,14 +987,14 @@ func _generate_phase4_ui() -> void:
 
 	# ── 自適應調整：根據結果數量調整字體 ──
 	var result_count := guess_total
-	var font_size_ans := 32
-	var font_size_res := 28
+	var font_size_ans := 34 # 加大 2 單位 (原本 32)
+	var font_size_res := 30 # 加大 2 單位 (原本 28)
 	if result_count <= 3:
-		font_size_ans = 44
-		font_size_res = 36
+		font_size_ans = 46 # 加大 2 單位 (原本 44)
+		font_size_res = 38 # 加大 2 單位 (原本 36)
 	elif result_count <= 5:
-		font_size_ans = 36
-		font_size_res = 30
+		font_size_ans = 38 # 加大 2 單位 (原本 36)
+		font_size_res = 32 # 加大 2 單位 (原本 30)
 
 	var stagger_delay := 0.0
 	for player_name in round_answers:
@@ -1059,7 +1059,9 @@ func _generate_phase4_ui() -> void:
 		guessed_by_pct = float(cumul_guessed_by_others) / float(cumul_others_attempts) * 100.0
 
 	# ── 更新 UI ──
-	$Phases/Phase4_Revelation/VBox/ScoreLabel.text = "猜對 " + str(correct_count) + " / " + str(guess_total) + " 題"
+	var score_label := $Phases/Phase4_Revelation/VBox/ScoreLabel
+	score_label.text = "猜對 " + str(correct_count) + " / " + str(guess_total) + " 題"
+	score_label.add_theme_font_size_override("font_size", 50) # 成績加大 2 單位 (原本 48)
 
 	# 累計統計區塊
 	var stats_vbox := $Phases/Phase4_Revelation/VBox.get_node_or_null("StatsVBox")
@@ -1077,19 +1079,35 @@ func _generate_phase4_ui() -> void:
 
 	# 猜中率
 	var guess_label := Label.new()
-	guess_label.text = "你的猜中率：" + str(cumul_my_correct) + "/" + str(cumul_my_attempts) + "（" + str(snapped(my_accuracy_pct, 0.1)) + "%）"
-	guess_label.add_theme_font_size_override("font_size", 30)
+	guess_label.text = "你的猜中率：" + str(cumul_my_correct) + "/" + str(cumul_my_attempts) + "（0.0%）"
+	guess_label.add_theme_font_size_override("font_size", 32) # 成績加大 2 單位 (原本 30)
 	guess_label.add_theme_color_override("font_color", COLOR_CORRECT)
 	guess_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stats_vbox.add_child(guess_label)
+	
+	# 計數動畫：你的猜中率
+	var guess_tween := create_tween().set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	guess_tween.tween_interval(0.5) 
+	guess_tween.tween_method(func(v: float):
+		if is_instance_valid(guess_label):
+			guess_label.text = "你的猜中率：" + str(cumul_my_correct) + "/" + str(cumul_my_attempts) + "（" + str(snapped(v, 0.1)) + "%）"
+	, 0.0, my_accuracy_pct, 1.2)
 
 	# 被猜中率
 	var guessed_label := Label.new()
-	guessed_label.text = "被隊友猜中：" + str(cumul_guessed_by_others) + "/" + str(cumul_others_attempts) + "（" + str(snapped(guessed_by_pct, 0.1)) + "%）"
-	guessed_label.add_theme_font_size_override("font_size", 30)
+	guessed_label.text = "被隊友猜中：" + str(cumul_guessed_by_others) + "/" + str(cumul_others_attempts) + "（0.0%）"
+	guessed_label.add_theme_font_size_override("font_size", 32) # 成績加大 2 單位 (原本 30)
 	guessed_label.add_theme_color_override("font_color", Color(0.98, 0.82, 0.20, 1))
 	guessed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stats_vbox.add_child(guessed_label)
+
+	# 計數動畫：被隊友猜中率
+	var guessed_tween := create_tween().set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	guessed_tween.tween_interval(0.7)
+	guessed_tween.tween_method(func(v: float):
+		if is_instance_valid(guessed_label):
+			guessed_label.text = "被隊友猜中：" + str(cumul_guessed_by_others) + "/" + str(cumul_others_attempts) + "（" + str(snapped(v, 0.1)) + "%）"
+	, 0.0, guessed_by_pct, 1.2)
 
 	print("Phase 4 Score: ", correct_count, "/", guess_total)
 	print("Cumulative - 猜中率: ", cumul_my_correct, "/", cumul_my_attempts, " (", snapped(my_accuracy_pct, 0.1), "%)")
