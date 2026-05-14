@@ -507,12 +507,101 @@ func _on_btn_confirm_name() -> void:
 	
 	$Phases/Phase0_Lobby/NamePanel.visible = false
 	
+	# 斷線重連豁免：跳過廣告流程
+	if NetworkManager._is_reconnecting:
+		_proceed_to_room()
+		return
+	
+	# 正常流程：先顯示廣告警語面板
+	_show_ad_disclaimer()
+
+func _proceed_to_room() -> void:
 	if is_host:
-		print("Requesting room creation for: ", player_name)
-		NetworkManager.create_room(player_name)
+		print("Requesting room creation for: ", mock_self_name)
+		NetworkManager.create_room(mock_self_name)
 	else:
-		print("Attempting to join room ", pending_room_id, " as: ", player_name)
-		NetworkManager.join_room(pending_room_id, player_name)
+		print("Attempting to join room ", pending_room_id, " as: ", mock_self_name)
+		NetworkManager.join_room(pending_room_id, mock_self_name)
+
+# ── 廣告友善警語面板 ─────────────────────────────────────────────────────────
+func _show_ad_disclaimer() -> void:
+	var lobby := $Phases/Phase0_Lobby
+	var panel = lobby.get_node_or_null("AdDisclaimerPanel")
+	if not panel:
+		panel = PanelContainer.new()
+		panel.name = "AdDisclaimerPanel"
+		panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+		
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.12, 0.11, 0.10, 0.98)
+		panel.add_theme_stylebox_override("panel", style)
+		
+		var margin := MarginContainer.new()
+		margin.name = "MarginContainer"
+		margin.add_theme_constant_override("margin_left", 60)
+		margin.add_theme_constant_override("margin_right", 60)
+		margin.add_theme_constant_override("margin_top", 200)
+		margin.add_theme_constant_override("margin_bottom", 200)
+		panel.add_child(margin)
+		
+		var vbox := VBoxContainer.new()
+		vbox.name = "VBoxContainer"
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 40)
+		margin.add_child(vbox)
+		
+		var icon_label := Label.new()
+		icon_label.text = "📢"
+		icon_label.add_theme_font_size_override("font_size", 72)
+		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(icon_label)
+		
+		var title := Label.new()
+		title.text = "即將播放一則短廣告"
+		title.add_theme_font_size_override("font_size", 42)
+		title.add_theme_color_override("font_color", COLOR_HIGHLIGHT)
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(title)
+		
+		var desc := Label.new()
+		desc.text = "您的每次觀看，都是對我們\n維持伺服器運作的支持。\n\n感謝您的體諒與陪伴 ❤️"
+		desc.add_theme_font_size_override("font_size", 32)
+		desc.add_theme_color_override("font_color", Color(1, 0.95, 0.8, 0.9))
+		desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD
+		vbox.add_child(desc)
+		
+		var spacer := Control.new()
+		spacer.custom_minimum_size = Vector2(0, 20)
+		vbox.add_child(spacer)
+		
+		var btn_continue := Button.new()
+		btn_continue.name = "BtnContinue"
+		btn_continue.text = "繼續"
+		btn_continue.custom_minimum_size = Vector2(340, 80)
+		btn_continue.add_theme_font_size_override("font_size", 36)
+		_set_btn_color(btn_continue, COLOR_BTN_NORMAL)
+		btn_continue.pressed.connect(_on_ad_disclaimer_continue)
+		vbox.add_child(btn_continue)
+		
+		lobby.add_child(panel)
+	
+	panel.visible = true
+
+func _on_ad_disclaimer_continue() -> void:
+	AudioManager.play_tap()
+	# 隱藏警語面板
+	var panel = $Phases/Phase0_Lobby.get_node_or_null("AdDisclaimerPanel")
+	if panel:
+		panel.visible = false
+	
+	# 播放廣告 → 等待 ad_finished 信號 → 進入房間
+	AdManager.ad_finished.connect(_on_ad_finished_proceed, CONNECT_ONE_SHOT)
+	AdManager.show_interstitial()
+
+func _on_ad_finished_proceed() -> void:
+	print("[Main] Ad finished — proceeding to room.")
+	_proceed_to_room()
 
 func _on_network_room_created(room_id: String) -> void:
 	print("Room joined/created successfully: ", room_id)
@@ -572,6 +661,8 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		$Phases/Phase3_Guessing/BtnSubmitMatch.text = "送出配對結果"
 		
 		if current_captain == mock_self_name:
+			# 通知：輪到你當隊長
+			NotifManager.notify_captain()
 			switch_phase(GamePhase.SELECTION)
 		else:
 			$Phases/Phase1_Waiting/VBox/CaptainInfoLabel.text = "目前隊長：" + current_captain
@@ -589,11 +680,15 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		submit_btn.text = "送出答案"
 		_set_btn_color(submit_btn, COLOR_BTN_DISABLED)
 		
+		# 通知：新題目來了
+		NotifManager.notify_answering()
 		switch_phase(GamePhase.ANSWERING)
 
 	elif new_phase == "GUESSING":
 		var remote_answers = data.get("answers", {})
 		_setup_real_round(remote_answers)
+		# 通知：配對階段開始
+		NotifManager.notify_guessing()
 		switch_phase(GamePhase.GUESSING)
 
 	elif new_phase == "REVELATION":
@@ -602,6 +697,8 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		var remote_answers = data.get("all_answers", {})
 		if remote_answers.size() > 0:
 			round_answers = remote_answers
+		# 通知：結果揭曉
+		NotifManager.notify_revelation()
 		switch_phase(GamePhase.REVELATION)
 
 # ── Phase 1 ───────────────────────────────────────────────────────────────────
@@ -1216,3 +1313,9 @@ func _on_btn_final_leave_pressed() -> void:
 	NetworkManager.socket.close()
 	
 	switch_phase(GamePhase.WAITING)
+
+# ── App 前景/背景偵測 — 取消通知 ─────────────────────────────────────────────
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		# App 回到前景 → 取消所有已排程的通知
+		NotifManager.cancel_all()

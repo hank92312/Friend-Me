@@ -19,6 +19,9 @@ config/icon="res://icon.svg"
 
 NetworkManager="*res://network_manager.gd"
 AudioManager="*res://audio_manager.gd"
+AdManager="*res://ad_manager.gd"
+NotifManager="*res://notification_manager.gd"
+_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [display]
 
@@ -30,6 +33,10 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/NotificationSchedulerPlugin/plugin.cfg", "res://addons/admob/plugin.cfg", "res://addons/godot_ai/plugin.cfg")
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
@@ -39,3 +46,4 @@ window/handheld/orientation=1
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

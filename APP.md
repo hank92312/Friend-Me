@@ -79,7 +79,14 @@ cd backend
     - **設定選項 (Options)**：包含音效開關，以及「問題回饋」按鈕（點擊後自動複製開發者信箱並播放專屬音效）。
 
 ## 5. 擴展設計 (Scalability)
-- **題庫擴充接口**：預留 CSV/JSON 導入機制，支援未來「使用者自定義題庫」與「AI 動態題庫」。
+- **題庫策略：本地打包 (Local Bundle)**：
+    - **當前決策**：題庫以 `question_bank.json` 打包在 Godot 專案內（`res://data/`），隨 App 安裝檔一同發行。
+    - **採用原因（輕量化 & 低伺服器負擔）**：
+        1. **零伺服器頻寬消耗**：客戶端直接從本地記憶體讀取題目，FastAPI 伺服器僅需傳遞輕量的控制指令（如題目 ID 或等級代碼），完全不需要透過網路傳輸題目文字內容，大幅降低流量費用與後端壓力。
+        2. **即時載入，無網路延遲**：題目讀取為本地操作，無 API 延遲，UI 切換更順暢。
+        3. **架構精簡**：後端無需建立題庫的 CRUD API，降低系統複雜度與潛在故障點。
+    - **更新方式**：修改題庫後重新打包 App 上傳至各平台商店（手機端），或重新部署網頁（Web 端）。
+    - **未來選項（備用）**：若日後需高頻更新題庫而不願重新上架，可引入「輕量 CDN 版本檢查」機制——App 啟動時僅向靜態空間比對一個 `version.txt`，確認有新版本後才下載更新，既不佔用 FastAPI 伺服器，也能讓玩家免去商店更新。
 - **跨平台佈局**：Godot UI 節點需設定 Anchors 與 Margins，確保手機直式與未來 PC 橫式佈局的響應式適應 (Responsive Design)。
 
 ## 6. 主視覺
@@ -91,6 +98,25 @@ cd backend
 
 ---
 
+## 8. 商業模式 (Monetization) — 待實作
+
+### 發行平台與廣告策略
+| 平台 | 廣告方案 | 狀態 |
+|------|---------|------|
+| **Android (Google Play)** | Google AdMob SDK — 插頁廣告 (Interstitial) / 獎勵影片 (Rewarded Video) | 🔲 待實作 |
+| **Web (HTML5)** | Google AdSense for Games / H5 遊戲廣告聯播網 (CrazyGames, Poki 等)，透過 `JavaScriptBridge` 與 Godot 互動 | 🔲 待實作 |
+| **iOS (Apple App Store)** | 暫緩 — 目前尚無 Apple 開發者帳號，待未來取得後再規劃 | ⏸️ 暫緩 |
+
+### 廣告觸發時機設計
+- **最佳觸發點**：在「建立房間」或「加入房間」**之前**安插一個可跳過的短影片廣告 (Skippable Interstitial)，此時玩家處於等待狀態，不會感到遊戲被打斷。
+- **備選觸發點**：每局結束 (Phase 4 結算) 到下一局開始之間的過渡畫面。
+- **體驗原則**：遊戲進行中 (Phase 1~4) **絕不插入廣告**，保護核心社交體驗的沉浸感。
+
+### 技術實作概念
+- **Android**：透過 Godot 的 Android Plugin 機制整合 AdMob SDK，在 GDScript 中呼叫 Java 端的廣告顯示函式。
+- **Web**：Godot 匯出 HTML5 後，在外層 HTML 頁面中引入廣告 SDK 的 JavaScript。遊戲內透過 `JavaScriptBridge.eval("showVideoAd()")` 觸發廣告播放，廣告結束後由 JS 回呼 Godot 函式 `ad_finished()` 繼續遊戲流程。
+- **AdBlock 防護 (Web)**：偵測廣告是否被阻擋，若被擋則直接放行遊玩或彈出友善提示。
+
 ## 7. 已完成的前端架構 (Current Frontend Implementation)
 
 ### 檔案結構
@@ -100,7 +126,7 @@ friend&me/
 ├── main.tscn              # 主場景 (Phase 0~4 UI 佈局)
 ├── main.gd                # 主腳本 (狀態機 + 題庫載入 + 配對邏輯)
 └── data/
-    └── question_bank.json # 結構化題庫 (5 級，共 95 題)
+    └── question_bank.json # 結構化題庫 (5 級，共 105 題)
 ```
 
 ### 場景節點架構 (main.tscn)
@@ -136,7 +162,7 @@ Main (Control)
 
 ### 題庫 (question_bank.json)
 - **格式**：`levels.{1~5}.questions[]`，每題有 `id`、`tag`、`text`
-- **數量**：LV1: 25題 / LV2: 25題 / LV3: 15題 / LV4: 15題 / LV5: 15題，共 95 題
+- **數量**：LV1: 25題 / LV2: 25題 / LV3: 25題 / LV4: 15題 / LV5: 15題，共 105 題
 - **原始設計文件**：`Friends&Me_Question_Bank.md` (根目錄)
 
 ### StyleBox 資源 (Sub Resources in main.tscn)
