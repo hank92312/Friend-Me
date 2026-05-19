@@ -21,6 +21,8 @@ app = FastAPI(lifespan=lifespan)
 async def create_room(player_name: str):
     # 隨機產生一個 6 位數房間 ID
     room_id = str(uuid.uuid4())[:6].upper()
+    # 在 manager 預註冊房間（防止加入者在房主連線前被擋掉）
+    manager.create_room_id(room_id)
     return {
         "status": "success",
         "room_id": room_id,
@@ -29,11 +31,23 @@ async def create_room(player_name: str):
 
 @app.post("/join_room")
 async def join_room(room_id: str, player_name: str):
+    if room_id not in manager.room_states:
+        return {
+            "status": "error",
+            "message": "房間不存在，請確認房號是否正確。"
+        }
+    
     return {
         "status": "success",
         "room_id": room_id,
         "player_name": player_name
     }
+
+@app.get("/check_room/{room_id}")
+async def check_room(room_id: str):
+    if room_id not in manager.room_states:
+        return {"exists": False}
+    return {"exists": True}
 
 @app.get("/player/{player_name}/stats")
 async def get_player_stats(player_name: str):
@@ -173,17 +187,44 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                         "player_stats": all_stats
                     })
 
-            # 再玩一輪（換隊長）
+            # 準備接續下一輪
+            elif data.get("event") == "ready_for_next_round":
+                if room_id not in manager.room_ready_players:
+                    manager.room_ready_players[room_id] = set()
+                manager.room_ready_players[room_id].add(player_name)
+                
+                active_names = manager.get_active_player_names(room_id)
+                ready_count = len(manager.room_ready_players[room_id])
+                total_count = len(active_names)
+                
+                await manager.broadcast_to_room(room_id, {
+                    "event": "next_round_status",
+                    "ready": ready_count,
+                    "total": total_count
+                })
+                
+                if ready_count >= total_count and total_count > 0:
+                    # 所有人準備完畢，進入下一輪
+                    new_captain = manager.rotate_captain(room_id)
+                    manager.room_states[room_id]["phase"] = "SELECTION"
+                    active_names = manager.get_active_player_names(room_id)
+                    await manager.broadcast_to_room(room_id, {
+                        "event": "phase_changed",
+                        "new_phase": "SELECTION",
+                        "captain": new_captain,
+                        "players": active_names
+                    })
+
+            # 再玩一輪（換隊長，舊版保留相容性或可移除，但為了安全先保留）
             elif data.get("event") == "next_round":
                 new_captain = manager.rotate_captain(room_id)
-                # rotate_captain 內部已清空 waiting_for_next_round
                 manager.room_states[room_id]["phase"] = "SELECTION"
                 active_names = manager.get_active_player_names(room_id)
                 await manager.broadcast_to_room(room_id, {
                     "event": "phase_changed",
                     "new_phase": "SELECTION",
                     "captain": new_captain,
-                    "players": active_names  # 更新玩家名單（含重連的玩家）
+                    "players": active_names
                 })
 
             # 離開房間
@@ -252,3 +293,32 @@ async def _check_phase_progress_after_disconnect(room_id: str):
                 "all_answers": manager.room_answers[room_id],
                 "player_stats": all_stats
             })
+
+    elif current_phase == "REVELATION":
+        # 檢查是否剩下的人都已經 ready
+        active_names = manager.get_active_player_names(room_id)
+        # 移除斷線玩家的 ready 狀態
+        ready_players = manager.room_ready_players.get(room_id, set())
+        ready_players = {p for p in ready_players if p in active_names}
+        manager.room_ready_players[room_id] = ready_players
+        
+        ready_count = len(ready_players)
+        total_count = len(active_names)
+        
+        if total_count > 0:
+            await manager.broadcast_to_room(room_id, {
+                "event": "next_round_status",
+                "ready": ready_count,
+                "total": total_count
+            })
+            
+            if ready_count >= total_count:
+                new_captain = manager.rotate_captain(room_id)
+                manager.room_states[room_id]["phase"] = "SELECTION"
+                active_names = manager.get_active_player_names(room_id)
+                await manager.broadcast_to_room(room_id, {
+                    "event": "phase_changed",
+                    "new_phase": "SELECTION",
+                    "captain": new_captain,
+                    "players": active_names
+                })

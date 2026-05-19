@@ -42,7 +42,10 @@
     - 狀態切換時的平滑轉場 (Transitions) — 待實作。
     - Phase 3 配對的顏色變化回饋：金黃色高亮 → 溫暖綠色已配對。
     - 異步狀態同步：需能處理離線與重新登入後的畫面恢復。
-- **推播系統**：透過 Godot 插件串接 Firebase Cloud Messaging (FCM) & APNs — 待實作。
+- **平台感知 Emoji 輔助**：為解決 Android 系統字型不支援部分 Emoji 導致顯示亂碼豆腐塊的問題，實作全域 `_emoji(emoji_text, fallback)` 輔助函數，在 Web/PC 顯示 Emoji，而在 Android 上顯示純文字替代方案。
+- **推播系統**：採用 Android 本地通知插件 (`NotificationScheduler`)，註冊為 `NotifManager` 單例。已實作 App 前背景狀態感知邏輯：
+    - 僅在 App 進入背景或暫停時（`NOTIFICATION_APPLICATION_FOCUS_OUT`/`PAUSED`）才允許發送通知，避免浮島視窗干擾遊玩。
+    - 當 App 回到前景時（`NOTIFICATION_APPLICATION_FOCUS_IN`/`RESUMED`），自動呼叫 `cancel_all()` 清除所有發出的通知，並靜音後續通知。
 
 ### B. 後端 (Backend) — [已部署至 Fly.io]
 - **語言/框架**：FastAPI (Python)。
@@ -98,12 +101,12 @@ cd backend
 
 ---
 
-## 8. 商業模式 (Monetization) — 待實作
+## 8. 商業模式 (Monetization)
 
 ### 發行平台與廣告策略
 | 平台 | 廣告方案 | 狀態 |
 |------|---------|------|
-| **Android (Google Play)** | Google AdMob SDK — 插頁廣告 (Interstitial) / 獎勵影片 (Rewarded Video) | 🔲 待實作 |
+| **Android (Google Play)** | Google AdMob SDK — 插頁廣告 (Interstitial) / 獎勵影片 (Rewarded Video) | ✅ 已完成 (AdManager 單例整合) |
 | **Web (HTML5)** | Google AdSense for Games / H5 遊戲廣告聯播網 (CrazyGames, Poki 等)，透過 `JavaScriptBridge` 與 Godot 互動 | 🔲 待實作 |
 | **iOS (Apple App Store)** | 暫緩 — 目前尚無 Apple 開發者帳號，待未來取得後再規劃 | ⏸️ 暫緩 |
 

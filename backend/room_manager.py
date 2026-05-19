@@ -25,6 +25,13 @@ class RoomConnectionManager:
         self.disconnected_players: dict[str, dict[str, dict]] = {}
         # 等待重連後加入下一輪的玩家：{ "room_id": [player_name, ...] }
         self.waiting_for_next_round: dict[str, list[str]] = {}
+        # 準備好進入下一輪的玩家：{ "room_id": set(player_name, ...) }
+        self.room_ready_players: dict[str, set[str]] = {}
+
+    def create_room_id(self, room_id: str):
+        """預先註冊房間 ID，供 REST API 使用"""
+        if room_id not in self.room_states:
+            self.room_states[room_id] = {"phase": "WAITING"}
 
     async def connect(self, websocket: WebSocket, room_id: str, player_name: str):
         await websocket.accept()
@@ -48,6 +55,7 @@ class RoomConnectionManager:
             self.room_captains[room_id] = player_name  # 房主預設是第一個隊長
             self.disconnected_players[room_id] = {}
             self.waiting_for_next_round[room_id] = []
+            self.room_ready_players[room_id] = set()
             
             # 同步房間到資料庫
             async with AsyncSessionLocal() as db:
@@ -227,6 +235,8 @@ class RoomConnectionManager:
 
         # 等待清單的玩家可以重新加入下一輪
         self.waiting_for_next_round[room_id] = []
+        # 重置準備狀態
+        self.room_ready_players[room_id] = set()
         # 重置答案與猜測
         self.room_answers[room_id] = {}
         self.room_guesses[room_id] = {}
@@ -257,7 +267,8 @@ class RoomConnectionManager:
         # 移除所有內存資料
         for d in [self.active_rooms, self.room_players, self.room_ws_map,
                   self.room_states, self.room_answers, self.room_guesses,
-                  self.room_captains, self.disconnected_players, self.waiting_for_next_round]:
+                  self.room_captains, self.disconnected_players, self.waiting_for_next_round,
+                  self.room_ready_players]:
             d.pop(room_id, None)
         
         # 啟動非同步任務清除資料庫中的房間數據

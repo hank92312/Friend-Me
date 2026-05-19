@@ -62,25 +62,25 @@ Hello 接下來接手的 AI：
 ### 🔴 最優先：Android APK 實機測試 + 上架準備
 
 > ⚠️ **路徑注意事項**：
-> - 開發目錄：`C:\Friend&Me\friend&me\`（含 `&` 符號）
+> - 開發目錄：`C:\FriendAndMe\friend&me\`
 > - 因為 Windows 命令列會將 `&` 解讀為指令分隔符，**匯出 Android APK 時必須使用不含 `&` 的路徑**。
 > - 建議方案：將專案複製到 `C:\FriendAndMe_Build\` 匯出，或直接將外層資料夾改名為 `FriendAndMe`。
-> - 已建立一鍵同步腳本：`C:\Friend&Me\sync_to_build.bat`
+> - 已建立一鍵同步腳本：`C:\FriendAndMe\sync_to_build.bat`
 
 #### Step A：匯出 APK 並進行實機測試（下次 Session 立即執行）
-- [ ] 從 Godot 匯出 APK（**不要**存到 C:\ 根目錄，改存桌面或專案資料夾內）
-- [ ] 安裝到 Android 手機，驗證以下功能：
-  - [ ] 廣告警語面板正常顯示
-  - [ ] AdMob 測試廣告正常播放（使用 Google 測試 ID）
-  - [ ] 廣告播放後能正常建立/加入房間
-  - [ ] 各階段通知正常推送 (ANSWERING/GUESSING/REVELATION/SELECTION)
-  - [ ] App 回到前景時通知自動取消
-  - [ ] WebSocket 連線正常（連到 `friends-and-me.fly.dev`）
-  - [ ] 多人遊戲完整流程跑通
+- [x] 從 Godot 匯出 APK（**不要**存到 C:\ 根目錄，改存桌面或專案資料夾內）
+- [x] 安裝到 Android 手機，驗證以下功能：
+  - [x] 廣告警語面板正常顯示
+  - [x] AdMob 測試廣告正常播放（使用 Google 測試 ID）
+  - [x] 廣告播放後能正常建立/加入房間
+  - [x] 各階段通知正常推送 (ANSWERING/GUESSING/REVELATION/SELECTION)
+  - [x] App 回到前景時通知自動取消
+  - [x] WebSocket 連線正常（連到 `friends-and-me.fly.dev`）
+  - [x] 多人遊戲完整流程跑通
 
 #### Step B：Android 匯出設定微調
-- [ ] 確認權限設定：`INTERNET`、`ACCESS_NETWORK_STATE`、`POST_NOTIFICATIONS`
-- [ ] 確認 AdMob 與 Notification 插件已在 Export 中勾選
+- [x] 確認權限設定：`INTERNET`、`ACCESS_NETWORK_STATE`、`POST_NOTIFICATIONS`
+- [x] 確認 AdMob 與 Notification 插件已在 Export 中勾選
 
 #### Step C：AdMob 後台建議設定
 - [ ] **關閉「High-engagement ads」** → 廣告最快 5 秒即可跳過
@@ -102,6 +102,16 @@ Hello 接下來接手的 AI：
 - **推播通知 (Push Notifications)**：✅ 已完成（採本地通知方案）。
 - **資料庫轉移 (選作)**：若未來玩家數量大增且需要多節點擴充，可將 SQLite 轉移至 PostgreSQL。
 - ~~**題庫動態導入**~~：已完成 — 採「本地打包」策略 (V3 擴充版，共 105 題)，因應輕量化與低伺服器負擔需求。詳見 `APP.md` 第 5 章。
+- **音效缺漏 (🔍 尋找適合音效中)**：
+  - [ ] 「離開圈圈」按鈕 (`BtnLeaveCircle`) — 需要一個柔和的離開/退出音效
+  - [ ] 「確定離開」按鈕 (`BtnFinalLeave`) — 需要一個確認離開的音效（比上面稍微強調一點）
+
+### Android 實機測試發現的 Bug（已修正 ✅）
+- [x] **廣告警語面板 Emoji 亂碼**：📢 和 ❤️ 在 Android 上無法正常顯示 → 已替換為純中文字串
+- [x] **題目超出螢幕不換行**：Phase 2 題目 Label 在手機上超過一行時不會自動折行 → 已改用 `TextServer.AUTOWRAP_WORD_SMART`
+- [x] **難度選擇全形冒號亂碼**：`LV 1：` 全形冒號在部分 Android 裝置顯示為豆腐方塊 → 已修正為半形 `LV 1: `
+- [x] **結算畫面長題目與結果折行**：結算畫面題目與對比結果在字數過多時未自動折行 → 已將自動換行模式改為 `TextServer.AUTOWRAP_WORD_SMART` 並補上擴充填充
+- [x] **相同答案配對覆寫邏輯**：多位玩家選「不回答」時，配對結果字典被覆寫導致錯誤 → 已重構為 `{"玩家": "答案"}` 結構
 
 ### 3. Phase D：商業化 — Web 端廣告 (待實作，優先級低於 Android)
 - **Web 廣告整合**：在 HTML5 匯出的外層頁面引入 H5 遊戲廣告 SDK (Google AdSense for Games 或 CrazyGames/Poki 等聯播網)，透過 `JavaScriptBridge` 讓 Godot 與 JS 廣告程式碼互動。
