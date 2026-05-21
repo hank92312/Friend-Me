@@ -146,6 +146,9 @@ func _ready() -> void:
 			main_theme.default_font_size = 32  # 手機與電腦端使用 32
 		
 		self.theme = main_theme
+		print("DEBUG: [Theme Setup] Base font loaded successfully. Set embolden=0.6, font_size=", main_theme.default_font_size)
+	else:
+		print("DEBUG: [Theme Setup] FAILED to load base font!")
 		
 	_load_question_bank()
 	
