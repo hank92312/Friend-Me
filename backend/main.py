@@ -13,7 +13,17 @@ async def lifespan(app: FastAPI):
     yield
     # 關閉時：可以在此處清理資源
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- REST API: 處理房間建立與加入 ---
 

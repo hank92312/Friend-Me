@@ -115,9 +115,8 @@ var game_history : Array = []     # 存放本局所有問答: [{"question": "...
 # Android 的 Godot Label 不支援 Emoji（缺少 Emoji 字型），但 Web 和 PC 可以正常顯示。
 # 此函數會在 Android 上回傳 fallback 文字，其他平台回傳原始 Emoji。
 func _emoji(emoji_text: String, fallback: String) -> String:
-	if OS.get_name() == "Android":
-		return fallback
-	return emoji_text
+	# 由於全域字型 NotoSansTC-VF 無 Emoji 字符，因此全部平台統一回傳替代文字以防止亂碼
+	return fallback
 
 func _quote(text: String) -> String:
 	if OS.get_name() == "Android":

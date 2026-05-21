@@ -49,6 +49,11 @@ Hello 接下來接手的 AI：
     - 在 Godot Editor Settings 中設定 Java SDK Path 和 Android SDK Path。
     - 啟用 ETC2/ASTC 紋理壓縮。
     - 首次嘗試匯出 APK：Gradle 建置成功，僅因輸出路徑權限問題（C:\ 根目錄）未完成最終輸出。
+- **Web 端與全域修復 (本次 Session 完成) ✅**：
+    - **全域字體放大**：於 `project.godot` 新增 `theme/default_font_size=32` 全域放大字型，解決 Web 端文字過小偏小的易讀性問題。
+    - **Emoji 顯示亂碼修正**：修正 `main.gd` 中的 `_emoji()` 函數，全平台統一回傳 `fallback` 純文字，解決 NotoSansTC-VF 不支援 Emoji 產生的豆腐塊亂碼。
+    - **CORS 連線限制解除**：於後端 `backend/main.py` 掛載 `CORSMiddleware` 並部署至 Fly.io，解決 Web 瀏覽器端 HTTP 連線受制於 CORS 導致連線失敗 (CODE0) 的問題。並已同步重新匯出 Web 專案至本地 `build_web` 以供測試。
+
 
 ## godot_ai 插件說明
 - **位置**：`friend&me/addons/godot_ai/`
@@ -59,7 +64,17 @@ Hello 接下來接手的 AI：
 
 ## 接下來未完成的工作事項 (Pending Tasks)
 
-### 🔴 最優先：Android APK 實機測試 + 上架準備
+### 🔴 最優先：剛剛修復但尚未測試的項目 (下次 Session 優先驗證)
+由於本次 Session 進行了多項關鍵問題的修正，但尚未進行三端的實際測試，因此**請在下次 Session 開始時，優先對以下項目進行測試與驗證**：
+
+- [ ] **1. 驗證網頁端 (Web) 全域字體大小**：
+  - **測試方法**：在瀏覽器開啟 `http://127.0.0.1:8080`，檢查各場景（特別是首頁大廳、建立/加入房間、問題選擇、結算畫面）的文字是否夠大，有無超出或擠壓。
+- [ ] **2. 驗證 PC、Web、Android 三端的廣告警語與各 UI 字元是否仍有亂碼**：
+  - **測試方法**：檢查點擊創立/加入房間時彈出的「廣告警語」以及相關介面。確認 Emoji 部分是否已成功退回純文字（不再顯示為豆腐塊）。
+- [ ] **3. 驗證網頁端 (Web) 與 Fly.io 雲端伺服器的 HTTP/WebSocket 連線**：
+  - **測試方法**：在網頁端觀看廣告警語確認後，建立或加入房間。確認連線是否能順利成功，且瀏覽器 Console 不再回報 `CODE 0` 或是 CORS 阻擋錯誤（已在後端掛載 `CORSMiddleware` 且更新至 Fly.io）。
+
+### 🔴 次優先：Android APK 實機測試 + 上架準備
 
 > ⚠️ **路徑注意事項**：
 > - 開發目錄：`C:\FriendAndMe\friend&me\`

@@ -46,7 +46,7 @@
     - **浮動模態視窗與彈跳動畫 (Pop Card Modals)**：遊戲說明、設定選項、廣告警語等全數改為半透明暗底覆蓋層 (`#0D0A0A` 82% 透明) + 居中懸浮圓角卡片，並搭配 Entry (scale 0.9->1.0, `TRANS_BACK`) 與 Exit (縮小淡出) 的彈跳特效。
     - Phase 3 配對的顏色變化回饋：金黃色高亮 → 溫暖綠色已配對。
     - 異步狀態同步：需能處理離線與重新登入後的畫面恢復。
-- **平台感知 Emoji 輔助**：為解決 Android 系統字型不支援部分 Emoji 導致顯示亂碼豆腐塊的問題，實作全域 `_emoji(emoji_text, fallback)` 輔助函數，在 Web/PC 顯示 Emoji，而在 Android 上顯示純文字替代方案。
+- **平台感知 Emoji 輔助**：為解決各平台字型不支援 Emoji 導致顯示亂碼豆腐塊的問題，調整全域 `_emoji(emoji_text, fallback)` 輔助函數，不限平台均統一回傳純文字替代方案（`fallback`），避免因專案主字型（思源黑體）缺少 Emoji 字符而渲染成豆腐塊。
 - **推播系統**：採用 Android 本地通知插件 (`NotificationScheduler`)，註冊為 `NotifManager` 單例。已實作 App 前背景狀態感知邏輯：
     - 僅在 App 進入背景或暫停時（`NOTIFICATION_APPLICATION_FOCUS_OUT`/`PAUSED`）才允許發送通知，避免浮島視窗干擾遊玩。
     - 當 App 回到前景時（`NOTIFICATION_APPLICATION_FOCUS_IN`/`RESUMED`），自動呼叫 `cancel_all()` 清除所有發出的通知，並靜音後續通知。
@@ -213,4 +213,14 @@ Main (Control)
 - 將專案根目錄下新作好的 `icon-new.png` 複製至專案資源目錄為 `icon_new.png`。
 - 修改 `project.godot` 配置全域 `config/icon="res://icon_new.png"`，確保遊戲主圖示已替換。
 - 修改 `export_presets.cfg` 設定 Android 端的各尺寸啟動圖示、自適應圖示 (Launcher Icons) 及 Web 端的 PWA 圖示路徑全數指向新圖示 `res://icon_new.png`，完成全平台圖示的一致性更替。
-- 重新執行 Web 平台釋出匯出，產出包含新圖示與修復後字型的最新靜態資源包。
+- 重新執行 Web 平台釋出匯出，產出包含新圖示與修復後字型的最新靜態資源包。
+
+### 6. 網頁端與全域字體大小優化
+- 在 `project.godot` 的 `[gui]` 區塊新增 `theme/default_font_size=32` 全域放大字體。此調整使網頁端 (Web) 和其他平台的基礎 UI 文字看起來大小合適，解決網頁端字體偏小的問題。
+
+### 7. 廣告警語等全平台 Emoji 亂碼徹底修正
+- 修改 `main.gd` 中的 `_emoji()` 函數，使不限平台皆統一回傳 `fallback` 純文字。由於專案套用的思源黑體 (`NotoSansTC-VF.ttf`) 不包含 Emoji 字符，這能完全解決 PC、Web 與 Android 三端出現豆腐塊亂碼的問題。
+
+### 8. 後端 API CORS 跨網域連線支援與部署
+- 於 `backend/main.py` 中導入 `CORSMiddleware` 並設置 `allow_origins=["*"]` 以允許跨來源請求。此舉解決了網頁端 (HTML5) 在瀏覽器載入後發送 HTTP 請求遭遇 CORS 阻擋而出現「伺服器連線失敗 (CODE0)」的問題。
+- 使用 `flyctl deploy` 將後端成功部署至 Fly.io，並重新匯出最新的 Web 專案至 `build_web` 目錄。
