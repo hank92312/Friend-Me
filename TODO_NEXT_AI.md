@@ -82,10 +82,10 @@ Hello 接下來接手的 AI：
 - [x] 確認權限設定：`INTERNET`、`ACCESS_NETWORK_STATE`、`POST_NOTIFICATIONS`
 - [x] 確認 AdMob 與 Notification 插件已在 Export 中勾選
 
-#### Step C：AdMob 後台建議設定
-- [ ] **關閉「High-engagement ads」** → 廣告最快 5 秒即可跳過
-- [ ] **禁用「Non-skippable video ads」** → 杜絕 30 秒不可跳過廣告
-- [ ] 設定 **Frequency Capping**（每人每小時最多 N 次廣告）
+#### Step C：AdMob 後台建議設定 ✅
+- [x] **關閉「High-engagement ads」** → 廣告最快 5 秒即可跳過（已於應用程式設定中關閉）
+- [x] **禁用「Non-skippable video ads」** → 杜絕 30 秒不可跳過廣告（新版 AdMob 已將其併入「High-engagement ads」控制項，關閉後即一併關閉不可跳過影片）
+- [x] 設定 **Frequency Capping**（已於插頁式廣告單元的進階設定中設定頻率上限）
 
 #### Step D：正式發布前
 - [ ] `ad_manager.gd` 第 12 行：將 `USE_TEST_ADS` 改為 `false`

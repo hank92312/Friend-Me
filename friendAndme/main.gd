@@ -191,6 +191,67 @@ func _ready() -> void:
 	# Phase 5 ── 確定離開
 	$Phases/Phase5_Summary/VBox/BtnFinalLeave.pressed.connect(_on_btn_final_leave_pressed)
 
+	# ── 創建動態放射漸層背景 ──
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([
+		Color(0.16, 0.14, 0.13, 1), # 中心稍微亮一點的溫暖深灰色
+		Color(0.08, 0.07, 0.07, 1)  # 邊緣極深色
+	])
+	grad.offsets = PackedFloat32Array([0.0, 1.0])
+	
+	var grad_tex := GradientTexture2D.new()
+	grad_tex.gradient = grad
+	grad_tex.fill = GradientTexture2D.FILL_RADIAL
+	grad_tex.fill_from = Vector2(0.5, 0.5)
+	grad_tex.fill_to = Vector2(0.85, 0.85)
+	
+	var bg_rect := TextureRect.new()
+	bg_rect.name = "GradientBG"
+	bg_rect.texture = grad_tex
+	bg_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	bg_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	$Background.add_child(bg_rect)
+
+	# ── 面板與卡片樣式美化 (追加陰影與邊框) ──
+	var card_sb: StyleBoxFlat = $Phases/Phase2_Answering/VBox/QuestionCard.get_theme_stylebox("panel")
+	if card_sb:
+		card_sb.border_width_left = 2
+		card_sb.border_width_top = 2
+		card_sb.border_width_right = 2
+		card_sb.border_width_bottom = 2
+		card_sb.border_color = Color(0.815, 0.505, 0.235, 0.16)
+		card_sb.shadow_color = Color(0, 0, 0, 0.45)
+		card_sb.shadow_size = 20
+		card_sb.shadow_offset = Vector2(0, 12)
+		card_sb.corner_radius_top_left = 24
+		card_sb.corner_radius_top_right = 24
+		card_sb.corner_radius_bottom_right = 24
+		card_sb.corner_radius_bottom_left = 24
+	
+	var section_sb: StyleBoxFlat = $Phases/Phase0_Lobby/JoinPanel.get_theme_stylebox("panel")
+	if section_sb:
+		section_sb.border_width_left = 2
+		section_sb.border_width_top = 2
+		section_sb.border_width_right = 2
+		section_sb.border_width_bottom = 2
+		section_sb.border_color = Color(0.815, 0.505, 0.235, 0.12)
+		section_sb.shadow_color = Color(0, 0, 0, 0.35)
+		section_sb.shadow_size = 16
+		section_sb.shadow_offset = Vector2(0, 8)
+		section_sb.corner_radius_top_left = 32
+		section_sb.corner_radius_top_right = 32
+		section_sb.corner_radius_bottom_right = 32
+		section_sb.corner_radius_bottom_left = 32
+
+	# ── 套用輸入框美化 ──
+	_style_line_edit($Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput)
+	_style_line_edit($Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput)
+	_style_line_edit($Phases/Phase2_Answering/VBox/AnswerArea/LineEdit)
+
+	# ── 註冊全域按鈕動畫 ──
+	_register_button_animations(self)
+
 	switch_phase(GamePhase.WAITING)
 
 # ── 題庫載入 ──────────────────────────────────────────────────────────────────
@@ -218,7 +279,7 @@ func _get_random_question(level: int) -> String:
 	var q: Dictionary = questions[idx]
 	return q["text"]
 
-# ── 通用切換畫面（含淡入淡出動畫） ────────────────────────────────────────────
+# ── 通用切換畫面（含縮放與淡入淡出轉場） ───────────────────────────────────────
 func switch_phase(new_phase: GamePhase) -> void:
 	var old_node = phase_nodes.get(current_phase)
 	current_phase = new_phase
@@ -237,16 +298,35 @@ func switch_phase(new_phase: GamePhase) -> void:
 			phase_nodes[key].visible = (key == current_phase)
 		return
 
-	# 淡出舊畫面 → 淡入新畫面
+	# 計算中心點，確保以中央為基準進行縮放
+	var viewport_size = get_viewport_rect().size
+	old_node.pivot_offset = old_node.size / 2.0 if old_node.size != Vector2.ZERO else viewport_size / 2.0
+	new_node.pivot_offset = new_node.size / 2.0 if new_node.size != Vector2.ZERO else viewport_size / 2.0
+
+	# 準備新畫面：透明度為 0、輕微縮小
 	new_node.modulate.a = 0.0
+	new_node.scale = Vector2(0.97, 0.97)
 	new_node.visible = true
-	var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	# 平行播放淡入淡出與縮放
+	var tween := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	
+	# 舊畫面：淡出並縮小至 0.97
 	tween.tween_property(old_node, "modulate:a", 0.0, 0.18)
-	tween.tween_callback(func():
+	tween.tween_property(old_node, "scale", Vector2(0.97, 0.97), 0.18)
+	
+	# 隱藏舊畫面並還原狀態
+	var chain_tw := create_tween()
+	chain_tw.tween_interval(0.18)
+	chain_tw.tween_callback(func():
 		old_node.visible = false
 		old_node.modulate.a = 1.0
+		old_node.scale = Vector2(1.0, 1.0)
 	)
+
+	# 新畫面：淡入與放大至 1.0
 	tween.tween_property(new_node, "modulate:a", 1.0, 0.22)
+	tween.tween_property(new_node, "scale", Vector2(1.0, 1.0), 0.22)
 
 func _on_reconnect_status(data: Dictionary) -> void:
 	var phase_str = data.get("current_phase", "")
@@ -290,31 +370,58 @@ func _on_btn_instructions_pressed() -> void:
 	var lobby := $Phases/Phase0_Lobby
 	var panel = lobby.get_node_or_null("TutorialPanel")
 	if not panel:
-		panel = PanelContainer.new()
+		# 建立半透明暗底覆蓋層
+		panel = Control.new()
 		panel.name = "TutorialPanel"
 		panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 		
+		var bg_overlay := ColorRect.new()
+		bg_overlay.name = "BgOverlay"
+		bg_overlay.color = Color(0.05, 0.04, 0.04, 0.82)
+		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel.add_child(bg_overlay)
+		
+		# 建立中央漂浮卡片
+		var card := PanelContainer.new()
+		card.name = "DialogCard"
+		card.custom_minimum_size = Vector2(880, 1100)
+		card.set_anchors_preset(Control.PRESET_CENTER)
+		card.pivot_offset = Vector2(440, 550)
+		
 		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0.12, 0.11, 0.10, 0.98) # Dark almost solid background
-		panel.add_theme_stylebox_override("panel", style)
+		style.bg_color = Color(0.16, 0.14, 0.13, 1)
+		style.corner_radius_top_left = 32
+		style.corner_radius_top_right = 32
+		style.corner_radius_bottom_right = 32
+		style.corner_radius_bottom_left = 32
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color(0.815, 0.505, 0.235, 0.18)
+		style.shadow_color = Color(0, 0, 0, 0.5)
+		style.shadow_size = 24
+		style.shadow_offset = Vector2(0, 16)
+		card.add_theme_stylebox_override("panel", style)
+		panel.add_child(card)
 		
 		var margin := MarginContainer.new()
 		margin.name = "MarginContainer"
-		margin.add_theme_constant_override("margin_left", 40)
-		margin.add_theme_constant_override("margin_right", 40)
-		margin.add_theme_constant_override("margin_top", 100)
-		margin.add_theme_constant_override("margin_bottom", 100)
-		panel.add_child(margin)
+		margin.add_theme_constant_override("margin_left", 60)
+		margin.add_theme_constant_override("margin_right", 60)
+		margin.add_theme_constant_override("margin_top", 80)
+		margin.add_theme_constant_override("margin_bottom", 80)
+		card.add_child(margin)
 		
 		var vbox := VBoxContainer.new()
 		vbox.name = "VBoxContainer"
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 40)
+		vbox.add_theme_constant_override("separation", 45)
 		margin.add_child(vbox)
 		
 		var title := Label.new()
 		title.text = "遊戲說明"
-		title.add_theme_font_size_override("font_size", 48)
+		title.add_theme_font_size_override("font_size", 52)
 		title.add_theme_color_override("font_color", COLOR_HIGHLIGHT)
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		vbox.add_child(title)
@@ -322,22 +429,22 @@ func _on_btn_instructions_pressed() -> void:
 		var content := Label.new()
 		content.name = "ContentLabel"
 		content.text = tutorial_slides[0]
-		content.add_theme_font_size_override("font_size", 32)
+		content.add_theme_font_size_override("font_size", 36)
 		content.autowrap_mode = TextServer.AUTOWRAP_WORD
-		content.custom_minimum_size = Vector2(400, 300)
+		content.custom_minimum_size = Vector2(400, 360)
 		vbox.add_child(content)
 		
 		var hbox := HBoxContainer.new()
 		hbox.name = "HBoxContainer"
 		hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		hbox.add_theme_constant_override("separation", 20)
+		hbox.add_theme_constant_override("separation", 30)
 		vbox.add_child(hbox)
 		
 		var btn_prev := Button.new()
 		btn_prev.name = "BtnPrev"
 		btn_prev.text = "上一頁"
-		btn_prev.custom_minimum_size = Vector2(160, 70)
-		btn_prev.add_theme_font_size_override("font_size", 30)
+		btn_prev.custom_minimum_size = Vector2(220, 80)
+		btn_prev.add_theme_font_size_override("font_size", 32)
 		_set_btn_color(btn_prev, COLOR_BTN_NORMAL)
 		btn_prev.pressed.connect(_on_tutorial_prev)
 		hbox.add_child(btn_prev)
@@ -345,29 +452,38 @@ func _on_btn_instructions_pressed() -> void:
 		var btn_next := Button.new()
 		btn_next.name = "BtnNext"
 		btn_next.text = "下一頁"
-		btn_next.custom_minimum_size = Vector2(160, 70)
-		btn_next.add_theme_font_size_override("font_size", 30)
+		btn_next.custom_minimum_size = Vector2(220, 80)
+		btn_next.add_theme_font_size_override("font_size", 32)
 		_set_btn_color(btn_next, COLOR_BTN_NORMAL)
 		btn_next.pressed.connect(_on_tutorial_next)
 		hbox.add_child(btn_next)
 		
 		var btn_close := Button.new()
 		btn_close.text = "關閉說明"
-		btn_close.custom_minimum_size = Vector2(340, 70)
-		btn_close.add_theme_font_size_override("font_size", 30)
+		btn_close.custom_minimum_size = Vector2(470, 80)
+		btn_close.add_theme_font_size_override("font_size", 32)
 		_set_btn_color(btn_close, COLOR_BTN_DISABLED)
 		btn_close.pressed.connect(_on_tutorial_close)
 		
 		var spacer := Control.new()
-		spacer.custom_minimum_size = Vector2(0, 40)
+		spacer.custom_minimum_size = Vector2(0, 30)
 		vbox.add_child(spacer)
 		vbox.add_child(btn_close)
 		
 		lobby.add_child(panel)
+		_register_button_animations(card)
 	
 	tutorial_current_slide = 0
 	_update_tutorial_ui()
+	
+	# 播放開場動畫
 	panel.visible = true
+	var card_node = panel.get_node("DialogCard")
+	card_node.scale = Vector2(0.9, 0.9)
+	card_node.modulate.a = 0.0
+	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(card_node, "scale", Vector2(1.0, 1.0), 0.22)
+	tw.tween_property(card_node, "modulate:a", 1.0, 0.22)
 
 func _on_tutorial_prev() -> void:
 	AudioManager.play_tap()
@@ -385,17 +501,23 @@ func _on_tutorial_close() -> void:
 	AudioManager.play_cancel()
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
 	if panel:
-		panel.visible = false
+		var card_node = panel.get_node("DialogCard")
+		var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tw.tween_property(card_node, "scale", Vector2(0.9, 0.9), 0.18)
+		tw.tween_property(card_node, "modulate:a", 0.0, 0.18)
+		tw.chain().tween_callback(func():
+			panel.visible = false
+		)
 
 func _update_tutorial_ui() -> void:
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
 	if not panel: return
 	
-	var content: Label = panel.get_node("MarginContainer/VBoxContainer/ContentLabel")
+	var content: Label = panel.get_node("DialogCard/MarginContainer/VBoxContainer/ContentLabel")
 	content.text = tutorial_slides[tutorial_current_slide]
 	
-	var btn_prev: Button = panel.get_node("MarginContainer/VBoxContainer/HBoxContainer/BtnPrev")
-	var btn_next: Button = panel.get_node("MarginContainer/VBoxContainer/HBoxContainer/BtnNext")
+	var btn_prev: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnPrev")
+	var btn_next: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnNext")
 	
 	btn_prev.disabled = (tutorial_current_slide == 0)
 	btn_next.disabled = (tutorial_current_slide == tutorial_slides.size() - 1)
@@ -409,31 +531,58 @@ func _on_btn_options_pressed() -> void:
 	var lobby := $Phases/Phase0_Lobby
 	var panel = lobby.get_node_or_null("OptionsPanel")
 	if not panel:
-		panel = PanelContainer.new()
+		# 建立半透明暗底覆蓋層
+		panel = Control.new()
 		panel.name = "OptionsPanel"
 		panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 		
+		var bg_overlay := ColorRect.new()
+		bg_overlay.name = "BgOverlay"
+		bg_overlay.color = Color(0.05, 0.04, 0.04, 0.82)
+		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel.add_child(bg_overlay)
+		
+		# 建立中央漂浮卡片
+		var card := PanelContainer.new()
+		card.name = "DialogCard"
+		card.custom_minimum_size = Vector2(880, 1000)
+		card.set_anchors_preset(Control.PRESET_CENTER)
+		card.pivot_offset = Vector2(440, 500)
+		
 		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0.12, 0.11, 0.10, 0.98) # Dark almost solid background
-		panel.add_theme_stylebox_override("panel", style)
+		style.bg_color = Color(0.16, 0.14, 0.13, 1)
+		style.corner_radius_top_left = 32
+		style.corner_radius_top_right = 32
+		style.corner_radius_bottom_right = 32
+		style.corner_radius_bottom_left = 32
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color(0.815, 0.505, 0.235, 0.18)
+		style.shadow_color = Color(0, 0, 0, 0.5)
+		style.shadow_size = 24
+		style.shadow_offset = Vector2(0, 16)
+		card.add_theme_stylebox_override("panel", style)
+		panel.add_child(card)
 		
 		var margin := MarginContainer.new()
 		margin.name = "MarginContainer"
-		margin.add_theme_constant_override("margin_left", 40)
-		margin.add_theme_constant_override("margin_right", 40)
-		margin.add_theme_constant_override("margin_top", 100)
-		margin.add_theme_constant_override("margin_bottom", 100)
-		panel.add_child(margin)
+		margin.add_theme_constant_override("margin_left", 60)
+		margin.add_theme_constant_override("margin_right", 60)
+		margin.add_theme_constant_override("margin_top", 80)
+		margin.add_theme_constant_override("margin_bottom", 80)
+		card.add_child(margin)
 		
 		var vbox := VBoxContainer.new()
 		vbox.name = "VBoxContainer"
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 40)
+		vbox.add_theme_constant_override("separation", 45)
 		margin.add_child(vbox)
 		
 		var title := Label.new()
 		title.text = "設定選項"
-		title.add_theme_font_size_override("font_size", 48)
+		title.add_theme_font_size_override("font_size", 52)
 		title.add_theme_color_override("font_color", COLOR_HIGHLIGHT)
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		vbox.add_child(title)
@@ -441,8 +590,8 @@ func _on_btn_options_pressed() -> void:
 		var btn_audio := Button.new()
 		btn_audio.name = "BtnAudio"
 		btn_audio.text = "音效：開啟" if not AudioManager.is_muted else "音效：關閉"
-		btn_audio.custom_minimum_size = Vector2(400, 80)
-		btn_audio.add_theme_font_size_override("font_size", 32)
+		btn_audio.custom_minimum_size = Vector2(450, 90)
+		btn_audio.add_theme_font_size_override("font_size", 34)
 		_set_btn_color(btn_audio, COLOR_BTN_NORMAL)
 		btn_audio.pressed.connect(_on_options_audio_toggled)
 		vbox.add_child(btn_audio)
@@ -450,43 +599,51 @@ func _on_btn_options_pressed() -> void:
 		var btn_feedback := Button.new()
 		btn_feedback.name = "BtnFeedback"
 		btn_feedback.text = "問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)"
-		btn_feedback.custom_minimum_size = Vector2(400, 100)
-		btn_feedback.add_theme_font_size_override("font_size", 28)
+		btn_feedback.custom_minimum_size = Vector2(450, 120)
+		btn_feedback.add_theme_font_size_override("font_size", 30)
 		_set_btn_color(btn_feedback, COLOR_BTN_NORMAL)
 		btn_feedback.pressed.connect(_on_options_feedback_pressed)
 		vbox.add_child(btn_feedback)
 		
 		var spacer := Control.new()
-		spacer.custom_minimum_size = Vector2(0, 40)
+		spacer.custom_minimum_size = Vector2(0, 30)
 		vbox.add_child(spacer)
 		
 		var btn_close := Button.new()
 		btn_close.text = "關閉設定"
-		btn_close.custom_minimum_size = Vector2(340, 70)
-		btn_close.add_theme_font_size_override("font_size", 30)
+		btn_close.custom_minimum_size = Vector2(450, 80)
+		btn_close.add_theme_font_size_override("font_size", 32)
 		_set_btn_color(btn_close, COLOR_BTN_DISABLED)
 		btn_close.pressed.connect(_on_options_close)
 		vbox.add_child(btn_close)
 		
 		lobby.add_child(panel)
+		_register_button_animations(card)
 	
 	# 每次開啟時更新按鈕文字（防止在其他地方修改了靜音）
-	var btn_audio: Button = panel.get_node("MarginContainer/VBoxContainer/BtnAudio")
+	var btn_audio: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/BtnAudio")
 	if btn_audio:
 		btn_audio.text = "音效：關閉" if AudioManager.is_muted else "音效：開啟"
 	
-	var btn_feedback: Button = panel.get_node("MarginContainer/VBoxContainer/BtnFeedback")
+	var btn_feedback: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/BtnFeedback")
 	if btn_feedback:
 		btn_feedback.text = "問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)"
 	
+	# 播放開場動畫
 	panel.visible = true
+	var card_node = panel.get_node("DialogCard")
+	card_node.scale = Vector2(0.9, 0.9)
+	card_node.modulate.a = 0.0
+	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(card_node, "scale", Vector2(1.0, 1.0), 0.22)
+	tw.tween_property(card_node, "modulate:a", 1.0, 0.22)
 
 func _on_options_audio_toggled() -> void:
 	AudioManager.is_muted = not AudioManager.is_muted
 	AudioManager.play_tap() # 若開啟音效，就會播放一聲作為回饋
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if panel:
-		var btn_audio: Button = panel.get_node("MarginContainer/VBoxContainer/BtnAudio")
+		var btn_audio: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/BtnAudio")
 		btn_audio.text = "音效：關閉" if AudioManager.is_muted else "音效：開啟"
 
 func _on_options_feedback_pressed() -> void:
@@ -494,7 +651,7 @@ func _on_options_feedback_pressed() -> void:
 	DisplayServer.clipboard_set("hank92312@gmail.com")
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if panel:
-		var btn_feedback: Button = panel.get_node("MarginContainer/VBoxContainer/BtnFeedback")
+		var btn_feedback: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/BtnFeedback")
 		btn_feedback.text = "已複製信箱！"
 		await get_tree().create_timer(1.5).timeout
 		if btn_feedback and is_instance_valid(btn_feedback):
@@ -504,7 +661,13 @@ func _on_options_close() -> void:
 	AudioManager.play_cancel()
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if panel:
-		panel.visible = false
+		var card_node = panel.get_node("DialogCard")
+		var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tw.tween_property(card_node, "scale", Vector2(0.9, 0.9), 0.18)
+		tw.tween_property(card_node, "modulate:a", 0.0, 0.18)
+		tw.chain().tween_callback(func():
+			panel.visible = false
+		)
 
 func _show_join_error(msg: String) -> void:
 	var vbox = $Phases/Phase0_Lobby/JoinPanel/VBox
@@ -590,21 +753,48 @@ func _show_ad_disclaimer() -> void:
 	var lobby := $Phases/Phase0_Lobby
 	var panel = lobby.get_node_or_null("AdDisclaimerPanel")
 	if not panel:
-		panel = PanelContainer.new()
+		# 建立半透明暗底覆蓋層
+		panel = Control.new()
 		panel.name = "AdDisclaimerPanel"
 		panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 		
+		var bg_overlay := ColorRect.new()
+		bg_overlay.name = "BgOverlay"
+		bg_overlay.color = Color(0.05, 0.04, 0.04, 0.82)
+		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel.add_child(bg_overlay)
+		
+		# 建立中央漂浮卡片
+		var card := PanelContainer.new()
+		card.name = "DialogCard"
+		card.custom_minimum_size = Vector2(880, 1000)
+		card.set_anchors_preset(Control.PRESET_CENTER)
+		card.pivot_offset = Vector2(440, 500)
+		
 		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0.12, 0.11, 0.10, 0.98)
-		panel.add_theme_stylebox_override("panel", style)
+		style.bg_color = Color(0.16, 0.14, 0.13, 1)
+		style.corner_radius_top_left = 32
+		style.corner_radius_top_right = 32
+		style.corner_radius_bottom_right = 32
+		style.corner_radius_bottom_left = 32
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color(0.815, 0.505, 0.235, 0.18)
+		style.shadow_color = Color(0, 0, 0, 0.5)
+		style.shadow_size = 24
+		style.shadow_offset = Vector2(0, 16)
+		card.add_theme_stylebox_override("panel", style)
+		panel.add_child(card)
 		
 		var margin := MarginContainer.new()
 		margin.name = "MarginContainer"
 		margin.add_theme_constant_override("margin_left", 60)
 		margin.add_theme_constant_override("margin_right", 60)
-		margin.add_theme_constant_override("margin_top", 200)
-		margin.add_theme_constant_override("margin_bottom", 200)
-		panel.add_child(margin)
+		margin.add_theme_constant_override("margin_top", 100)
+		margin.add_theme_constant_override("margin_bottom", 100)
+		card.add_child(margin)
 		
 		var vbox := VBoxContainer.new()
 		vbox.name = "VBoxContainer"
@@ -869,6 +1059,9 @@ func _set_btn_color(btn: Button, color: Color) -> void:
 	sb.corner_radius_bottom_left = 16
 	sb.content_margin_top = 24.0
 	sb.content_margin_bottom = 24.0
+	sb.shadow_color = Color(0, 0, 0, 0.15)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2(0, 4)
 	btn.add_theme_stylebox_override("normal", sb)
 	btn.add_theme_stylebox_override("hover", sb)
 	btn.add_theme_stylebox_override("pressed", sb)
@@ -1184,6 +1377,9 @@ func _set_pill_style(btn: Button, color: Color) -> void:
 	sb.content_margin_right  = 40.0
 	sb.content_margin_top    = 22.0
 	sb.content_margin_bottom = 22.0
+	sb.shadow_color = Color(0, 0, 0, 0.12)
+	sb.shadow_size = 5
+	sb.shadow_offset = Vector2(0, 3)
 	btn.add_theme_stylebox_override("normal",  sb)
 	btn.add_theme_stylebox_override("hover",   sb)
 	btn.add_theme_stylebox_override("pressed", sb)
@@ -1510,6 +1706,83 @@ func _on_btn_final_leave_pressed() -> void:
 		ad_panel.visible = false
 	
 	switch_phase(GamePhase.WAITING)
+
+# ── 全域按鈕與輸入框美化輔助函數 ──────────────────────────────────────────────
+func _register_button_animations(node: Node) -> void:
+	if node is Button:
+		var btn = node as Button
+		# 排除 Phase 3 的動態 Pill 按鈕，因為它們有自訂的選擇和配對動畫
+		var parent = btn.get_parent()
+		var is_p3_pill = parent and (parent.name == "FlowAnswers" or parent.name == "FlowParticipants")
+		if not is_p3_pill:
+			_setup_button_hover_press_tween(btn)
+	for child in node.get_children():
+		_register_button_animations(child)
+
+func _setup_button_hover_press_tween(btn: Button) -> void:
+	btn.pivot_offset = btn.size / 2.0
+	if not btn.resized.is_connected(self._on_btn_resized.bind(btn)):
+		btn.resized.connect(self._on_btn_resized.bind(btn))
+	
+	# 滑鼠移入（放大）
+	btn.mouse_entered.connect(func():
+		if btn.disabled: return
+		var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(btn, "scale", Vector2(1.04, 1.04), 0.12)
+	)
+	
+	# 滑鼠移出（還原）
+	btn.mouse_exited.connect(func():
+		if btn.disabled: return
+		var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.12)
+	)
+	
+	# 按鈕按下（下壓）
+	btn.button_down.connect(func():
+		if btn.disabled: return
+		var tw := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tw.tween_property(btn, "scale", Vector2(0.94, 0.94), 0.06)
+	)
+	
+	# 按鈕放開（還原或維持 Hover）
+	btn.button_up.connect(func():
+		if btn.disabled: return
+		var target_scale = Vector2(1.04, 1.04) if btn.is_hovered() else Vector2(1.0, 1.0)
+		var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(btn, "scale", target_scale, 0.12)
+	)
+
+func _on_btn_resized(btn: Button) -> void:
+	btn.pivot_offset = btn.size / 2.0
+
+func _style_line_edit(line_edit: LineEdit) -> void:
+	var sb_normal := StyleBoxFlat.new()
+	sb_normal.bg_color = Color(0.08, 0.07, 0.07, 1)
+	sb_normal.corner_radius_top_left = 16
+	sb_normal.corner_radius_top_right = 16
+	sb_normal.corner_radius_bottom_right = 16
+	sb_normal.corner_radius_bottom_left = 16
+	sb_normal.border_width_left = 2
+	sb_normal.border_width_top = 2
+	sb_normal.border_width_right = 2
+	sb_normal.border_width_bottom = 2
+	sb_normal.border_color = Color(0.28, 0.25, 0.22, 1)
+	sb_normal.content_margin_left = 24.0
+	sb_normal.content_margin_right = 24.0
+	sb_normal.content_margin_top = 16.0
+	sb_normal.content_margin_bottom = 16.0
+	
+	var sb_focus := sb_normal.duplicate() as StyleBoxFlat
+	sb_focus.border_color = COLOR_BTN_HOVER
+	sb_focus.shadow_color = Color(0.815, 0.505, 0.235, 0.15)
+	sb_focus.shadow_size = 10
+	sb_focus.shadow_offset = Vector2(0, 4)
+	
+	line_edit.add_theme_stylebox_override("normal", sb_normal)
+	line_edit.add_theme_stylebox_override("focus", sb_focus)
+	line_edit.add_theme_color_override("font_color", Color(0.98, 0.95, 0.9, 1))
+	line_edit.add_theme_color_override("placeholder_color", Color(0.5, 0.45, 0.4, 1))
 
 # ── App 前景/背景偵測 — 取消通知 ─────────────────────────────────────────────
 func _notification(what: int) -> void:
