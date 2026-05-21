@@ -119,6 +119,11 @@ func _emoji(emoji_text: String, fallback: String) -> String:
 		return fallback
 	return emoji_text
 
+func _quote(text: String) -> String:
+	if OS.get_name() == "Android":
+		return "\"" + text + "\""
+	return "「" + text + "」"
+
 # ── Tutorial Slides ─────────────────────────────────────────────────────────────
 # 注意：因為 _emoji() 需要在 _ready() 之後才能呼叫，tutorial_slides 改為在 _ready() 中初始化
 var tutorial_slides: Array = []
@@ -381,11 +386,16 @@ func _on_btn_instructions_pressed() -> void:
 		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 		panel.add_child(bg_overlay)
 		
+		# 建立居中容器以防止跑版
+		var center_container := CenterContainer.new()
+		center_container.name = "CenterContainer"
+		center_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel.add_child(center_container)
+		
 		# 建立中央漂浮卡片
 		var card := PanelContainer.new()
 		card.name = "DialogCard"
 		card.custom_minimum_size = Vector2(880, 1100)
-		card.set_anchors_preset(Control.PRESET_CENTER)
 		card.pivot_offset = Vector2(440, 550)
 		
 		var style := StyleBoxFlat.new()
@@ -403,7 +413,7 @@ func _on_btn_instructions_pressed() -> void:
 		style.shadow_size = 24
 		style.shadow_offset = Vector2(0, 16)
 		card.add_theme_stylebox_override("panel", style)
-		panel.add_child(card)
+		center_container.add_child(card)
 		
 		var margin := MarginContainer.new()
 		margin.name = "MarginContainer"
@@ -478,7 +488,7 @@ func _on_btn_instructions_pressed() -> void:
 	
 	# 播放開場動畫
 	panel.visible = true
-	var card_node = panel.get_node("DialogCard")
+	var card_node = panel.get_node("CenterContainer/DialogCard")
 	card_node.scale = Vector2(0.9, 0.9)
 	card_node.modulate.a = 0.0
 	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -501,7 +511,7 @@ func _on_tutorial_close() -> void:
 	AudioManager.play_cancel()
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
 	if panel:
-		var card_node = panel.get_node("DialogCard")
+		var card_node = panel.get_node("CenterContainer/DialogCard")
 		var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 		tw.tween_property(card_node, "scale", Vector2(0.9, 0.9), 0.18)
 		tw.tween_property(card_node, "modulate:a", 0.0, 0.18)
@@ -513,11 +523,11 @@ func _update_tutorial_ui() -> void:
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
 	if not panel: return
 	
-	var content: Label = panel.get_node("DialogCard/MarginContainer/VBoxContainer/ContentLabel")
+	var content: Label = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/ContentLabel")
 	content.text = tutorial_slides[tutorial_current_slide]
 	
-	var btn_prev: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnPrev")
-	var btn_next: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnNext")
+	var btn_prev: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnPrev")
+	var btn_next: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnNext")
 	
 	btn_prev.disabled = (tutorial_current_slide == 0)
 	btn_next.disabled = (tutorial_current_slide == tutorial_slides.size() - 1)
@@ -542,11 +552,16 @@ func _on_btn_options_pressed() -> void:
 		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 		panel.add_child(bg_overlay)
 		
+		# 建立居中容器以防止跑版
+		var center_container := CenterContainer.new()
+		center_container.name = "CenterContainer"
+		center_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel.add_child(center_container)
+		
 		# 建立中央漂浮卡片
 		var card := PanelContainer.new()
 		card.name = "DialogCard"
 		card.custom_minimum_size = Vector2(880, 1000)
-		card.set_anchors_preset(Control.PRESET_CENTER)
 		card.pivot_offset = Vector2(440, 500)
 		
 		var style := StyleBoxFlat.new()
@@ -564,7 +579,7 @@ func _on_btn_options_pressed() -> void:
 		style.shadow_size = 24
 		style.shadow_offset = Vector2(0, 16)
 		card.add_theme_stylebox_override("panel", style)
-		panel.add_child(card)
+		center_container.add_child(card)
 		
 		var margin := MarginContainer.new()
 		margin.name = "MarginContainer"
@@ -621,17 +636,17 @@ func _on_btn_options_pressed() -> void:
 		_register_button_animations(card)
 	
 	# 每次開啟時更新按鈕文字（防止在其他地方修改了靜音）
-	var btn_audio: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/BtnAudio")
+	var btn_audio: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnAudio")
 	if btn_audio:
 		btn_audio.text = "音效：關閉" if AudioManager.is_muted else "音效：開啟"
 	
-	var btn_feedback: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/BtnFeedback")
+	var btn_feedback: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnFeedback")
 	if btn_feedback:
 		btn_feedback.text = "問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)"
 	
 	# 播放開場動畫
 	panel.visible = true
-	var card_node = panel.get_node("DialogCard")
+	var card_node = panel.get_node("CenterContainer/DialogCard")
 	card_node.scale = Vector2(0.9, 0.9)
 	card_node.modulate.a = 0.0
 	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -643,7 +658,7 @@ func _on_options_audio_toggled() -> void:
 	AudioManager.play_tap() # 若開啟音效，就會播放一聲作為回饋
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if panel:
-		var btn_audio: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/BtnAudio")
+		var btn_audio: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnAudio")
 		btn_audio.text = "音效：關閉" if AudioManager.is_muted else "音效：開啟"
 
 func _on_options_feedback_pressed() -> void:
@@ -651,7 +666,7 @@ func _on_options_feedback_pressed() -> void:
 	DisplayServer.clipboard_set("hank92312@gmail.com")
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if panel:
-		var btn_feedback: Button = panel.get_node("DialogCard/MarginContainer/VBoxContainer/BtnFeedback")
+		var btn_feedback: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnFeedback")
 		btn_feedback.text = "已複製信箱！"
 		await get_tree().create_timer(1.5).timeout
 		if btn_feedback and is_instance_valid(btn_feedback):
@@ -661,7 +676,7 @@ func _on_options_close() -> void:
 	AudioManager.play_cancel()
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if panel:
-		var card_node = panel.get_node("DialogCard")
+		var card_node = panel.get_node("CenterContainer/DialogCard")
 		var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 		tw.tween_property(card_node, "scale", Vector2(0.9, 0.9), 0.18)
 		tw.tween_property(card_node, "modulate:a", 0.0, 0.18)
@@ -764,11 +779,16 @@ func _show_ad_disclaimer() -> void:
 		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 		panel.add_child(bg_overlay)
 		
+		# 建立居中容器以防止跑版
+		var center_container := CenterContainer.new()
+		center_container.name = "CenterContainer"
+		center_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel.add_child(center_container)
+		
 		# 建立中央漂浮卡片
 		var card := PanelContainer.new()
 		card.name = "DialogCard"
 		card.custom_minimum_size = Vector2(880, 1000)
-		card.set_anchors_preset(Control.PRESET_CENTER)
 		card.pivot_offset = Vector2(440, 500)
 		
 		var style := StyleBoxFlat.new()
@@ -786,7 +806,7 @@ func _show_ad_disclaimer() -> void:
 		style.shadow_size = 24
 		style.shadow_offset = Vector2(0, 16)
 		card.add_theme_stylebox_override("panel", style)
-		panel.add_child(card)
+		center_container.add_child(card)
 		
 		var margin := MarginContainer.new()
 		margin.name = "MarginContainer"
@@ -843,14 +863,14 @@ func _show_ad_disclaimer() -> void:
 	panel.visible = true
 	
 	# 確保每次顯示時按鈕狀態是正確的（防止上一輪殘留的「載入中」狀態）
-	var btn = panel.get_node_or_null("MarginContainer/VBoxContainer/BtnContinue")
+	var btn = panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnContinue")
 	if btn:
 		btn.text = "繼續"
 		btn.disabled = false
 		_set_btn_color(btn, COLOR_BTN_NORMAL)
 	
 	# 清除錯誤訊息
-	var error_label = panel.get_node_or_null("MarginContainer/VBoxContainer/ErrorLabel")
+	var error_label = panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/ErrorLabel")
 	if error_label:
 		error_label.text = ""
 
@@ -862,7 +882,7 @@ func _on_ad_disclaimer_continue() -> void:
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("AdDisclaimerPanel")
 	if not panel: return
 	
-	var btn = panel.get_node_or_null("MarginContainer/VBoxContainer/BtnContinue")
+	var btn = panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnContinue")
 	if btn:
 		btn.text = "載入中..."
 		btn.disabled = true
@@ -886,13 +906,13 @@ func _on_network_join_failed(reason: String) -> void:
 	# 優先尋找警語面板中的 ErrorLabel
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("AdDisclaimerPanel")
 	if panel:
-		var btn = panel.get_node_or_null("MarginContainer/VBoxContainer/BtnContinue")
+		var btn = panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnContinue")
 		if btn:
 			btn.text = "重試"
 			btn.disabled = false
 			_set_btn_color(btn, COLOR_BTN_NORMAL)
 		
-		var vbox = panel.get_node("MarginContainer/VBoxContainer")
+		var vbox = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer")
 		if vbox:
 			var error_label = vbox.get_node_or_null("ErrorLabel")
 			if not error_label:
@@ -1180,14 +1200,19 @@ func _generate_phase3_ui() -> void:
 	if q_label == null:
 		q_label = Label.new()
 		q_label.name = "QuestionLabel"
-		q_label.add_theme_font_size_override("font_size", 32)
+		q_label.add_theme_font_size_override("font_size", 42)
 		q_label.add_theme_color_override("font_color", Color(1, 0.95, 0.8, 1))
 		q_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		q_label.custom_minimum_size = Vector2(100, 0) # 確保它能夠換行
 		outer_vbox.add_child(q_label)
 		outer_vbox.move_child(q_label, 0)
-	q_label.text = "「" + current_question + "」"
+	else:
+		q_label.add_theme_font_size_override("font_size", 42)
+		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	q_label.text = _quote(current_question)
 
 	var flow_ans := $Phases/Phase3_Guessing/OuterVBox/AnswerPanel/InnerVBox/ScrollAnswers/FlowAnswers
 	var flow_par := $Phases/Phase3_Guessing/OuterVBox/ParticipantPanel/InnerVBox/ScrollParticipants/FlowParticipants
@@ -1408,7 +1433,7 @@ func _generate_phase4_ui() -> void:
 	
 	# ── 調整字體大小 ──
 	var q_label := $Phases/Phase4_Revelation/VBox/QuestionLabel
-	q_label.text = "「" + current_question + "」"
+	q_label.text = _quote(current_question)
 	q_label.add_theme_font_size_override("font_size", 33) # 題目加大 1 單位 (原本 32)
 	q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1603,7 +1628,7 @@ func _create_result_row(ans_text: String, correct_player: String, guessed_player
 
 	# 答案文字
 	var ans_label := Label.new()
-	ans_label.text = "「" + ans_text + "」"
+	ans_label.text = _quote(ans_text)
 	ans_label.add_theme_font_size_override("font_size", font_ans)
 	ans_label.add_theme_color_override("font_color", Color(1, 0.95, 0.8, 1))
 	ans_label.autowrap_mode = TextServer.AUTOWRAP_WORD

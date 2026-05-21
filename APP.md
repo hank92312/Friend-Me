@@ -186,3 +186,24 @@ Main (Control)
 | StyleBoxFlat_section_panel | Phase 3 上下背景框 | 深暖灰，圓角 32 |
 
 ---
+
+## 9. 最近重要更新紀錄 (Recent Updates - 2026-05-21)
+
+### 1. UI 懸浮面板置中自適應優化
+- 針對 `TutorialPanel` (遊戲說明)、`OptionsPanel` (設定選項)、`AdDisclaimerPanel` (廣告提示) 等動態生成卡片，在半透明覆蓋層下引入 `CenterContainer` 節點包裹 `DialogCard`。
+- 修改所有相關 `get_node()` 內部路徑至 `CenterContainer/DialogCard/...`，確保在各種寬高比解析度下（包括 PC 端寬螢幕與手機端窄螢幕）卡片皆能保持置中，防偏置跑版。
+
+### 2. 連連看題目換行與手機自適應
+- Phase 3 配對階段頂部的題目 Label 屬性調整：
+  - `size_flags_horizontal` 設為 `Control.SIZE_EXPAND_FILL`。
+  - `autowrap_mode` 設為 `TextServer.AUTOWRAP_WORD_SMART`，以便能流暢折行中文與英文混排。
+  - 字體大小調大至 `42`，徹底解決原本字體過小、超出螢幕的問題。
+
+### 3. Android 系統引號 tofu 豆腐塊亂碼修正
+- 利用平台感知輔助函數 `_quote(text: String) -> String`，檢測如果當前平台為 `Android`，則自動將 `「` 與 `」` 引號更換為標準雙引號 `"`。
+- 將 Phase 3/4 的題目與 Phase 4 結果卡片的引號拼接皆替換為 `_quote()`，解決 Android 預設中文字型缺少直角引號造成的豆腐塊亂碼。
+
+### 4. 網頁端 Web 匯出與本地測試伺服器建立
+- 在 `export_presets.cfg` 中追加 `Web` (HTML5) 導出預設。
+- 使用 Godot Console 執行檔 `--headless` 成功導出 Web 專案檔案至 `C:\FriendAndMe\build_web`。
+- 啟動本地 Python HTTP 伺服器 (Port 8080)，支援電腦端、手機端、網頁端三端同步聯合連線測試。
