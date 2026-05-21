@@ -130,6 +130,23 @@ var tutorial_current_slide := 0
 
 # ── 初始化 ────────────────────────────────────────────────────────────────────
 func _ready() -> void:
+	# 建立加粗與調整大小的全域 Theme，以解決網頁端字型太細與太小的問題
+	var base_font = load("res://assets/fonts/NotoSansTC-VF.ttf")
+	if base_font:
+		var font_var = FontVariation.new()
+		font_var.base_font = base_font
+		font_var.embolden = 0.6  # 模擬加粗 (0.0~1.0)
+		
+		var main_theme = Theme.new()
+		main_theme.default_font = font_var
+		
+		if OS.has_feature("web"):
+			main_theme.default_font_size = 38  # 網頁端字體特別放大
+		else:
+			main_theme.default_font_size = 32  # 手機與電腦端使用 32
+		
+		self.theme = main_theme
+		
 	_load_question_bank()
 	
 	# 初始化 Tutorial Slides（需要在 _ready 中才能呼叫 _emoji()）
