@@ -135,18 +135,21 @@ func _ready() -> void:
 	if base_font:
 		var font_var = FontVariation.new()
 		font_var.base_font = base_font
-		font_var.embolden = 0.6  # 模擬加粗 (0.0~1.0)
+		font_var.embolden = 0.7  # 模擬加粗 (提高至 0.7)
 		
+		var font_size = 38 if OS.has_feature("web") else 32
 		var main_theme = Theme.new()
 		main_theme.default_font = font_var
+		main_theme.default_font_size = font_size
 		
-		if OS.has_feature("web"):
-			main_theme.default_font_size = 38  # 網頁端字體特別放大
-		else:
-			main_theme.default_font_size = 32  # 手機與電腦端使用 32
+		# 顯式覆寫所有常見 UI 元件的字型與字級，避免 Godot fallback 回引擎預設值 (e.g. Button 預設大小 16)
+		var ui_types = ["Label", "Button", "LineEdit", "TextEdit", "RichTextLabel"]
+		for type in ui_types:
+			main_theme.set_font("font", type, font_var)
+			main_theme.set_font_size("font_size", type, font_size)
 		
 		self.theme = main_theme
-		print("DEBUG: [Theme Setup] Base font loaded successfully. Set embolden=0.6, font_size=", main_theme.default_font_size)
+		print("DEBUG: [Theme Setup] Base font loaded successfully. Set embolden=0.7, font_size=", font_size)
 	else:
 		print("DEBUG: [Theme Setup] FAILED to load base font!")
 		
