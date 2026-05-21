@@ -207,4 +207,10 @@ Main (Control)
 - 在 `export_presets.cfg` 中追加 `Web` (HTML5) 導出預設。
 - **解決 Web 端中文顯示亂碼問題**：引入微軟系統內建思源黑體繁體中文變量字型 `NotoSansTC-VF.ttf` 至專案資源目錄 `assets/fonts/` 中，並於 `project.godot` 配置全域 `gui/theme/custom_font`。此舉使得 HTML5 Web 端在瀏覽器中能夠無縫載入中文，徹底解決了標題與遊戲中文字元顯示為亂碼豆腐塊的問題。
 - 使用 Godot Console 執行檔 `--headless` 成功導出 Web 專案檔案至 `C:\FriendAndMe\build_web`。
-- 啟動本地 Python HTTP 伺服器 (Port 8080)，支援電腦端、手機端、網頁端三端同步聯合連線測試。
+- 啟動本地 Python HTTP 伺服器 (Port 8080)，支援電腦端、手機端、網頁端三端同步聯合連線測試。
+
+### 5. 全域專案圖示替換 (Project Icon Replacement)
+- 將專案根目錄下新作好的 `icon-new.png` 複製至專案資源目錄為 `icon_new.png`。
+- 修改 `project.godot` 配置全域 `config/icon="res://icon_new.png"`，確保遊戲主圖示已替換。
+- 修改 `export_presets.cfg` 設定 Android 端的各尺寸啟動圖示、自適應圖示 (Launcher Icons) 及 Web 端的 PWA 圖示路徑全數指向新圖示 `res://icon_new.png`，完成全平台圖示的一致性更替。
+- 重新執行 Web 平台釋出匯出，產出包含新圖示與修復後字型的最新靜態資源包。
