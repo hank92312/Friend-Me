@@ -39,7 +39,7 @@ enabled=PackedStringArray("res://addons/NotificationSchedulerPlugin/plugin.cfg",
 
 [gui]
 
-theme/custom_font="res://assets/fonts/NotoSansTC-VF.ttf"
+theme/custom_font="res://assets/fonts/NotoSansTC-Bold.otf"
 theme/default_font_size=32
 
 [physics]
