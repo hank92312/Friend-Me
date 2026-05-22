@@ -128,7 +128,7 @@ cd backend
 
 ### 檔案結構
 ```
-friend&me/
+friendAndme/
 ├── project.godot          # 專案配置 (1080x1920, 開發視窗 540x960)
 ├── main.tscn              # 主場景 (Phase 0~4 UI 佈局)
 ├── main.gd                # 主腳本 (狀態機 + 題庫載入 + 配對邏輯)
@@ -222,5 +222,14 @@ Main (Control)
 - 修改 `main.gd` 中的 `_emoji()` 函數，使不限平台皆統一回傳 `fallback` 純文字。由於專案套用的思源黑體 (`NotoSansTC-VF.ttf`) 不包含 Emoji 字符，這能完全解決 PC、Web 與 Android 三端出現豆腐塊亂碼的問題。
 
 ### 8. 後端 API CORS 跨網域連線支援與部署
-- 於 `backend/main.py` 中導入 `CORSMiddleware` 並設置 `allow_origins=["*"]` 以允許跨來源請求。此舉解決了網頁端 (HTML5) 在瀏覽器載入後發送 HTTP 請求遭遇 CORS 阻擋而出現「伺服器連線失敗 (CODE0)」的問題。
-- 使用 `flyctl deploy` 將後端成功部署至 Fly.io，並重新匯出最新的 Web 專案至 `build_web` 目錄。
+- 於 `backend/main.py` 中導入 `CORSMiddleware` 並設置 `allow_origins=["*"]` 以允許跨來源請求。此舉解決了網頁端 (HTML5) 在瀏覽器載入後發送 HTTP 請求遭遇 CORS 阻擋而出現「伺服器連線失敗 (CODE0)」的問題。並已同步重新匯出 Web 專案至本地 `build_web` 以供測試。
+
+### 9. 廣告警語面板退出鎖死與記憶體殘留修正
+- 修改 `main.gd` 中的 `_on_btn_back_pressed()`，確保在 `queue_free()` 之前，先將 `AdDisclaimerPanel` 的 `visible` 設為 `false`，防範因 Godot 在幀末才釋放節點而導致的大廳首幀閃爍或 UI 鎖死。
+- 修改 `_on_btn_final_leave_pressed()`，在 `visible = false` 之後補上 `queue_free()`，避免面板常駐記憶體與節點樹。
+- 於 `switch_phase(GamePhase.WAITING)` 當中新增雙重保險邏輯，若回到大廳時發現 `AdDisclaimerPanel` 仍存在，將其強制隱藏並釋放。
+
+### 10. Web 瀏覽器強快取與 Wasm / PCK Cache-Busting 機制實作
+- 實作了 Web 端專用的 API 與資源請求攔截機制：在 `build_web/index.html` 頂部注入 `window.fetch` 攔截器，對於任何 Godot 核心資源（如 `.wasm` 與 `.pck` 檔案）自動在 URL 後綴補上 `?v=timestamp`，強制瀏覽器跳過本地快取下載最新編譯代碼。
+- 修改 `index.js` 的載入方式，將 HTML 的靜態 `<script>` 引用改為 `document.write` 動態注入時間戳記載入 `index.js?v=timestamp`。
+- 建立 `build_and_patch.py` 自動化建置與補丁 Python 腳本。該腳本可一鍵呼叫 Godot Web 釋出匯出，並在匯出完成後自動將 Cache-Busting 與攔截邏輯寫入 `index.html`，解決了因瀏覽器強快取舊版 37MB `index.wasm` 導致更新後的 Theme 與 `NotoSansTC-Bold.otf` 粗體字型未生效的問題。

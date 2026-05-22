@@ -209,7 +209,7 @@
 ## 建議放置路徑
 
 ```
-friend&me/
+friendAndme/
 └── audio/
     └── sfx/
         ├── sfx_btn_tap.ogg

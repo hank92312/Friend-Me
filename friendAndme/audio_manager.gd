@@ -70,6 +70,14 @@ func play_tap() -> void:
 func play_cancel() -> void:
 	play_sfx(sfx_btn_cancel, 0.8)
 
+## 2b. 離開圈圈按鈕（BtnLeaveCircle）— 低音調退出音效 (pitch = 0.65)
+func play_leave_circle() -> void:
+	play_sfx(sfx_btn_cancel, 0.65)
+
+## 2c. 確定離開按鈕（BtnFinalLeave）— 更低沈、有關閉感音效 (pitch = 0.5)
+func play_final_leave() -> void:
+	play_sfx(sfx_btn_cancel, 0.5)
+
 ## 3. 房間建立成功
 func play_room_created() -> void:
 	play_sfx(sfx_room_created)

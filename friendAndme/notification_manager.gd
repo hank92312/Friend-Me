@@ -47,8 +47,8 @@ func _on_init_completed() -> void:
 	# 建立通知頻道 (Android 8+ 必須)
 	var channel := NotificationChannel.new()
 	channel.set_id(CHANNEL_ID)
-	channel.set_name(CHANNEL_NAME)
-	channel.set_description(CHANNEL_DESC)
+	channel.set_name(tr(CHANNEL_NAME))
+	channel.set_description(tr(CHANNEL_DESC))
 	channel.set_importance(NotificationChannel.Importance.HIGH)
 	_scheduler.create_notification_channel(channel)
 	print("[NotifManager] Notification channel created: ", CHANNEL_ID)
@@ -81,31 +81,31 @@ func notify(title: String, content: String) -> void:
 	if not _scheduler.has_post_notifications_permission():
 		return
 
-	var notification := NotificationData.new()
-	notification.set_id(_next_notification_id)
-	notification.set_channel_id(CHANNEL_ID)
-	notification.set_title(title)
-	notification.set_content(content)
-	notification.set_small_icon_name("ic_default_notification")
-	notification.set_delay(0)  # 立即發送
+	var notif := NotificationData.new()
+	notif.set_id(_next_notification_id)
+	notif.set_channel_id(CHANNEL_ID)
+	notif.set_title(title)
+	notif.set_content(content)
+	notif.set_small_icon_name("ic_default_notification")
+	notif.set_delay(0)  # 立即發送
 
-	_scheduler.schedule(notification)
+	_scheduler.schedule(notif)
 	print("[NotifManager] Notification scheduled: ", title, " — ", content)
 
 	_next_notification_id += 1
 
 # ── 便捷方法：各遊戲階段通知 ─────────────────────────────────────────────────
 func notify_answering() -> void:
-	notify("Friends & Me", "新題目來了！快回來作答 ✏️")
+	notify("Friends & Me", tr("新題目來了！快回來作答 ✏️"))
 
 func notify_guessing() -> void:
-	notify("Friends & Me", "配對階段開始！猜猜誰寫了什麼 🔍")
+	notify("Friends & Me", tr("配對階段開始！猜猜誰寫了什麼 🔍"))
 
 func notify_revelation() -> void:
-	notify("Friends & Me", "結果揭曉！回來看看你猜對了幾個 🎉")
+	notify("Friends & Me", tr("結果揭曉！回來看看你猜對了幾個 🎉"))
 
 func notify_captain() -> void:
-	notify("Friends & Me", "輪到你當隊長！快選一個話題深度 👑")
+	notify("Friends & Me", tr("輪到你當隊長！快選一個話題深度 👑"))
 
 # ── 取消所有已排程的通知 ──────────────────────────────────────────────────────
 func cancel_all() -> void:

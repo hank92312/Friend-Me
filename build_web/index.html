@@ -109,9 +109,32 @@ body {
 			<div id="status-notice"></div>
 		</div>
 
-		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":20536040,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+			// 攔截 fetch 以強行對 Godot 的資源請求（如 .wasm 和 .pck 檔案）進行 Cache-Busting
+			(function() {
+				const originalFetch = window.fetch;
+				window.fetch = function (input, init) {
+					let url = (typeof input === 'string') ? input : input.url;
+					if (url.endsWith('.wasm') || url.endsWith('.pck') || url.indexOf('.wasm?') !== -1 || url.indexOf('.pck?') !== -1) {
+						if (url.indexOf('v=') === -1) {
+							const separator = url.indexOf('?') !== -1 ? '&' : '?';
+							url = url + separator + 'v=' + Date.now();
+						}
+					}
+					if (typeof input === 'string') {
+						input = url;
+					} else {
+						input = new Request(url, input);
+					}
+					return originalFetch(input, init);
+				};
+			})();
+		</script>
+		<script>
+			document.write('<script src="index.js?v=' + Date.now() + '"><\/script>');
+		</script>
+		<script>
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":20578412,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 

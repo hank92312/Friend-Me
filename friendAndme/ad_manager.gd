@@ -8,7 +8,7 @@ signal ad_finished  # 廣告播放完成（或跳過）後發出
 
 # ── AdMob ID ─────────────────────────────────────────────────────────────────
 # 開發測試時使用 Google 官方測試 ID，正式發布前替換為真實 ID
-const USE_TEST_ADS := true
+const USE_TEST_ADS := false
 
 # 正式 ID
 const REAL_AD_UNIT_ID := "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
