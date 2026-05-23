@@ -1152,11 +1152,10 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		line_edit.text = ""
 		
 		# 重置題目卡與不回答按鈕的顯示狀態（以防聚焦狀態中斷）
-		var q_card = $Phases/Phase2_Answering/VBox/QuestionCard
-		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
 		if q_card:
 			q_card.visible = true
 			q_card.modulate.a = 1.0
+		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
 		if btn_no_ans:
 			btn_no_ans.visible = true
 			btn_no_ans.modulate.a = 1.0
