@@ -16,6 +16,7 @@ Hello 接下來接手的 AI：
 - **手機端輸入焦點遮擋與釋放焦點優化 (Answering Focus & Tap-Dismiss)**：
   - 輸入框獲得焦點時完全隱藏題目卡與不回答按鈕（輸入框置頂避開虛擬鍵盤遮擋）。
   - 點擊或碰碰輸入框外部時會自動調用 `release_focus()` 關閉鍵盤並還原畫面。
+- **WebGL 2.0 相容性檢測與引導阻斷**：當使用者的裝置（如舊版 iPad/iOS Safari）未啟用 WebGL 2.0 時，主動攔截 Godot 載入，並在前端以精美的毛玻璃卡片引導玩家如何開啟 WebGL 2.0 或關閉多餘分頁釋放記憶體，避免出現 `gl.getContextAttributes().antialias` 引擎崩潰條。
 - **中英文雙語支援 (Bilingual Localization)**：
   - 於主畫面左下角加入 Language 切換按鈕與滑出式選單，支援「中文/English」即時切換與保存。
   - 解決了英文排版換行與按鈕高度自適應問題（關卡選擇按鈕動態高度計算）。

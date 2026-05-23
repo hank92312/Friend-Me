@@ -241,3 +241,10 @@ Main (Control)
   - 當失去焦點時，在 `_on_answer_focus_exited()` 中將題目卡與按鈕重新顯示，讓玩家能隨時收起鍵盤查看題目。
 - **結果揭曉亂碼修正**：
   - 將 Phase 4 結果揭曉清單前面的 `✓` 與 `✗` 替換為 `O` 與 `X` 字符。此修復徹底解決了因為主字型 NotoSansTC 缺少此類 unicode 符號而在 Android 與網頁端產生豆腐塊亂碼的問題。
+
+### 12. 網頁端 WebGL 2.0 相容性檢測與引導阻斷 (2026-05-23)
+- **問題分析**：Godot 4 的 Web 導出版強制要求瀏覽器支援 WebGL 2.0。在部分 iOS / iPadOS 系統較舊（iOS 15 以前）的手機平板上，或是因為記憶體吃緊導致 Safari 拒絕提供 WebGL context，載入時會於 `index.js` 崩潰並拋出 `null is not an object (evaluating 'gl.getContextAttributes().antialias')` 紅色錯誤條，造成極差的 UX 體驗。
+- **解決方案**：
+  - 更新了 `build_and_patch.py` 補丁腳本，在 `index.html` 載入 Godot `index.js` 前加入前置檢測。
+  - 若偵測到目前瀏覽器不支持 WebGL 2.0，主動**攔截**載入（不載入 `index.js` 也不啟動 Godot，防止 ReferenceError 或運行崩潰）。
+  - 自動在前端顯示一個與遊戲整體深色金橘風格一致的 Fullscreen Overlay 磨砂提示卡，明確引導使用者前往 iOS 設定開啟 WebGL 2.0、關閉其他 Safari 分頁以釋放記憶體、或是更換 Chrome/Firefox/電腦設備遊玩。

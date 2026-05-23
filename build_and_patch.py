@@ -29,7 +29,7 @@ def main():
     with open(export_output, 'r', encoding='utf-8') as f:
         html = f.read()
         
-    # 定義要插入的 fetch 攔截器
+    # 定義要插入的 fetch 攔截器與 WebGL 2.0 檢測器
     patch_code = """<script>
 			// 攔截 fetch 以強行對 Godot 的資源請求（如 .wasm 和 .pck 檔案）進行 Cache-Busting
 			(function() {
@@ -52,14 +52,145 @@ def main():
 			})();
 		</script>
 		<script>
-			document.write('<script src="index.js?v=' + Date.now() + '"><\\/script>');
+			// WebGL 2.0 相容性檢測與阻斷
+			window.hasWebGL2 = (function() {
+				try {
+					var canvas = document.createElement('canvas');
+					return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
+				} catch (e) {
+					return false;
+				}
+			})();
+			
+			if (window.hasWebGL2) {
+				document.write('<script src="index.js?v=' + Date.now() + '"><\\/script>');
+			} else {
+				console.error("WebGL 2.0 is not supported or disabled on this device/browser.");
+				window.addEventListener('DOMContentLoaded', function() {
+					// 隱藏原本的 status 載入區
+					var statusDiv = document.getElementById('status');
+					if (statusDiv) statusDiv.style.display = 'none';
+					
+					// 建立精美的 WebGL2 錯誤提示畫面
+					var errDiv = document.createElement('div');
+					errDiv.id = 'webgl2-error-overlay';
+					errDiv.innerHTML = `
+						<div class="err-card">
+							<h2>⚠️ 瀏覽器未啟用 WebGL 2.0</h2>
+							<p class="subtitle">WebGL 2.0 Disabled / Unsupported</p>
+							<div class="desc-box">
+								<p>您的裝置或瀏覽器目前未開啟 <strong>WebGL 2.0</strong> 繪圖功能，導致遊戲無法順利載入。這在蘋果 iOS / iPadOS Safari 瀏覽器上非常常見。</p>
+								<hr/>
+								<h3>🛠️ 解決步驟引導：</h3>
+								<ul>
+									<li><strong>開啟系統 WebGL 2.0 (iOS 15 以前)</strong>：請前往您 iPad/iPhone 的「設定」➔「Safari」➔「進階」➔「Experimental Features」，尋找並將 <strong>WebGL 2.0</strong> 開啟。</li>
+									<li><strong>檢查記憶體，關閉多餘分頁</strong>：Safari 會因為記憶體過高而拒絕提供繪圖環境。請關閉其他所有瀏覽器分頁，並「重新整理」此頁面。</li>
+									<li><strong>關閉「低耗電模式」</strong>：部分裝置在低耗電模式下會停用 WebGL，請關閉省電模式後重試。</li>
+									<li><strong>更新系統或更換設備</strong>：建議將 iOS 系統更新至最新版本，或嘗試使用電腦版 Chrome / Firefox 瀏覽器進行遊玩。</li>
+								</ul>
+							</div>
+							<button class="retry-btn" onclick="window.location.reload()">重新整理 ➔</button>
+						</div>
+					`;
+					
+					// 注入 CSS
+					var style = document.createElement('style');
+					style.innerHTML = `
+						#webgl2-error-overlay {
+							position: fixed;
+							top: 0;
+							left: 0;
+							width: 100%;
+							height: 100%;
+							background: #161413;
+							display: flex;
+							justify-content: center;
+							align-items: center;
+							z-index: 100000;
+							font-family: system-ui, -apple-system, sans-serif;
+							color: #FFF2CC;
+							padding: 20px;
+							box-sizing: border-box;
+							overflow-y: auto;
+						}
+						.err-card {
+							width: 95%;
+							max-width: 500px;
+							background: #1F1C1A;
+							border: 2px solid #D0813C;
+							border-radius: 24px;
+							padding: 25px;
+							box-sizing: border-box;
+							box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+							text-align: left;
+						}
+						.err-card h2 {
+							color: #E39450;
+							margin-top: 0;
+							margin-bottom: 5px;
+							font-size: 1.5rem;
+							text-align: center;
+						}
+						.err-card .subtitle {
+							color: #7C6858;
+							font-size: 0.9rem;
+							margin-top: 0;
+							margin-bottom: 20px;
+							text-align: center;
+							font-weight: bold;
+						}
+						.desc-box {
+							font-size: 0.95rem;
+							line-height: 1.5;
+							color: #E0E0E0;
+						}
+						.desc-box hr {
+							border: 0;
+							border-top: 1px dashed rgba(208, 129, 60, 0.3);
+							margin: 15px 0;
+						}
+						.desc-box h3 {
+							color: #FFF2CC;
+							font-size: 1.05rem;
+							margin-bottom: 10px;
+						}
+						.desc-box ul {
+							padding-left: 20px;
+							margin: 0;
+						}
+						.desc-box li {
+							margin-bottom: 12px;
+						}
+						.retry-btn {
+							background: #D0813C;
+							color: #1F1C1A;
+							border: none;
+							padding: 12px 20px;
+							font-size: 1.05rem;
+							border-radius: 40px;
+							cursor: pointer;
+							width: 100%;
+							margin-top: 20px;
+							font-weight: bold;
+							transition: all 0.2s ease;
+							box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+						}
+						.retry-btn:hover {
+							background: #E39450;
+							box-shadow: 0 6px 15px rgba(227, 148, 80, 0.4);
+						}
+					`;
+					document.head.appendChild(style);
+					document.body.appendChild(errDiv);
+				});
+			}
 		</script>"""
 
     # 替換 <script src="index.js"></script>
     target = '<script src="index.js"></script>'
     if target in html:
         html = html.replace(target, patch_code)
-        print("Successfully replaced <script src=\"index.js\"></script> with cache-busting script.")
+        print("Successfully replaced <script src=\"index.js\"></script> with cache-busting and WebGL2 check script.")
     else:
         print("Warning: '<script src=\"index.js\"></script>' not found in index.html. Checking if already patched...")
         if "originalFetch" in html:
@@ -73,6 +204,16 @@ def main():
     if '"mainPack":"index.pck"' in html:
         html = html.replace('"mainPack":"index.pck"', '"mainPack":"index.pck?v=" + Date.now()')
         print("Successfully patched mainPack in GODOT_CONFIG.")
+        
+    # 替換 GODOT_CONFIG 啟動區塊以防 WebGL2 不支援時產生 ReferenceError
+    if "const GODOT_CONFIG =" in html:
+        html = html.replace("const GODOT_CONFIG =", "if (window.hasWebGL2) {\nconst GODOT_CONFIG =")
+        if "}());\r\n\t\t</script>" in html:
+            html = html.replace("}());\r\n\t\t</script>", "}());\n}\r\n\t\t</script>")
+            print("Successfully patched GODOT_CONFIG block with WebGL2 conditional check (CRLF).")
+        elif "}());\n\t\t</script>" in html:
+            html = html.replace("}());\n\t\t</script>", "}());\n}\n\t\t</script>")
+            print("Successfully patched GODOT_CONFIG block with WebGL2 conditional check (LF).")
     
     # 注入網頁端廣告 HTML/CSS/JS 覆蓋層
     ad_overlay_html = """
