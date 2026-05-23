@@ -212,7 +212,10 @@ func _ready() -> void:
 	# Phase 2
 	$Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit.pressed.connect(_on_btn_submit_answer)
 	$Phases/Phase2_Answering/VBox/BtnNoAnswer.pressed.connect(_on_btn_no_answer)
-	($Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit).text_changed.connect(_on_answer_text_changed)
+	var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit
+	line_edit.text_changed.connect(_on_answer_text_changed)
+	line_edit.focus_entered.connect(_on_answer_focus_entered)
+	line_edit.focus_exited.connect(_on_answer_focus_exited)
 
 	# Phase 3 ── 送出配對（pill 會動態建立）
 	$Phases/Phase3_Guessing/BtnSubmitMatch.pressed.connect(_on_btn_submit_match)
@@ -1145,7 +1148,18 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		q_label.custom_minimum_size = Vector2(100, 0)
-		($Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit).text = ""
+		var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit
+		line_edit.text = ""
+		
+		# 重置題目卡與不回答按鈕的顯示狀態（以防聚焦狀態中斷）
+		var q_card = $Phases/Phase2_Answering/VBox/QuestionCard
+		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
+		if q_card:
+			q_card.visible = true
+			q_card.modulate.a = 1.0
+		if btn_no_ans:
+			btn_no_ans.visible = true
+			btn_no_ans.modulate.a = 1.0
 		
 		# 重置送出按鈕
 		var submit_btn := $Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit
@@ -1230,6 +1244,38 @@ func _on_answer_text_changed(new_text: String) -> void:
 	else:
 		submit_btn.disabled = false
 		_set_btn_color(submit_btn, COLOR_BTN_NORMAL)
+
+func _on_answer_focus_entered() -> void:
+	if OS.has_feature("mobile") or OS.has_feature("web"):
+		var q_card = $Phases/Phase2_Answering/VBox/QuestionCard
+		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
+		
+		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		if q_card:
+			tw.tween_property(q_card, "modulate:a", 0.0, 0.15)
+		if btn_no_ans:
+			tw.tween_property(btn_no_ans, "modulate:a", 0.0, 0.15)
+		
+		tw.chain().tween_callback(func():
+			if q_card: q_card.visible = false
+			if btn_no_ans: btn_no_ans.visible = false
+		)
+
+func _on_answer_focus_exited() -> void:
+	if OS.has_feature("mobile") or OS.has_feature("web"):
+		var q_card = $Phases/Phase2_Answering/VBox/QuestionCard
+		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
+		
+		if q_card:
+			q_card.visible = true
+		if btn_no_ans:
+			btn_no_ans.visible = true
+			
+		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		if q_card:
+			tw.tween_property(q_card, "modulate:a", 1.0, 0.15)
+		if btn_no_ans:
+			tw.tween_property(btn_no_ans, "modulate:a", 1.0, 0.15)
 
 func _set_btn_color(btn: Button, color: Color) -> void:
 	var sb := StyleBoxFlat.new()
