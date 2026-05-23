@@ -6,11 +6,16 @@ Hello 接下來接手的 AI：
 ---
 
 ## 🟢 最新實測已驗證 (Recent Verifications)
-在 2026-05-21/22 的測試中，使用者已在 **Web 瀏覽器端** 實測驗證以下功能正常：
+在 2026-05-23 的測試中，使用者已在 **Web 瀏覽器端** 實測驗證以下功能正常：
 - **字體變大變粗**：NotoSansTC-Bold 成功透過 Wasm/PCK Cache-Busting 載入，解決字型大小/粗細問題。
 - **退回首頁正常**：廣告警語面板順利在退出房間時關閉並銷毀，不會卡死在大廳畫面上。
 - **雲端連線正常**：網頁端可順利與 Fly.io 雲端伺服器 (`friends-and-me.fly.dev`) 連接，無 CORS 阻擋。
-- **亂碼豆腐塊修復**：Emoji 已成功降級為純文字，Android 直角引號已自動轉為標準雙引號。
+- **亂碼豆腐塊修復**：
+  - Emoji 已成功降級為純文字，Android 直角引號已自動轉為標準雙引號。
+  - 將 Phase 4 結果揭曉清單前面的 `✓` 與 `✗` 成功變更為安全通用的 `O` 與 `X` 字元，徹底解決思源黑體缺字產生的豆腐塊亂碼。
+- **手機端輸入焦點遮擋與釋放焦點優化 (Answering Focus & Tap-Dismiss)**：
+  - 輸入框獲得焦點時完全隱藏題目卡與不回答按鈕（輸入框置頂避開虛擬鍵盤遮擋）。
+  - 點擊或碰碰輸入框外部時會自動調用 `release_focus()` 關閉鍵盤並還原畫面。
 - **中英文雙語支援 (Bilingual Localization)**：
   - 於主畫面左下角加入 Language 切換按鈕與滑出式選單，支援「中文/English」即時切換與保存。
   - 解決了英文排版換行與按鈕高度自適應問題（關卡選擇按鈕動態高度計算）。
@@ -24,10 +29,9 @@ Hello 接下來接手的 AI：
 
 ### 1. 最優先：AdMob 正式發布準備與 Android APK 最終測試
 - [x] **關閉測試廣告**：將 `ad_manager.gd` 的 `USE_TEST_ADS` 改為 `false`。
-- [x] **替換正式廣告 ID**：已設定並啟用正式的 Interstitial Ad Unit ID：`ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX`。
-- [ ] **Android 匯出路徑與建置**：
-  - 開發目錄為 `C:\FriendAndMe\friendAndme\`。
-  - 由於已統一將包含 `&` 的專案資料夾名稱修改為 `friendAndme`（已無特殊符號），現在可以直接在該目錄下進行 Android APK 匯出，或依然使用一鍵同步腳本 `C:\FriendAndMe\sync_to_build.bat` 同步至 `C:\FriendAndMe_Build` 再行匯出。
+- [x] **替換正式廣告 ID**：已設定並啟用正式 the Interstitial Ad Unit ID。
+- [x] **Android 匯出路徑與建置**：
+  - 已經使用同步腳本將所有最新修正同步至 `C:\FriendAndMe_Build`，現在可以直接開啟 Godot 並從 `C:\FriendAndMe_Build` 執行「匯出 Android」導出最新 APK。
 
 ### 2. 次優先：音效缺漏補充 (已完成 ✅)
 - [x] **音效缺漏補充**：無須引入新音效，直接套用現有 `sfx_btn_cancel` 並於 `audio_manager.gd` 降低音調。

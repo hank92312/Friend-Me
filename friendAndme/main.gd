@@ -1247,40 +1247,20 @@ func _on_answer_text_changed(new_text: String) -> void:
 func _on_answer_focus_entered() -> void:
 	if OS.has_feature("mobile") or OS.has_feature("web"):
 		var q_card = $Phases/Phase2_Answering/VBox/QuestionCard
-		var q_label = $Phases/Phase2_Answering/VBox/QuestionCard/Label
 		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
-		
-		# 縮小題目卡以釋放空間，但保留文字可供閱讀思考
 		if q_card:
-			q_card.size_flags_stretch_ratio = 0.6
-		if q_label:
-			q_label.add_theme_font_size_override("font_size", 34)
-		
-		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			q_card.visible = false
 		if btn_no_ans:
-			tw.tween_property(btn_no_ans, "modulate:a", 0.0, 0.15)
-		tw.chain().tween_callback(func():
-			if btn_no_ans: btn_no_ans.visible = false
-		)
+			btn_no_ans.visible = false
 
 func _on_answer_focus_exited() -> void:
 	if OS.has_feature("mobile") or OS.has_feature("web"):
 		var q_card = $Phases/Phase2_Answering/VBox/QuestionCard
-		var q_label = $Phases/Phase2_Answering/VBox/QuestionCard/Label
 		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
-		
-		# 恢復原本的大尺寸與字體
 		if q_card:
-			q_card.size_flags_stretch_ratio = 2.0
-		if q_label:
-			q_label.remove_theme_font_size_override("font_size")
-		
+			q_card.visible = true
 		if btn_no_ans:
 			btn_no_ans.visible = true
-			
-		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-		if btn_no_ans:
-			tw.tween_property(btn_no_ans, "modulate:a", 1.0, 0.15)
 
 func _set_btn_color(btn: Button, color: Color) -> void:
 	var sb := StyleBoxFlat.new()
@@ -2162,13 +2142,30 @@ func _sync_locale_to_web() -> void:
 			print("[Main] Synced locale to Web: ", TranslationServer.get_locale())
 
 func _input(event: InputEvent) -> void:
+	var is_click_or_touch = false
+	var global_pos = Vector2()
 	if event is InputEventMouseButton and event.pressed:
+		is_click_or_touch = true
+		global_pos = event.global_position
+	elif event is InputEventScreenTouch and event.pressed:
+		is_click_or_touch = true
+		global_pos = event.position
+
+	if is_click_or_touch:
 		var panel : PanelContainer = $Phases/Phase0_Lobby/LanguagePanel as PanelContainer
 		if panel.visible:
 			var rect : Rect2 = panel.get_global_rect()
 			var btn_rect : Rect2 = ($Phases/Phase0_Lobby/BtnLanguage as Button).get_global_rect()
-			if not rect.has_point(event.global_position) and not btn_rect.has_point(event.global_position):
+			if not rect.has_point(global_pos) and not btn_rect.has_point(global_pos):
 				_hide_language_panel()
+		
+		# 點擊輸入框外部時釋放回答輸入框的焦點，以便手機端收起鍵盤與回復題目顯示
+		if current_phase == GamePhase.ANSWERING:
+			var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit
+			if line_edit and line_edit.has_focus():
+				var le_rect := line_edit.get_global_rect()
+				if not le_rect.has_point(global_pos):
+					line_edit.release_focus()
 
 func _update_random_name_prefix(locale_str: String) -> void:
 	if mock_self_name.begins_with("玩家_") or mock_self_name.begins_with("Player_"):

@@ -111,7 +111,7 @@ cd backend
 | 平台 | 廣告方案 | 狀態 |
 |------|---------|------|
 | **Android (Google Play)** | Google AdMob SDK — 插頁廣告 (Interstitial) / 獎勵影片 (Rewarded Video) | ✅ 已完成 (AdManager 單例整合) |
-| **Web (HTML5)** | Google AdSense for Games / H5 遊戲廣告聯播網 (CrazyGames, Poki 等)，透過 `JavaScriptBridge` 與 Godot 互動 | 🔲 待實作 |
+| **Web (HTML5)** | Google AdSense for Games / H5 遊戲廣告聯播網 (CrazyGames, Poki 等)，透過 `JavaScriptBridge` 與 Godot 互動 | ✅ 已完成 (透過 build_and_patch.py 注入 MOCK/CRAZYGAMES/GOOGLE_H5 控制器) |
 | **iOS (Apple App Store)** | 暫緩 — 目前尚無 Apple 開發者帳號，待未來取得後再規劃 | ⏸️ 暫緩 |
 
 ### 廣告觸發時機設計
@@ -231,5 +231,13 @@ Main (Control)
 
 ### 10. Web 瀏覽器強快取與 Wasm / PCK Cache-Busting 機制實作
 - 實作了 Web 端專用的 API 與資源請求攔截機制：在 `build_web/index.html` 頂部注入 `window.fetch` 攔截器，對於任何 Godot 核心資源（如 `.wasm` 與 `.pck` 檔案）自動在 URL 後綴補上 `?v=timestamp`，強制瀏覽器跳過本地快取下載最新編譯代碼。
-- 修改 `index.js` 的載入方式，將 HTML 的靜態 `<script>` 引用改為 `document.write` 動態注入時間戳記載入 `index.js?v=timestamp`。
+- 修改 `index.js` 的載入方式，將 HTML 的靜態 `<script>` 引用改為 `document.write` 動態注入時間戳記載入 `index.js?v=timestamp`
 - 建立 `build_and_patch.py` 自動化建置與補丁 Python 腳本。該腳本可一鍵呼叫 Godot Web 釋出匯出，並在匯出完成後自動將 Cache-Busting 與攔截邏輯寫入 `index.html`，解決了因瀏覽器強快取舊版 37MB `index.wasm` 導致更新後的 Theme 與 `NotoSansTC-Bold.otf` 粗體字型未生效的問題。
+
+### 11. 手機端輸入焦點遮擋與釋放焦點機制優化及結果揭曉亂碼修正 (2026-05-23)
+- **輸入焦點機制優化**：
+  - 在 `main.gd` 的 `_on_answer_focus_entered()` 中，當 `LineEdit` 獲得焦點時，直接將 `QuestionCard` 與 `BtnNoAnswer` 隱藏 (`visible = false`)，釋放大量螢幕空間，避免被任何型號的虛擬鍵盤擋住。
+  - 監聽 `_input(event)` 中的觸控與點擊事件，當點擊落在輸入框之外時自動呼叫 `release_focus()`，使虛擬鍵盤順利收起。
+  - 當失去焦點時，在 `_on_answer_focus_exited()` 中將題目卡與按鈕重新顯示，讓玩家能隨時收起鍵盤查看題目。
+- **結果揭曉亂碼修正**：
+  - 將 Phase 4 結果揭曉清單前面的 `✓` 與 `✗` 替換為 `O` 與 `X` 字符。此修復徹底解決了因為主字型 NotoSansTC 缺少此類 unicode 符號而在 Android 與網頁端產生豆腐塊亂碼的問題。
