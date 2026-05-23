@@ -1247,32 +1247,38 @@ func _on_answer_text_changed(new_text: String) -> void:
 func _on_answer_focus_entered() -> void:
 	if OS.has_feature("mobile") or OS.has_feature("web"):
 		var q_card = $Phases/Phase2_Answering/VBox/QuestionCard
+		var q_label = $Phases/Phase2_Answering/VBox/QuestionCard/Label
 		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
 		
-		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		# 縮小題目卡以釋放空間，但保留文字可供閱讀思考
 		if q_card:
-			tw.tween_property(q_card, "modulate:a", 0.0, 0.15)
+			q_card.size_flags_stretch_ratio = 0.6
+		if q_label:
+			q_label.add_theme_font_size_override("font_size", 34)
+		
+		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		if btn_no_ans:
 			tw.tween_property(btn_no_ans, "modulate:a", 0.0, 0.15)
-		
 		tw.chain().tween_callback(func():
-			if q_card: q_card.visible = false
 			if btn_no_ans: btn_no_ans.visible = false
 		)
 
 func _on_answer_focus_exited() -> void:
 	if OS.has_feature("mobile") or OS.has_feature("web"):
 		var q_card = $Phases/Phase2_Answering/VBox/QuestionCard
+		var q_label = $Phases/Phase2_Answering/VBox/QuestionCard/Label
 		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
 		
+		# 恢復原本的大尺寸與字體
 		if q_card:
-			q_card.visible = true
+			q_card.size_flags_stretch_ratio = 2.0
+		if q_label:
+			q_label.remove_theme_font_size_override("font_size")
+		
 		if btn_no_ans:
 			btn_no_ans.visible = true
 			
 		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-		if q_card:
-			tw.tween_property(q_card, "modulate:a", 1.0, 0.15)
 		if btn_no_ans:
 			tw.tween_property(btn_no_ans, "modulate:a", 1.0, 0.15)
 
@@ -1873,15 +1879,15 @@ func _create_result_row(ans_text: String, correct_player: String, guessed_player
 	var result_label := Label.new()
 	if is_correct:
 		if TranslationServer.get_locale().begins_with("en"):
-			result_label.text = "✓ Correct! It's " + correct_player + "'s answer"
+			result_label.text = "O Correct! It's " + correct_player + "'s answer"
 		else:
-			result_label.text = "✓ 正確！是 " + correct_player + " 的答案"
+			result_label.text = "O 正確！是 " + correct_player + " 的答案"
 		result_label.add_theme_color_override("font_color", COLOR_CORRECT)
 	else:
 		if TranslationServer.get_locale().begins_with("en"):
-			result_label.text = "✗ You guessed " + guessed_player + ", correct answer is " + correct_player
+			result_label.text = "X You guessed " + guessed_player + ", correct answer is " + correct_player
 		else:
-			result_label.text = "✗ 你猜 " + guessed_player + "，正確答案是 " + correct_player
+			result_label.text = "X 你猜 " + guessed_player + "，正確答案是 " + correct_player
 		result_label.add_theme_color_override("font_color", COLOR_WRONG)
 	result_label.add_theme_font_size_override("font_size", font_res)
 	result_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
