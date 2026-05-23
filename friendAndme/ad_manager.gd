@@ -29,6 +29,7 @@ var _is_showing_ad := false
 var _current_showing_ad = null               # 正在播放的廣告物件
 var _current_full_screen_callback = null      # 正在使用的回呼物件
 var _safety_timer: Timer = null               # 安全計時器（防止永遠卡住）
+var _web_ad_callback = null                  # Web 平台 JavaScript 回呼物件
 
 func _ready() -> void:
 	# 建立安全計時器（30 秒後如果廣告還沒回應，強制放行）
@@ -38,11 +39,12 @@ func _ready() -> void:
 	_safety_timer.timeout.connect(_on_safety_timeout)
 	add_child(_safety_timer)
 	
-	# 僅在 Android 平台初始化 AdMob
 	if OS.get_name() == "Android":
 		_initialize_admob()
+	elif OS.has_feature("web"):
+		_initialize_web_ads()
 	else:
-		print("[AdManager] Non-Android platform — AdMob disabled.")
+		print("[AdManager] Non-Android/Web platform — AdMob/Web Ads disabled.")
 
 # ── 初始化 AdMob SDK ─────────────────────────────────────────────────────────
 func _initialize_admob() -> void:
@@ -54,6 +56,20 @@ func _initialize_admob() -> void:
 		_load_interstitial()
 	MobileAds.initialize(listener)
 	print("[AdManager] Initializing AdMob SDK...")
+
+# ── 初始化 Web 廣告 ──────────────────────────────────────────────────────────
+func _initialize_web_ads() -> void:
+	print("[AdManager] Initializing Web Ad callbacks...")
+	_web_ad_callback = JavaScriptBridge.create_callback(_on_web_ad_finished)
+	var window = JavaScriptBridge.get_interface("window")
+	if window:
+		window.godot_on_web_ad_finished = _web_ad_callback
+		_is_initialized = true
+		print("[AdManager] Web Ad callbacks registered successfully on window.")
+
+func _on_web_ad_finished(_args) -> void:
+	print("[AdManager] Web ad finished callback received from JS.")
+	_finish_ad()
 
 # ── 預載入 Interstitial 廣告 ─────────────────────────────────────────────────
 func _load_interstitial() -> void:
@@ -81,9 +97,22 @@ func _load_interstitial() -> void:
 # ── 顯示廣告 ─────────────────────────────────────────────────────────────────
 # 呼叫後等待 `ad_finished` 信號即可繼續遊戲流程
 func show_interstitial() -> void:
+	# Web 平台 → 呼叫 JavaScript 播放廣告
+	if OS.has_feature("web"):
+		_is_showing_ad = true
+		_safety_timer.start()
+		var window = JavaScriptBridge.get_interface("window")
+		if window and window.showWebAd != null:
+			print("[AdManager] Requesting Web Ad via JS...")
+			window.showWebAd()
+		else:
+			print("[AdManager] showWebAd JS function not found or is null! Skipping ad.")
+			_finish_ad()
+		return
+
 	# 非 Android 平台 → 直接跳過
 	if OS.get_name() != "Android":
-		print("[AdManager] Skipping ad (non-Android).")
+		print("[AdManager] Skipping ad (non-Android/Web).")
 		ad_finished.emit.call_deferred()
 		return
 

@@ -32,9 +32,13 @@ Hello 接下來接手的 AI：
 ### 2. 次優先：音效缺漏補充 (已完成 ✅)
 - [x] **音效缺漏補充**：無須引入新音效，直接套用現有 `sfx_btn_cancel` 並於 `audio_manager.gd` 降低音調。
 
-### 3. 低優先：Web 端廣告整合 (Phase D)
-- [ ] **Web 廣告整合**：在 HTML5 匯出的外層網頁引入 H5 廣告 SDK (如 Google AdSense for Games / CrazyGames 等)，透過 `JavaScriptBridge` 讓 Godot 與外層 JS 互動。
-- [ ] **AdBlock 偵測**：實作友善提示或直接放行機制。
+### 3. Web 端廣告整合 (Phase D - 已完成 ✅)
+- [x] **Web 廣告整合**：已在 `build_and_patch.py` 中實作多功能 JS 廣告控制器，並注入 `index.html`，完美支援：
+  - `MOCK`：自製精美磨砂玻璃倒數廣告。
+  - `CRAZYGAMES`：CrazyGames SDK 廣告 API。
+  - `GOOGLE_H5`：Google AdSense H5 遊戲廣告 API（含測試廣告引導）。
+  - 可以透過 `index.html` 中的 `AD_PLATFORM` 變數一鍵切換。
+- [ ] **AdBlock 偵測**：未來可選實作。
 
 ---
 

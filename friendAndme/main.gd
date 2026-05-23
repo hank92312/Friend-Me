@@ -2049,6 +2049,7 @@ func _setup_translations() -> void:
 		else:
 			TranslationServer.set_locale("zh_TW")
 			print("DEBUG: [Locale] Defaulting to zh_TW locale")
+	_sync_locale_to_web()
 
 func _save_saved_locale(locale_str: String) -> void:
 	var config := ConfigFile.new()
@@ -2099,7 +2100,15 @@ func _change_language_impl(locale_str: String) -> void:
 	AudioManager.play_tap()
 	TranslationServer.set_locale(locale_str)
 	_save_saved_locale(locale_str)
+	_sync_locale_to_web()
 	_hide_language_panel()
+
+func _sync_locale_to_web() -> void:
+	if OS.has_feature("web"):
+		var window = JavaScriptBridge.get_interface("window")
+		if window:
+			window.godot_current_locale = TranslationServer.get_locale()
+			print("[Main] Synced locale to Web: ", TranslationServer.get_locale())
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
