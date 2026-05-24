@@ -105,7 +105,7 @@ func play_level_select(level: int) -> void:
 	var echo_delay := 0.0
 
 	match level:
-		1:  # 日話家常 — 輕快、明亮、乾淨
+		1:  # 閒話家常 — 輕快、明亮、乾淨
 			pitch = 1.25
 		2:  # 下午茶閒聊 — 稍高、舒適
 			pitch = 1.12

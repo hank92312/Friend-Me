@@ -98,7 +98,7 @@ const EN_MAP = {
 	"連線失敗": "Connection Failed",
 	"提交配對": "Submit Matches",
 	
-	"LV 1: 日話家常": "LV 1: Daily Chit-Chat",
+	"LV 1: 閒話家常": "LV 1: Daily Chit-Chat",
 	"(觀察得到的表層習慣，如：食衣住行)": "(Observable daily habits: food, clothing, housing, transport)",
 	"LV 2: 下午茶閒聊": "LV 2: Afternoon Chat",
 	"(輕鬆、適合公開討論的話題，帶有一點個人色彩)": "(Casual topics suitable for open discussion with some personal touch)",

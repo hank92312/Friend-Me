@@ -437,7 +437,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 48
-text = "LV 1: 日話家常"
+text = "LV 1: 閒話家常"
 horizontal_alignment = 1
 
 [node name="SubTitle" type="Label" parent="Phases/Phase1_Selection/VBoxContainer/BtnLevel1/VBox"]

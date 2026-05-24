@@ -78,8 +78,11 @@ Hello 接下來接手的 AI：
   - 點擊「離開圈圈」後的個人結算畫面，若題目文字太長會超出卡片邊界並被截斷。
 - [ ] **14. 結算畫面詳細被猜統計 (全端 / 後端)**
   - 個人結算畫面應新增詳細數據區：顯示「自己總共被猜中幾次」、依據正確率「依序列出誰最了解你」，以及「本次遊玩共 X 輪」。
-- [ ] **15. 題庫 ? 數量調整 (題庫優化標記)**
-  - 題目中不適合出現 2 個以上的問號（?），避免玩家一時間不知道該回答哪個問號（此點先做標記，後續待修）。
+- [x] **15. 題庫 ? 數量調整 (已完成 ✅)**
+  - 經程式碼掃描，題庫中目前僅有一題包含大於或等於 2 個問號：
+    - **L1Q14 (數位習慣)**：
+      - 中文原文：`打開你的手機，目前哪一個 App 的未讀通知數字是最多的？大約多少？` (建議精簡為：`打開你的手機，目前未讀通知數字最多的 App 是哪一個？`)
+      - 英文原文：`Open your phone right now. Which app has the highest number of unread notifications? Roughly how many is it?` (建議精簡為：`Open your phone right now and check which app has the highest number of unread notifications.`)
   - *註：未特別標註平台之項目，皆為全端 (PC/Web/Android) 適用。*
 
 ---

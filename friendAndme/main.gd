@@ -542,9 +542,9 @@ func _on_btn_instructions_pressed() -> void:
 		var content := Label.new()
 		content.name = "ContentLabel"
 		content.text = tutorial_slides[0]
-		content.add_theme_font_size_override("font_size", 36)
-		content.autowrap_mode = TextServer.AUTOWRAP_WORD
-		content.custom_minimum_size = Vector2(400, 360)
+		content.add_theme_font_size_override("font_size", 30)
+		content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		content.custom_minimum_size = Vector2(760, 480)
 		vbox.add_child(content)
 		
 		var hbox := HBoxContainer.new()
@@ -1430,14 +1430,14 @@ func _generate_phase3_ui() -> void:
 
 	# ── 自適應調整：根據人數調整按鈕大小與字體 ──
 	var player_count := all_participants.size()
-	var pill_font_size := 34
-	var pill_min_height := 80
+	var pill_font_size := 38
+	var pill_min_height := 90
 	if player_count <= 3:
-		pill_font_size = 46
-		pill_min_height = 120
+		pill_font_size = 50
+		pill_min_height = 130
 	elif player_count <= 5:
-		pill_font_size = 38
-		pill_min_height = 90
+		pill_font_size = 42
+		pill_min_height = 100
 
 	var self_paired := false
 	# 生成答案 pill
@@ -1447,6 +1447,7 @@ func _generate_phase3_ui() -> void:
 		btn.custom_minimum_size = Vector2(0, pill_min_height)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL # 讓它佔滿寬度
 		btn.add_theme_font_size_override("font_size", pill_font_size)
+		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 		if ans_text == self_ans and not self_paired:
 			_set_pill_style(btn, COLOR_AUTO_PAIRED)
@@ -1467,6 +1468,7 @@ func _generate_phase3_ui() -> void:
 		btn.custom_minimum_size = Vector2(0, pill_min_height)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL # 讓它佔滿寬度
 		btn.add_theme_font_size_override("font_size", pill_font_size)
+		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 		if p_name == mock_self_name:
 			_set_pill_style(btn, COLOR_AUTO_PAIRED)
@@ -1734,14 +1736,14 @@ func _render_phase4_ui(play_animations: bool) -> void:
 
 	# ── 自適應調整：根據結果數量調整字體 ──
 	var result_count := last_round_results_data.size()
-	var font_size_ans := 34 # 加大 2 單位 (原本 32)
-	var font_size_res := 30 # 加大 2 單位 (原本 28)
+	var font_size_ans := 38
+	var font_size_res := 34
 	if result_count <= 3:
-		font_size_ans = 46 # 加大 2 單位 (原本 44)
-		font_size_res = 38 # 加大 2 單位 (原本 36)
+		font_size_ans = 50
+		font_size_res = 42
 	elif result_count <= 5:
-		font_size_ans = 38 # 加大 2 單位 (原本 36)
-		font_size_res = 32 # 加大 2 單位 (原本 30)
+		font_size_ans = 42
+		font_size_res = 36
 
 	var stagger_delay := 0.0
 	
@@ -1852,7 +1854,9 @@ func _create_result_row(ans_text: String, correct_player: String, guessed_player
 	ans_label.text = _quote(tr(ans_text))
 	ans_label.add_theme_font_size_override("font_size", font_ans)
 	ans_label.add_theme_color_override("font_color", Color(1, 0.95, 0.8, 1))
-	ans_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	ans_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ans_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ans_label.custom_minimum_size.x = 760
 	vbox.add_child(ans_label)
 
 	# 配對結果
@@ -1872,6 +1876,7 @@ func _create_result_row(ans_text: String, correct_player: String, guessed_player
 	result_label.add_theme_font_size_override("font_size", font_res)
 	result_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	result_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	result_label.custom_minimum_size.x = 760
 	vbox.add_child(result_label)
 
 	return panel
@@ -1912,14 +1917,18 @@ func _generate_phase5_ui() -> void:
 		q_label.text = tr("問：") + _get_localized_question(record["question"])
 		q_label.add_theme_font_size_override("font_size", 32)
 		q_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1))
-		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		q_label.custom_minimum_size.x = 760
 		history_vbox.add_child(q_label)
 		
 		var a_label := Label.new()
 		a_label.text = tr("答：") + tr(record["answer"])
 		a_label.add_theme_font_size_override("font_size", 36)
 		a_label.add_theme_color_override("font_color", Color(0.98, 0.82, 0.2, 1))
-		a_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		a_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		a_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		a_label.custom_minimum_size.x = 760
 		history_vbox.add_child(a_label)
 		
 		# 加入分隔線或間距
@@ -2240,7 +2249,7 @@ func _update_localized_ui() -> void:
 
 	# Phase 1 Selection
 	var p1 := $Phases/Phase1_Selection/VBoxContainer
-	p1.get_node("BtnLevel1/VBox/Title").text = tr("LV 1: 日話家常")
+	p1.get_node("BtnLevel1/VBox/Title").text = tr("LV 1: 閒話家常")
 	p1.get_node("BtnLevel1/VBox/SubTitle").text = tr("(觀察得到的表層習慣，如：食衣住行)")
 	p1.get_node("BtnLevel2/VBox/Title").text = tr("LV 2: 下午茶閒聊")
 	p1.get_node("BtnLevel2/VBox/SubTitle").text = tr("(輕鬆、適合公開討論的話題，帶有一點個人色彩)")
