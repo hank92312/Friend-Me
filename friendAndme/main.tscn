@@ -263,13 +263,29 @@ theme_override_font_sizes/font_size = 42
 text = "輸入房間代碼"
 horizontal_alignment = 1
 
-[node name="RoomIDInput" type="LineEdit" parent="Phases/Phase0_Lobby/JoinPanel/VBox"]
+[node name="JoinInputHBox" type="HBoxContainer" parent="Phases/Phase0_Lobby/JoinPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="RoomIDInput" type="LineEdit" parent="Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox"]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 48
 placeholder_text = "例如: 0B3152"
 alignment = 1
 max_length = 6
+
+[node name="BtnPasteRoomID" type="Button" parent="Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox"]
+custom_minimum_size = Vector2(160, 100)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_outline")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_outline")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_outline")
+text = "貼上"
+
 
 [node name="HBox" type="HBoxContainer" parent="Phases/Phase0_Lobby/JoinPanel/VBox"]
 layout_mode = 2
@@ -317,13 +333,29 @@ text = "打上圈圈裡你朋友會認得你的名字"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="PlayerNameInput" type="LineEdit" parent="Phases/Phase0_Lobby/NamePanel/VBox"]
+[node name="NameInputHBox" type="HBoxContainer" parent="Phases/Phase0_Lobby/NamePanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="PlayerNameInput" type="LineEdit" parent="Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox"]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 48
 placeholder_text = "你的暱稱"
 alignment = 1
 max_length = 12
+
+[node name="BtnPasteName" type="Button" parent="Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox"]
+custom_minimum_size = Vector2(160, 100)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_outline")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_outline")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_outline")
+text = "貼上"
+
 
 [node name="HBox" type="HBoxContainer" parent="Phases/Phase0_Lobby/NamePanel/VBox"]
 layout_mode = 2
@@ -713,12 +745,27 @@ size_flags_stretch_ratio = 1.0
 theme_override_constants/separation = 30
 alignment = 1
 
-[node name="LineEdit" type="LineEdit" parent="Phases/Phase2_Answering/VBox/AnswerArea"]
+[node name="InputHBox" type="HBoxContainer" parent="Phases/Phase2_Answering/VBox/AnswerArea"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="LineEdit" type="LineEdit" parent="Phases/Phase2_Answering/VBox/AnswerArea/InputHBox"]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 40
 placeholder_text = "輸入你的答案 (10~15字)..."
 alignment = 1
+
+[node name="BtnPaste" type="Button" parent="Phases/Phase2_Answering/VBox/AnswerArea/InputHBox"]
+custom_minimum_size = Vector2(160, 100)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_outline")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_outline")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_outline")
+text = "貼上"
 
 [node name="BtnSubmit" type="Button" parent="Phases/Phase2_Answering/VBox/AnswerArea"]
 layout_mode = 2
@@ -816,20 +863,10 @@ theme_override_constants/h_separation = 20
 theme_override_constants/v_separation = 20
 
 
-[node name="BtnSubmitMatch" type="Button" parent="Phases/Phase3_Guessing"]
+[node name="BtnSubmitMatch" type="Button" parent="Phases/Phase3_Guessing/OuterVBox"]
 visible = false
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -380.0
-offset_top = -130.0
-offset_right = -40.0
-offset_bottom = -40.0
-grow_horizontal = 0
-grow_vertical = 0
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")

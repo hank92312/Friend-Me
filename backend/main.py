@@ -1,10 +1,14 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from room_manager import manager
 import uuid
+import asyncio
+import time
 from database import AsyncSessionLocal, init_db
 from sqlalchemy import select
 import models
 from contextlib import asynccontextmanager
+
+countdown_tasks: dict[str, asyncio.Task] = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -100,10 +104,18 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
         # 告知重連玩家目前的房間狀態
         current_phase = manager.room_states.get(room_id, {}).get("phase", "WAITING")
         captain = manager.room_captains.get(room_id, "")
+        
+        # 計算剩餘時間
+        remaining = 60
+        if current_phase == "ANSWERING":
+            started_at = manager.room_states.get(room_id, {}).get("started_at", time.time())
+            remaining = max(0, 60 - int(time.time() - started_at))
+            
         await manager.send_to_player(room_id, player_name, {
             "event": "reconnect_status",
             "current_phase": current_phase,
             "captain": captain,
+            "remaining_seconds": remaining,
             "message": "重連成功！等待本輪結束後一起加入下一輪。"
         })
 
@@ -135,11 +147,14 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                 await manager.create_round(room_id, question, level, captain)
 
                 manager.room_states[room_id]["phase"] = "ANSWERING"
+                manager.room_states[room_id]["started_at"] = time.time()
+                
                 await manager.broadcast_to_room(room_id, {
                     "event": "phase_changed",
                     "new_phase": "ANSWERING",
                     "level": level,
-                    "question": question
+                    "question": question,
+                    "remaining_seconds": 60
                 })
 
             # 提交答案
@@ -197,6 +212,32 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                         "player_stats": all_stats
                     })
 
+async def start_next_round_countdown(room_id: str):
+    try:
+        # 倒數 10 秒
+        for seconds_left in range(10, 0, -1):
+            await manager.broadcast_to_room(room_id, {
+                "event": "next_round_countdown",
+                "seconds": seconds_left
+            })
+            await asyncio.sleep(1)
+        
+        # 倒數結束，強制進入下一輪
+        print(f"[Countdown Force] Room {room_id} next round countdown finished. Forcing next round.")
+        new_captain = manager.rotate_captain(room_id)
+        manager.room_states[room_id]["phase"] = "SELECTION"
+        active_names = manager.get_active_player_names(room_id)
+        await manager.broadcast_to_room(room_id, {
+            "event": "phase_changed",
+            "new_phase": "SELECTION",
+            "captain": new_captain,
+            "players": active_names
+        })
+        countdown_tasks.pop(room_id, None)
+    except asyncio.CancelledError:
+        print(f"[Countdown Cancelled] Room {room_id} next round countdown cancelled.")
+        pass
+
             # 準備接續下一輪
             elif data.get("event") == "ready_for_next_round":
                 if room_id not in manager.room_ready_players:
@@ -204,8 +245,16 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                 manager.room_ready_players[room_id].add(player_name)
                 
                 active_names = manager.get_active_player_names(room_id)
-                ready_count = len(manager.room_ready_players[room_id])
-                total_count = len(active_names)
+                waiting = manager.waiting_for_next_round.get(room_id, [])
+                eligible = [n for n in active_names if n not in waiting]
+                
+                # 確保 ready_players 中只有 eligible 玩家
+                ready_players = manager.room_ready_players.get(room_id, set())
+                ready_players = {p for p in ready_players if p in eligible}
+                manager.room_ready_players[room_id] = ready_players
+                
+                ready_count = len(ready_players)
+                total_count = len(eligible)
                 
                 await manager.broadcast_to_room(room_id, {
                     "event": "next_round_status",
@@ -214,7 +263,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                 })
                 
                 if ready_count >= total_count and total_count > 0:
-                    # 所有人準備完畢，進入下一輪
+                    # 所有人準備完畢，立即進入下一輪
+                    # 1. 取消可能存在的倒數計時
+                    if room_id in countdown_tasks:
+                        countdown_tasks[room_id].cancel()
+                        countdown_tasks.pop(room_id, None)
+                    
                     new_captain = manager.rotate_captain(room_id)
                     manager.room_states[room_id]["phase"] = "SELECTION"
                     active_names = manager.get_active_player_names(room_id)
@@ -224,6 +278,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                         "captain": new_captain,
                         "players": active_names
                     })
+                elif ready_count >= total_count - 1 and total_count > 1:
+                    # 剩下最後一個玩家未點擊，啟動 10 秒倒數計時
+                    if room_id not in countdown_tasks:
+                        print(f"[Countdown Start] Room {room_id} start next round countdown.")
+                        task = asyncio.create_task(start_next_round_countdown(room_id))
+                        countdown_tasks[room_id] = task
 
             # 再玩一輪（換隊長，舊版保留相容性或可移除，但為了安全先保留）
             elif data.get("event") == "next_round":
@@ -307,13 +367,16 @@ async def _check_phase_progress_after_disconnect(room_id: str):
     elif current_phase == "REVELATION":
         # 檢查是否剩下的人都已經 ready
         active_names = manager.get_active_player_names(room_id)
+        waiting = manager.waiting_for_next_round.get(room_id, [])
+        eligible = [n for n in active_names if n not in waiting]
+        
         # 移除斷線玩家的 ready 狀態
         ready_players = manager.room_ready_players.get(room_id, set())
-        ready_players = {p for p in ready_players if p in active_names}
+        ready_players = {p for p in ready_players if p in eligible}
         manager.room_ready_players[room_id] = ready_players
         
         ready_count = len(ready_players)
-        total_count = len(active_names)
+        total_count = len(eligible)
         
         if total_count > 0:
             await manager.broadcast_to_room(room_id, {
@@ -323,6 +386,11 @@ async def _check_phase_progress_after_disconnect(room_id: str):
             })
             
             if ready_count >= total_count:
+                # 所有人準備完畢，立即進入下一輪
+                if room_id in countdown_tasks:
+                    countdown_tasks[room_id].cancel()
+                    countdown_tasks.pop(room_id, None)
+                    
                 new_captain = manager.rotate_captain(room_id)
                 manager.room_states[room_id]["phase"] = "SELECTION"
                 active_names = manager.get_active_player_names(room_id)
@@ -332,3 +400,9 @@ async def _check_phase_progress_after_disconnect(room_id: str):
                     "captain": new_captain,
                     "players": active_names
                 })
+            elif ready_count >= total_count - 1 and total_count > 1:
+                # 剩最後一個人，啟動倒數計時
+                if room_id not in countdown_tasks:
+                    print(f"[Countdown Start - Disconnect] Room {room_id} start next round countdown.")
+                    task = asyncio.create_task(start_next_round_countdown(room_id))
+                    countdown_tasks[room_id] = task

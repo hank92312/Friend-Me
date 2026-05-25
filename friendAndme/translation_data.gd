@@ -115,5 +115,15 @@ const EN_MAP = {
 	
 	"【如何加入房間】\n\n1. 點擊「加入圈圈」按鈕。\n2. 輸入朋友給你的「6 位數房間碼」。\n3. 輸入你的專屬暱稱即可進入大廳，等待房主開始遊戲。": "【How to Join a Room】\n\n1. Tap 'Join Circle'.\n2. Enter the 6-digit code shared by your friends.\n3. Enter your nickname to enter the lobby and wait for the host.",
 	
-	"【遊戲流程說明】\n\n- Step 1：房主選擇本次「話題深度」 (LV1~LV5)。\n- Step 2：每人根據題目輸入答案，或選擇「不回答」。\n- Step 3：配對階段！點擊上方答案，再點擊下方朋友名字，猜出誰寫了什麼。\n- Step 4：結果揭曉，看看誰才是最懂你的人！": "【Game Flow】\n\n- Step 1: The host selects 'Topic Depth' (LV1~LV5).\n- Step 2: Everyone writes their answer or chooses 'Pass'.\n- Step 3: Matchmaking! Tap an answer, then tap the friend who wrote it.\n- Step 4: Results revealed! See who knows you best."
+	"【遊戲流程說明】\n\n- Step 1：房主選擇本次「話題深度」 (LV1~LV5)。\n- Step 2：每人根據題目輸入答案，或選擇「不回答」。\n- Step 3：配對階段！點擊上方答案，再點擊下方朋友名字，猜出誰寫了什麼。\n- Step 4：結果揭曉，看看誰才是最懂你的人！": "【Game Flow】\n\n- Step 1: The host selects 'Topic Depth' (LV1~LV5).\n- Step 2: Everyone writes their answer or chooses 'Pass'.\n- Step 3: Matchmaking! Tap an answer, then tap the friend who wrote it.\n- Step 4: Results revealed! See who knows you best.",
+	
+	"貼上": "Paste",
+	"結果揭曉 (第 %d 輪)": "Results Revealed (Round %d)",
+	"本輪結果：猜中 ": "This Round: Guessed ",
+	"，被猜中 ": ", Guessed by others ",
+	" 次": " times",
+	"累計被猜中：": "Total Guessed by Others: ",
+	"遊戲總輪數：": "Total Rounds: ",
+	"🌟 默契排行榜 (最了解你的人)：": "🌟 Compatibility Ranking (Who knows you best):",
+	"猜中你 ": "Guessed you "
 }

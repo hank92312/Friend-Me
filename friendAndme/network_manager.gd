@@ -7,6 +7,7 @@ signal room_created(room_id: String)
 signal player_list_updated(players: Array)
 signal phase_sync_requested(new_phase: String, data: Dictionary)
 signal next_round_status(ready: int, total: int)
+signal next_round_countdown(seconds: int)
 signal connection_established
 signal connection_closed
 signal reconnect_status_received(data: Dictionary)
@@ -185,3 +186,6 @@ func _handle_ws_message(message: Dictionary):
 
 		"next_round_status":
 			next_round_status.emit(message.get("ready", 0), message.get("total", 0))
+
+		"next_round_countdown":
+			next_round_countdown.emit(message.get("seconds", 0))

@@ -30,7 +30,48 @@ def main():
         html = f.read()
         
     # 定義要插入的 fetch 攔截器與 WebGL 2.0 檢測器
-    patch_code = """<script>
+    patch_code = """<style>
+			/* 行動端輸入與長按優化補丁 */
+			input, textarea {
+				-webkit-user-select: text !important;
+				user-select: text !important;
+				touch-action: auto !important;
+				pointer-events: auto !important;
+			}
+		</style>
+		<script>
+			(function() {
+				function patchInputs() {
+					const inputs = document.querySelectorAll('input, textarea');
+					inputs.forEach(input => {
+						if (input.dataset.patched) return;
+						input.dataset.patched = "true";
+						
+						input.style.setProperty('user-select', 'text', 'important');
+						input.style.setProperty('-webkit-user-select', 'text', 'important');
+						input.style.setProperty('pointer-events', 'auto', 'important');
+						
+						input.addEventListener('focus', function() {
+							console.log("[Input Patch] Input focused:", input);
+							input.style.setProperty('opacity', '0.01', 'important');
+							input.style.setProperty('z-index', '99999', 'important');
+							input.style.setProperty('position', 'absolute', 'important');
+							input.style.setProperty('top', '10px', 'important');
+							input.style.setProperty('left', '10px', 'important');
+							input.style.setProperty('width', 'calc(100% - 20px)', 'important');
+							input.style.setProperty('height', '80px', 'important');
+						});
+						
+						input.addEventListener('blur', function() {
+							input.style.setProperty('z-index', '-1', 'important');
+							input.style.setProperty('opacity', '0', 'important');
+						});
+					});
+				}
+				setInterval(patchInputs, 500);
+			})();
+		</script>
+		<script>
 			// 攔截 fetch 以強行對 Godot 的資源請求（如 .wasm 和 .pck 檔案）進行 Cache-Busting
 			(function() {
 				const originalFetch = window.fetch;
@@ -50,6 +91,29 @@ def main():
 					return originalFetch(input, init);
 				};
 			})();
+		</script>
+		<script>
+			// 全局剪貼簿貼上支援（含 Prompt 備用方案）
+			window.requestClipboard = function() {
+				if (navigator.clipboard && navigator.clipboard.readText) {
+					navigator.clipboard.readText().then(function(text) {
+						if (window.godot_on_web_paste_received) {
+							window.godot_on_web_paste_received([text]);
+						}
+					}).catch(function(err) {
+						console.warn("Clipboard API failed, using prompt fallback:", err);
+						var text = prompt("請貼上複製的文字 (Paste text):", "");
+						if (text !== null && window.godot_on_web_paste_received) {
+							window.godot_on_web_paste_received([text]);
+						}
+					});
+				} else {
+					var text = prompt("請貼上複製的文字 (Paste text):", "");
+					if (text !== null && window.godot_on_web_paste_received) {
+						window.godot_on_web_paste_received([text]);
+					}
+				}
+			};
 		</script>
 		<script>
 			// WebGL 2.0 相容性檢測與阻斷
@@ -561,6 +625,31 @@ def main():
             html = html[:start_idx] + ad_overlay_html + "</body>"
             print("Successfully updated injected web advertisement overlay in index.html.")
     
+    og_meta_tags = """
+		<!-- Social Media Preview (Open Graph) -->
+		<meta property="og:title" content="Friends & Me - 異步社交探索桌遊" />
+		<meta property="og:description" content="透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。" />
+		<meta property="og:image" content="https://friendandme.netlify.app/index.icon.png" />
+		<meta property="og:url" content="https://friendandme.netlify.app/" />
+		<meta property="og:type" content="website" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="Friends & Me - 異步社交探索桌遊" />
+		<meta name="twitter:description" content="透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。" />
+		<meta name="twitter:image" content="https://friendandme.netlify.app/index.icon.png" />"""
+    
+    if "<!-- Social Media Preview (Open Graph) -->" in html:
+        start_idx = html.find("<!-- Social Media Preview (Open Graph) -->")
+        end_idx = html.find('<meta name="twitter:image"', start_idx)
+        if end_idx != -1:
+            end_line_idx = html.find(">", end_idx)
+            if end_line_idx != -1:
+                html = html[:start_idx] + og_meta_tags + html[end_line_idx + 1:]
+                print("Successfully updated Open Graph Social Media Preview meta tags.")
+    else:
+        if "<head>" in html:
+            html = html.replace("<head>", "<head>" + og_meta_tags)
+            print("Successfully injected Open Graph Social Media Preview meta tags into <head>.")
+
     with open(export_output, 'w', encoding='utf-8') as f:
         f.write(html)
         

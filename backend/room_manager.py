@@ -163,7 +163,7 @@ class RoomConnectionManager:
 
             # 2. 儲存所有猜測並計算正確率
             for guesser, guess_map in guesses.items():
-                for ans_content, target_name in guess_map.items():
+                for target_name, ans_content in guess_map.items():
                     # 檢查是否猜對
                     actual_owner = next((p for p, a in answers.items() if a == ans_content), None)
                     is_correct = (actual_owner == target_name)
@@ -259,8 +259,51 @@ class RoomConnectionManager:
                 "phase": current_phase
             }
 
+            # 啟動 45 秒斷線判定緩衝任務
+            import asyncio
+            asyncio.create_task(self._wait_and_kick_player(room_id, player_name, 45.0))
+
             # 若房間已無任何連線（含斷線快取均空），才清除房間
             if not self.active_rooms[room_id] and not self.disconnected_players.get(room_id):
+                self._cleanup_room(room_id)
+
+    async def _wait_and_kick_player(self, room_id: str, player_name: str, timeout: float):
+        import asyncio
+        await asyncio.sleep(timeout)
+        # 檢查玩家是否仍在斷線快取中（如果重連成功，會被從 disconnected_players 中刪除）
+        if (
+            room_id in self.disconnected_players and
+            player_name in self.disconnected_players[room_id]
+        ):
+            print(f"[Disconnect Timeout] Player {player_name} in Room {room_id} did not reconnect within {timeout}s. Removing permanently.")
+            # 玩家未重連，執行永久剔除
+            # 1. 自斷線快取移除
+            del self.disconnected_players[room_id][player_name]
+            
+            # 2. 自 room_players 移除
+            if room_id in self.room_players and player_name in self.room_players[room_id]:
+                self.room_players[room_id].remove(player_name)
+            
+            # 3. 如果是隊長，進行隊長輪替
+            if self.room_captains.get(room_id) == player_name:
+                self.rotate_captain(room_id)
+            
+            # 4. 廣播最新玩家清單
+            active_names = self.get_active_player_names(room_id)
+            await self.broadcast_to_room(room_id, {
+                "event": "player_list_updated",
+                "players": active_names
+            })
+            
+            # 5. 檢查各階段是否因人數減少而能繼續推進
+            try:
+                from main import _check_phase_progress_after_disconnect
+                await _check_phase_progress_after_disconnect(room_id)
+            except Exception as e:
+                print(f"[Kick Error] Failed to check phase progress: {e}")
+            
+            # 6. 如果房間空了，進行清理
+            if not self.active_rooms.get(room_id) and not self.disconnected_players.get(room_id):
                 self._cleanup_room(room_id)
 
     def _cleanup_room(self, room_id: str):

@@ -25,7 +25,7 @@
 11. **Coffee Order**: When you go to a coffee shop or cafe, what is your exact, highly specific go-to order?
 12. **Cleaning Habit**: How often do you do a deep, thorough clean of your bedroom or apartment?
 13. **Travel Role**: In a group trip, what specific role do you unconsciously take on (e.g., the human GPS, the foodie, the one who sleeps in)?
-14. **Digital Clutter**: Look at your phone right now. Which app has the highest number of unread notifications, and roughly how many?
+14. **Digital Habits**: How many unread notifications do you currently have on your messaging app?
 15. **Weather Preference**: What specific type of weather or temperature instantly puts you in a good mood?
 16. **Travel Essential**: When traveling far from home, what specific "non-essential, but comforting" item must you pack in your suitcase?
 17. **Signature Dish**: If you had to cook your signature dish to host friends today, what specific meal would you make?

@@ -97,17 +97,29 @@ var current_room_id: String = ""
 # Phase 2 → 3 傳遞
 var self_answer: String = ""
 
+# Phase 2 計時器與貼上按鍵
+var timer_label: Label = null
+var remaining_answering_seconds := 60.0
+var answering_timer_active := false
+var is_answer_submitted := false
+var _web_paste_callback = null
+var _paste_target: String = ""
+
 # Phase 3 狀態
 var selected_answer_btn: Button = null
+var selected_participant_btn: Button = null
 var answer_buttons: Array[Button] = []
 var participant_buttons: Array[Button] = []
 var paired_count := 0
 var total_pairs  := 0
 
 # 配對追蹤
+var round_count := 0
+var last_round_guessed_by := 0
+var guess_correct_from_others: Dictionary = {}  # { player_name: correct_count }
 var round_answers: Dictionary = {}      # { player_name: answer_text }
 var correct_map: Dictionary = {}        # { answer_text: player_name }
-var player_guesses: Dictionary = {}     # { answer_text: player_name }
+var player_guesses: Dictionary = {}     # { player_name: answer_text } (標準化: key為人名，value為答案)
 var answer_btn_map: Dictionary = {}     # { Button: answer_text }
 var participant_btn_map: Dictionary = {} # { Button: player_name }
 var partner_map: Dictionary = {}        # { Button: Button } (配對對象)
@@ -143,10 +155,16 @@ var tutorial_current_slide := 0
 func _ready() -> void:
 	_setup_translations()
 	
+	if OS.has_feature("web"):
+		_web_paste_callback = JavaScriptBridge.create_callback(_on_web_paste_received)
+		var window = JavaScriptBridge.get_interface("window")
+		if window:
+			window.godot_on_web_paste_received = _web_paste_callback
+	
 	# 建立加粗與調整大小的全域 Theme，以解決網頁端字型太細與太小的問題
 	var base_font = load("res://assets/fonts/NotoSansTC-Bold.otf")
 	if base_font:
-		var font_size = 38 if OS.has_feature("web") else 32
+		var font_size = 46 if OS.has_feature("web") else 40
 		var main_theme = Theme.new()
 		main_theme.default_font = base_font
 		main_theme.default_font_size = font_size
@@ -167,6 +185,18 @@ func _ready() -> void:
 	# 初始化 Tutorial Slides（需要在 _ready 中才能呼叫 _emoji()）
 	_update_tutorial_slides()
 	
+	# 建立回答倒數 UI
+	var answering_vbox = $Phases/Phase2_Answering/VBox
+	timer_label = Label.new()
+	timer_label.name = "TimerLabel"
+	timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	timer_label.add_theme_font_size_override("font_size", 36)
+	timer_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.3, 1)) # 紅橘色
+	timer_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	answering_vbox.add_child(timer_label)
+	answering_vbox.move_child(timer_label, 0) # 放到最頂端
+	timer_label.visible = false
+	
 	# 為了解決名字重複問題，隨機產生一個名字 (MVP 測試用)
 	mock_self_name = tr("玩家_") + str(randi() % 1000)
 	_update_random_name_prefix(TranslationServer.get_locale())
@@ -182,8 +212,10 @@ func _ready() -> void:
 	$Phases/Phase0_Lobby/VBoxContainer/BtnOptions.pressed.connect(_on_btn_options_pressed)
 	$Phases/Phase0_Lobby/JoinPanel/VBox/HBox/BtnCancelJoin.pressed.connect(_on_btn_cancel_join_pressed)
 	$Phases/Phase0_Lobby/JoinPanel/VBox/HBox/BtnConfirmJoin.pressed.connect(_on_btn_confirm_join)
+	$Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox/BtnPasteRoomID.pressed.connect(_on_btn_paste_room_id_pressed)
 	$Phases/Phase0_Lobby/NamePanel/VBox/HBox/BtnCancelName.pressed.connect(_on_btn_cancel_name_pressed)
 	$Phases/Phase0_Lobby/NamePanel/VBox/HBox/BtnConfirmName.pressed.connect(_on_btn_confirm_name)
+	$Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/BtnPasteName.pressed.connect(_on_btn_paste_name_pressed)
 	
 	# 語言切換按鈕
 	$Phases/Phase0_Lobby/BtnLanguage.pressed.connect(_toggle_language_panel)
@@ -195,6 +227,7 @@ func _ready() -> void:
 	NetworkManager.join_failed.connect(_on_network_join_failed)
 	NetworkManager.room_checked.connect(_on_network_room_checked)
 	NetworkManager.next_round_status.connect(_on_network_next_round_status)
+	NetworkManager.next_round_countdown.connect(_on_network_next_round_countdown)
 	NetworkManager.player_list_updated.connect(_on_network_player_list_updated)
 	NetworkManager.phase_sync_requested.connect(_on_network_phase_sync)
 	NetworkManager.reconnect_status_received.connect(_on_reconnect_status)
@@ -212,13 +245,14 @@ func _ready() -> void:
 	# Phase 2
 	$Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit.pressed.connect(_on_btn_submit_answer)
 	$Phases/Phase2_Answering/VBox/BtnNoAnswer.pressed.connect(_on_btn_no_answer)
-	var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit
+	$Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/BtnPaste.pressed.connect(_on_btn_paste_pressed)
+	var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit as LineEdit
 	line_edit.text_changed.connect(_on_answer_text_changed)
 	line_edit.focus_entered.connect(_on_answer_focus_entered)
 	line_edit.focus_exited.connect(_on_answer_focus_exited)
 
 	# Phase 3 ── 送出配對（pill 會動態建立）
-	$Phases/Phase3_Guessing/BtnSubmitMatch.pressed.connect(_on_btn_submit_match)
+	$Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch.pressed.connect(_on_btn_submit_match)
 
 	# Phase 0 Lobby Wait
 	$Phases/Phase0_WaitLobby/VBox/BtnStartGame.pressed.connect(_on_btn_start_game)
@@ -285,12 +319,15 @@ func _ready() -> void:
 		section_sb.corner_radius_bottom_left = 32
 
 	# ── 套用輸入框美化 ──
-	_style_line_edit($Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput)
-	_style_line_edit($Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput)
-	_style_line_edit($Phases/Phase2_Answering/VBox/AnswerArea/LineEdit)
+	_style_line_edit($Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox/RoomIDInput)
+	_style_line_edit($Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/PlayerNameInput)
+	_style_line_edit($Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit)
 
 	# ── 註冊全域按鈕動畫 ──
 	_register_button_animations(self)
+
+	# ── 全域字型縮放 ──
+	_increase_font_sizes_recursively(self)
 
 	switch_phase(GamePhase.WAITING)
 
@@ -447,16 +484,16 @@ func _on_btn_create_pressed() -> void:
 	AudioManager.play_tap()
 	is_host = true
 	pending_room_id = ""
-	$Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.text = mock_self_name
+	$Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/PlayerNameInput.text = mock_self_name
 	$Phases/Phase0_Lobby/NamePanel.visible = true
-	$Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.grab_focus()
+	$Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/PlayerNameInput.grab_focus()
 
 func _on_btn_join_pressed() -> void:
 	AudioManager.play_tap()
 	is_host = false
 	$Phases/Phase0_Lobby/JoinPanel.visible = true
-	$Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput.text = ""
-	$Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput.grab_focus()
+	$Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox/RoomIDInput.text = ""
+	$Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox/RoomIDInput.grab_focus()
 	
 	# 重置 JoinPanel 狀態
 	var error_label = $Phases/Phase0_Lobby/JoinPanel/VBox.get_node_or_null("ErrorLabel")
@@ -585,6 +622,7 @@ func _on_btn_instructions_pressed() -> void:
 		vbox.add_child(btn_close)
 		
 		lobby.add_child(panel)
+		_increase_font_sizes_recursively(panel)
 		_register_button_animations(card)
 	
 	tutorial_current_slide = 0
@@ -739,6 +777,7 @@ func _on_btn_options_pressed() -> void:
 		vbox.add_child(btn_close)
 		
 		lobby.add_child(panel)
+		_increase_font_sizes_recursively(panel)
 		_register_button_animations(card)
 	
 	# 每次開啟時更新按鈕文字（防止在其他地方修改了靜音）
@@ -811,7 +850,7 @@ func _show_join_error(msg: String) -> void:
 	_set_btn_color(btn, COLOR_BTN_NORMAL)
 
 func _on_btn_confirm_join() -> void:
-	var room_id = $Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput.text.strip_edges().to_upper()
+	var room_id = $Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox/RoomIDInput.text.strip_edges().to_upper()
 	if room_id.length() != 6:
 		AudioManager.play_cancel()
 		_show_join_error("房號必須為 6 碼 (包含英數)")
@@ -832,9 +871,9 @@ func _on_network_room_checked(exists: bool, _room_id: String) -> void:
 	if exists:
 		# 房間存在，進入下一個流程 (輸入名字)
 		$Phases/Phase0_Lobby/JoinPanel.visible = false
-		$Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.text = mock_self_name
+		$Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/PlayerNameInput.text = mock_self_name
 		$Phases/Phase0_Lobby/NamePanel.visible = true
-		$Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.grab_focus()
+		$Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/PlayerNameInput.grab_focus()
 	else:
 		AudioManager.play_cancel()
 		_show_join_error("房間不存在，請確認房號是否正確。")
@@ -844,7 +883,7 @@ func _on_btn_cancel_name_pressed() -> void:
 	$Phases/Phase0_Lobby/NamePanel.visible = false
 
 func _on_btn_confirm_name() -> void:
-	var player_name = $Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.text.strip_edges()
+	var player_name = $Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/PlayerNameInput.text.strip_edges()
 	if player_name == "":
 		return
 	AudioManager.play_tap()
@@ -985,6 +1024,7 @@ func _show_ad_disclaimer() -> void:
 		btn_hbox.add_child(btn_continue)
 		
 		lobby.add_child(panel)
+		_increase_font_sizes_recursively(panel)
 	
 	panel.visible = true
 	
@@ -1122,13 +1162,15 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 	print("Network Sync: Switching to ", new_phase)
 	
 	if new_phase == "SELECTION":
+		round_count += 1
+		print("Round count incremented to: ", round_count)
 		# 接收伺服器指定的隊長
 		current_captain = data.get("captain", "")
 		print("New Captain: ", current_captain)
 		
 		# 重置一下按鈕狀態（以防是上一輪留下的殘留）
-		$Phases/Phase3_Guessing/BtnSubmitMatch.disabled = false
-		$Phases/Phase3_Guessing/BtnSubmitMatch.text = tr("送出配對結果")
+		$Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch.disabled = false
+		$Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch.text = tr("送出配對結果")
 		
 		if current_captain == mock_self_name:
 			# 通知：輪到你當隊長
@@ -1139,6 +1181,7 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 			switch_phase(GamePhase.SELECTION_WAITING)
 			
 	elif new_phase == "ANSWERING":
+		is_answer_submitted = false
 		current_level = data.get("level", 1)
 		current_question = data.get("question", "")
 		var q_card := $Phases/Phase2_Answering/VBox/QuestionCard
@@ -1148,8 +1191,15 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		q_label.custom_minimum_size = Vector2(100, 0)
-		var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit
+		var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit as LineEdit
 		line_edit.text = ""
+		
+		# 啟動 1 分鐘答題倒數
+		remaining_answering_seconds = float(data.get("remaining_seconds", 60.0))
+		answering_timer_active = true
+		if timer_label:
+			timer_label.text = tr("剩餘時間: ") + str(ceil(remaining_answering_seconds)) + tr(" 秒")
+			timer_label.visible = true
 		
 		# 重置題目卡與不回答按鈕的顯示狀態（以防聚焦狀態中斷）
 		if q_card:
@@ -1218,6 +1268,9 @@ func _on_btn_back_pressed() -> void:
 	cumul_others_attempts = 0
 	cumul_my_correct = 0
 	cumul_my_attempts = 0
+	round_count = 0
+	last_round_guessed_by = 0
+	guess_correct_from_others.clear()
 	game_history = []
 	
 	# 重置 NetworkManager 狀態
@@ -1233,6 +1286,91 @@ func _on_btn_back_pressed() -> void:
 		ad_panel.queue_free()
 	
 	switch_phase(GamePhase.WAITING)
+
+func _process(delta: float) -> void:
+	if answering_timer_active:
+		remaining_answering_seconds -= delta
+		if timer_label:
+			timer_label.text = tr("剩餘時間: ") + str(int(ceil(max(0.0, remaining_answering_seconds)))) + tr(" 秒")
+		if remaining_answering_seconds <= 0:
+			answering_timer_active = false
+			if timer_label:
+				timer_label.text = tr("時間到！自動提交中...")
+			# 如果尚未送出，自動提交
+			if not is_answer_submitted:
+				var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit as LineEdit
+				if line_edit and line_edit.text.strip_edges() != "":
+					_on_btn_submit_answer()
+				else:
+					_on_btn_no_answer()
+
+func _on_btn_paste_pressed() -> void:
+	AudioManager.play_tap()
+	_paste_target = "answer"
+	if OS.has_feature("web"):
+		var window = JavaScriptBridge.get_interface("window")
+		if window and window.requestClipboard != null:
+			window.requestClipboard()
+		else:
+			_handle_pasted_text(DisplayServer.clipboard_get())
+	else:
+		_handle_pasted_text(DisplayServer.clipboard_get())
+
+func _on_btn_paste_room_id_pressed() -> void:
+	AudioManager.play_tap()
+	_paste_target = "room_id"
+	if OS.has_feature("web"):
+		var window = JavaScriptBridge.get_interface("window")
+		if window and window.requestClipboard != null:
+			window.requestClipboard()
+		else:
+			_handle_pasted_text(DisplayServer.clipboard_get())
+	else:
+		_handle_pasted_text(DisplayServer.clipboard_get())
+
+func _on_btn_paste_name_pressed() -> void:
+	AudioManager.play_tap()
+	_paste_target = "player_name"
+	if OS.has_feature("web"):
+		var window = JavaScriptBridge.get_interface("window")
+		if window and window.requestClipboard != null:
+			window.requestClipboard()
+		else:
+			_handle_pasted_text(DisplayServer.clipboard_get())
+	else:
+		_handle_pasted_text(DisplayServer.clipboard_get())
+
+func _on_web_paste_received(args) -> void:
+	if args.size() > 0:
+		var text = args[0]
+		if text != null:
+			_handle_pasted_text(text)
+
+func _handle_pasted_text(text: String) -> void:
+	if text == null or text == "":
+		return
+	if _paste_target == "room_id":
+		var clipboard_text = text.strip_edges().to_upper()
+		var filtered_text = ""
+		for i in range(min(6, clipboard_text.length())):
+			var c = clipboard_text[i]
+			if (c >= "A" and c <= "Z") or (c >= "0" and c <= "9"):
+				filtered_text += c
+		var line_edit := $Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox/RoomIDInput as LineEdit
+		if line_edit:
+			line_edit.text = filtered_text
+			print("[Paste Room ID] Set room ID: ", filtered_text)
+	elif _paste_target == "answer":
+		var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit as LineEdit
+		if line_edit:
+			line_edit.text = text
+			_on_answer_text_changed(text)
+			print("[Paste Answer] Set answer: ", text)
+	elif _paste_target == "player_name":
+		var line_edit := $Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/PlayerNameInput as LineEdit
+		if line_edit:
+			line_edit.text = text
+			print("[Paste Player Name] Set player name: ", text)
 
 # ── Phase 2 ───────────────────────────────────────────────────────────────────
 func _on_answer_text_changed(new_text: String) -> void:
@@ -1280,7 +1418,12 @@ func _set_btn_color(btn: Button, color: Color) -> void:
 	btn.add_theme_stylebox_override("disabled", sb)
 
 func _on_btn_submit_answer() -> void:
-	var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit
+	is_answer_submitted = true
+	answering_timer_active = false
+	if timer_label:
+		timer_label.text = tr("已提交，請稍候")
+		
+	var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit as LineEdit
 	self_answer = line_edit.text.strip_edges()
 	if self_answer == "":
 		self_answer = "(空白)"
@@ -1297,6 +1440,11 @@ func _on_btn_submit_answer() -> void:
 	game_history.append({"question": current_question, "answer": self_answer})
 
 func _on_btn_no_answer() -> void:
+	is_answer_submitted = true
+	answering_timer_active = false
+	if timer_label:
+		timer_label.text = tr("已提交，請稍候")
+		
 	self_answer = "不回答"
 	AudioManager.play_no_answer()
 	print("Submitting No Answer")
@@ -1370,22 +1518,18 @@ func _generate_phase3_ui() -> void:
 	partner_map.clear()
 	partner_color_map.clear()
 	player_guesses.clear()
-	$Phases/Phase3_Guessing/BtnSubmitMatch.visible = true
-	$Phases/Phase3_Guessing/BtnSubmitMatch.disabled = false
-	$Phases/Phase3_Guessing/BtnSubmitMatch.text = tr("提交配對")
+	var submit_match_btn := $Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch
+	submit_match_btn.visible = true
+	submit_match_btn.disabled = false
+	submit_match_btn.text = tr("提交配對")
 	
-	# 自適應排版修正：確保按鈕不會被擠出畫面或被覆蓋
-	var submit_match_btn := $Phases/Phase3_Guessing/BtnSubmitMatch
-	submit_match_btn.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	submit_match_btn.offset_left = 40
-	submit_match_btn.offset_right = -40
-	submit_match_btn.offset_bottom = -40
-	submit_match_btn.offset_top = -140
-	
-	# 讓 OuterVBox 底部留出空間，才不會蓋住按鈕
+	# OuterVBox 佔滿整個畫面並預留四周間距
 	var outer_vbox := $Phases/Phase3_Guessing/OuterVBox
 	outer_vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	outer_vbox.offset_bottom = -160
+	outer_vbox.offset_left = 50
+	outer_vbox.offset_right = -50
+	outer_vbox.offset_top = 80
+	outer_vbox.offset_bottom = -80
 
 	# 在頂部顯示題目
 	var q_label: Label = outer_vbox.get_node_or_null("QuestionLabel")
@@ -1430,14 +1574,14 @@ func _generate_phase3_ui() -> void:
 
 	# ── 自適應調整：根據人數調整按鈕大小與字體 ──
 	var player_count := all_participants.size()
-	var pill_font_size := 38
-	var pill_min_height := 90
+	var pill_font_size := 44
+	var pill_min_height := 110
 	if player_count <= 3:
-		pill_font_size = 50
-		pill_min_height = 130
+		pill_font_size = 56
+		pill_min_height = 150
 	elif player_count <= 5:
-		pill_font_size = 42
-		pill_min_height = 100
+		pill_font_size = 48
+		pill_min_height = 120
 
 	var self_paired := false
 	# 生成答案 pill
@@ -1450,11 +1594,11 @@ func _generate_phase3_ui() -> void:
 		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 		if ans_text == self_ans and not self_paired:
-			_set_pill_style(btn, COLOR_AUTO_PAIRED)
+			_set_pill_style(btn, COLOR_AUTO_PAIRED, true)
 			btn.disabled = true
 			self_paired = true
 		else:
-			_set_pill_style(btn, COLOR_BTN_NORMAL)
+			_set_pill_style(btn, COLOR_BTN_NORMAL, false)
 			btn.pressed.connect(_on_answer_btn_pressed.bind(btn))
 
 		flow_ans.add_child(btn)
@@ -1471,16 +1615,17 @@ func _generate_phase3_ui() -> void:
 		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 		if p_name == mock_self_name:
-			_set_pill_style(btn, COLOR_AUTO_PAIRED)
+			_set_pill_style(btn, COLOR_AUTO_PAIRED, true)
 			btn.disabled = true
 		else:
-			_set_pill_style(btn, COLOR_PARTICIPANT)
+			_set_pill_style(btn, COLOR_PARTICIPANT, false)
 			btn.pressed.connect(_on_participant_btn_pressed.bind(btn))
 
 		flow_par.add_child(btn)
 		participant_buttons.append(btn)
 		participant_btn_map[btn] = p_name
 
+	_increase_font_sizes_recursively($Phases/Phase3_Guessing)
 	print("Phase 3 UI generated: ", all_answers.size(), " answers, ", all_participants.size(), " participants")
 
 # ── Phase 3：點擊配對邏輯 ─────────────────────────────────────────────────────
@@ -1489,13 +1634,27 @@ func _on_answer_btn_pressed(btn: Button) -> void:
 		_unmatch_pair(btn)
 		return
 
-	if selected_answer_btn != null and selected_answer_btn != btn:
-		if not partner_map.has(selected_answer_btn):
-			_set_pill_style(selected_answer_btn, COLOR_BTN_NORMAL)
-			_anim_pill_deselect(selected_answer_btn)
+	# 如果點擊的是已經選中的按鈕，則取消選取
+	if selected_answer_btn == btn:
+		_set_pill_style(btn, COLOR_BTN_NORMAL, false)
+		_anim_pill_deselect(btn)
+		selected_answer_btn = null
+		return
+
+	# 如果已經選取了某個人名，此時點選答案 ➔ 立即配對！
+	if selected_participant_btn != null:
+		var ans_text = answer_btn_map[btn]
+		var p_name = participant_btn_map[selected_participant_btn]
+		_pair_up(btn, selected_participant_btn, ans_text, p_name)
+		return
+
+	# 否則，單純選擇這個答案
+	if selected_answer_btn != null:
+		_set_pill_style(selected_answer_btn, COLOR_BTN_NORMAL, false)
+		_anim_pill_deselect(selected_answer_btn)
 
 	selected_answer_btn = btn
-	_set_pill_style(btn, COLOR_HIGHLIGHT)
+	_set_pill_style(btn, COLOR_HIGHLIGHT, true)
 	_anim_pill_select(btn)
 	print("Answer selected: ", btn.text)
 
@@ -1515,33 +1674,55 @@ func _on_participant_btn_pressed(btn: Button) -> void:
 		_unmatch_pair(btn)
 		return
 
-	if selected_answer_btn == null:
+	# 如果點擊的是已經選中的人名，則取消選取
+	if selected_participant_btn == btn:
+		_set_pill_style(btn, COLOR_PARTICIPANT, false)
+		_anim_pill_deselect(btn)
+		selected_participant_btn = null
 		return
 
-	var ans_text: String = answer_btn_map[selected_answer_btn]
-	var p_name: String = participant_btn_map[btn]
+	# 如果已經選取了某個答案，此時點選人名 ➔ 立即配對！
+	if selected_answer_btn != null:
+		var ans_text = answer_btn_map[selected_answer_btn]
+		var p_name = participant_btn_map[btn]
+		_pair_up(selected_answer_btn, btn, ans_text, p_name)
+		return
+
+	# 否則，單純選擇這個人名
+	if selected_participant_btn != null:
+		_set_pill_style(selected_participant_btn, COLOR_PARTICIPANT, false)
+		_anim_pill_deselect(selected_participant_btn)
+
+	selected_participant_btn = btn
+	_set_pill_style(btn, COLOR_HIGHLIGHT, true)
+	_anim_pill_select(btn)
+	print("Participant selected: ", btn.text)
+
+func _pair_up(ans_btn: Button, par_btn: Button, ans_text: String, p_name: String) -> void:
 	player_guesses[p_name] = ans_text
 
 	var pair_color = PAIR_COLORS[paired_count % PAIR_COLORS.size()]
-	_set_pill_style(selected_answer_btn, pair_color)
-	_set_pill_style(btn, pair_color)
+	_set_pill_style(ans_btn, pair_color, true)
+	_set_pill_style(par_btn, pair_color, true)
+	
 	# 配對成功 bounce 動畫 + 音效
 	AudioManager.play_pill_match()
-	_anim_pill_match(selected_answer_btn)
-	_anim_pill_match(btn)
+	_anim_pill_match(ans_btn)
+	_anim_pill_match(par_btn)
 
-	partner_map[selected_answer_btn] = btn
-	partner_map[btn] = selected_answer_btn
-	partner_color_map[selected_answer_btn] = pair_color
-	partner_color_map[btn] = pair_color
+	partner_map[ans_btn] = par_btn
+	partner_map[par_btn] = ans_btn
+	partner_color_map[ans_btn] = pair_color
+	partner_color_map[par_btn] = pair_color
 
 	print("Paired: [", ans_text, "] <-> [", p_name, "] with color ", pair_color)
 
+	# 清除選取狀態
 	selected_answer_btn = null
+	selected_participant_btn = null
 	paired_count += 1
 	
-	# 原本是全員配對才顯示，現在改為一直顯示，但可以做視覺提示
-	var submit_btn := $Phases/Phase3_Guessing/BtnSubmitMatch
+	var submit_btn := $Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch
 	if paired_count >= total_pairs:
 		submit_btn.text = tr("完成配對！送出")
 	else:
@@ -1567,9 +1748,9 @@ func _unmatch_pair(btn: Button) -> void:
 	var ans_text = answer_btn_map[ans_btn]
 	player_guesses.erase(par_name)
 	
-	# 復原樣式
-	_set_pill_style(ans_btn, COLOR_BTN_NORMAL)
-	_set_pill_style(par_btn, COLOR_PARTICIPANT)
+	# 復原樣式 (無底色，僅有外框線)
+	_set_pill_style(ans_btn, COLOR_BTN_NORMAL, false)
+	_set_pill_style(par_btn, COLOR_PARTICIPANT, false)
 	
 	# 移除配對資訊
 	partner_map.erase(ans_btn)
@@ -1579,15 +1760,24 @@ func _unmatch_pair(btn: Button) -> void:
 	
 	paired_count -= 1
 	
-	var submit_btn := $Phases/Phase3_Guessing/BtnSubmitMatch
+	var submit_btn := $Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch
 	if paired_count < total_pairs:
 		submit_btn.text = tr("提交目前的配對")
 	
+	# 如果在有選取狀態的情況下點擊退回配對，把現有的選取狀態也重置，以免混亂
+	if selected_answer_btn != null:
+		_set_pill_style(selected_answer_btn, COLOR_BTN_NORMAL, false)
+		_anim_pill_deselect(selected_answer_btn)
+		selected_answer_btn = null
+	if selected_participant_btn != null:
+		_set_pill_style(selected_participant_btn, COLOR_PARTICIPANT, false)
+		_anim_pill_deselect(selected_participant_btn)
+		selected_participant_btn = null
+		
 	print("Unmatched pair: ", ans_text)
 
-func _set_pill_style(btn: Button, color: Color) -> void:
+func _set_pill_style(btn: Button, color: Color, is_matched_or_selected: bool) -> void:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = color
 	sb.corner_radius_top_left    = 80
 	sb.corner_radius_top_right   = 80
 	sb.corner_radius_bottom_right = 80
@@ -1599,6 +1789,27 @@ func _set_pill_style(btn: Button, color: Color) -> void:
 	sb.shadow_color = Color(0, 0, 0, 0.12)
 	sb.shadow_size = 5
 	sb.shadow_offset = Vector2(0, 3)
+	
+	if is_matched_or_selected:
+		sb.bg_color = color
+		sb.border_width_left = 0
+		sb.border_width_top = 0
+		sb.border_width_right = 0
+		sb.border_width_bottom = 0
+		# 對於被選中或配對的藥丸，字體維持白色
+		btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	else:
+		# 無底色：背景設為非常淡的暗透明色，以契合背景
+		sb.bg_color = Color(0.12, 0.10, 0.09, 0.4)
+		# 僅有外框線
+		sb.border_width_left = 3
+		sb.border_width_top = 3
+		sb.border_width_right = 3
+		sb.border_width_bottom = 3
+		sb.border_color = color
+		# 字體顏色跟隨框線顏色
+		btn.add_theme_color_override("font_color", color)
+		
 	btn.add_theme_stylebox_override("normal",  sb)
 	btn.add_theme_stylebox_override("hover",   sb)
 	btn.add_theme_stylebox_override("pressed", sb)
@@ -1608,14 +1819,15 @@ func _set_pill_style(btn: Button, color: Color) -> void:
 func _on_btn_submit_match() -> void:
 	AudioManager.play_tap()
 	var self_ans: String = round_answers[mock_self_name]
-	player_guesses[self_ans] = mock_self_name
+	player_guesses[mock_self_name] = self_ans
 	
 	print("Sending guesses to server...")
 	NetworkManager.send_game_event("guesses_submitted", {"guesses": player_guesses})
 	
 	# 視覺回饋：等待中
-	$Phases/Phase3_Guessing/BtnSubmitMatch.disabled = true
-	$Phases/Phase3_Guessing/BtnSubmitMatch.text = tr("等待其他玩家...")
+	var submit_btn := $Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch
+	submit_btn.disabled = true
+	submit_btn.text = tr("等待其他玩家...")
 
 # ── Phase 4：戲劇性結果揭曉與計分 ────────────────────────────────────────────
 func _generate_phase4_ui() -> void:
@@ -1694,6 +1906,9 @@ func _generate_phase4_ui() -> void:
 		var other_guesses: Dictionary = all_room_guesses[other_name]
 		if other_guesses.get(mock_self_name) == self_ans_text:
 			round_guessed_by += 1
+			guess_correct_from_others[other_name] = guess_correct_from_others.get(other_name, 0) + 1
+
+	last_round_guessed_by = round_guessed_by
 
 	# ── 累計統計 (只在此處加一次) ──
 	cumul_my_correct += correct_count
@@ -1712,6 +1927,7 @@ func _generate_phase4_ui() -> void:
 	last_my_accuracy_pct = my_accuracy_pct
 	last_guessed_by_pct = guessed_by_pct
 
+	_increase_font_sizes_recursively($Phases/Phase4_Revelation)
 	_render_phase4_ui(true)
 
 func _render_phase4_ui(play_animations: bool) -> void:
@@ -1777,7 +1993,7 @@ func _render_phase4_ui(play_animations: bool) -> void:
 
 	# ── 更新 UI ──
 	var score_label := $Phases/Phase4_Revelation/VBox/ScoreLabel
-	score_label.text = tr("猜對 ") + str(last_correct_count) + " / " + str(last_guess_total) + tr(" 題")
+	score_label.text = tr("本輪結果：猜中 ") + str(last_correct_count) + " / " + str(last_guess_total) + tr(" 題") + tr("，被猜中 ") + str(last_round_guessed_by) + tr(" 次")
 	score_label.add_theme_font_size_override("font_size", 50) # 成績加大 2 單位 (原本 48)
 
 	# 累計統計區塊
@@ -1941,7 +2157,32 @@ func _generate_phase5_ui() -> void:
 	if cumul_my_attempts > 0:
 		my_accuracy_pct = float(cumul_my_correct) / float(cumul_my_attempts) * 100.0
 	
-	vbox.get_node("StatsLabel").text = tr("累計猜中率：") + str(snapped(my_accuracy_pct, 0.1)) + "% (" + str(cumul_my_correct) + "/" + str(cumul_my_attempts) + ")"
+	# 建立排行榜列表
+	var ranking_list: Array = []
+	for p_name in guess_correct_from_others:
+		ranking_list.append({
+			"name": p_name,
+			"count": guess_correct_from_others[p_name]
+		})
+	# 排序：依據猜中次數降序排序
+	ranking_list.sort_custom(func(a, b): return a["count"] > b["count"])
+	
+	# 組合排行榜字串
+	var ranking_str := ""
+	if ranking_list.size() > 0:
+		ranking_str = "\n" + tr("🌟 默契排行榜 (最了解你的人)：")
+		for i in range(ranking_list.size()):
+			var item = ranking_list[i]
+			ranking_str += "\n" + str(i + 1) + ". " + item["name"] + " (" + tr("猜中你 ") + str(item["count"]) + tr(" 次") + ")"
+	
+	var stats_text = tr("累計猜中率：") + str(snapped(my_accuracy_pct, 0.1)) + "% (" + str(cumul_my_correct) + "/" + str(cumul_my_attempts) + ")\n"
+	stats_text += tr("累計被猜中：") + str(cumul_guessed_by_others) + tr(" 次") + " | " + tr("遊戲總輪數：") + str(round_count) + tr(" 輪")
+	stats_text += ranking_str
+	
+	var stats_lbl = vbox.get_node("StatsLabel") as Label
+	stats_lbl.text = stats_text
+	stats_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_increase_font_sizes_recursively($Phases/Phase5_Summary)
 
 func _on_btn_final_leave_pressed() -> void:
 	AudioManager.play_final_leave() # 播放確定離開音效
@@ -1953,6 +2194,9 @@ func _on_btn_final_leave_pressed() -> void:
 	cumul_others_attempts = 0
 	cumul_my_correct = 0
 	cumul_my_attempts = 0
+	round_count = 0
+	last_round_guessed_by = 0
+	guess_correct_from_others.clear()
 	game_history = []
 	
 	# 重置 NetworkManager 狀態
@@ -2170,7 +2414,7 @@ func _input(event: InputEvent) -> void:
 		
 		# 點擊輸入框外部時釋放回答輸入框的焦點，以便手機端收起鍵盤與回復題目顯示
 		if current_phase == GamePhase.ANSWERING:
-			var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/LineEdit as LineEdit
+			var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit as LineEdit
 			if line_edit and line_edit.has_focus():
 				var le_rect := line_edit.get_global_rect()
 				if not le_rect.has_point(global_pos):
@@ -2208,7 +2452,8 @@ func _update_localized_ui() -> void:
 	$Phases/Phase0_Lobby/VBoxContainer/BtnOptions.text = tr("選項")
 	
 	$Phases/Phase0_Lobby/JoinPanel/VBox/Label.text = tr("輸入房間代碼")
-	$Phases/Phase0_Lobby/JoinPanel/VBox/RoomIDInput.placeholder_text = tr("例如: 0B3152")
+	$Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox/RoomIDInput.placeholder_text = tr("例如: 0B3152")
+	$Phases/Phase0_Lobby/JoinPanel/VBox/JoinInputHBox/BtnPasteRoomID.text = tr("貼上")
 	$Phases/Phase0_Lobby/JoinPanel/VBox/HBox/BtnCancelJoin.text = tr("取消")
 	
 	var btn_confirm_join := $Phases/Phase0_Lobby/JoinPanel/VBox/HBox/BtnConfirmJoin
@@ -2229,7 +2474,8 @@ func _update_localized_ui() -> void:
 			error_label.text = tr("錯誤：") + tr(err_msg)
 
 	$Phases/Phase0_Lobby/NamePanel/VBox/Label.text = tr("打上圈圈裡你朋友會認得你的名字")
-	$Phases/Phase0_Lobby/NamePanel/VBox/PlayerNameInput.placeholder_text = tr("你的暱稱")
+	$Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/PlayerNameInput.placeholder_text = tr("你的暱稱")
+	$Phases/Phase0_Lobby/NamePanel/VBox/NameInputHBox/BtnPasteName.text = tr("貼上")
 	$Phases/Phase0_Lobby/NamePanel/VBox/HBox/BtnCancelName.text = tr("取消")
 	$Phases/Phase0_Lobby/NamePanel/VBox/HBox/BtnConfirmName.text = tr("進入圈圈")
 	
@@ -2286,7 +2532,8 @@ func _update_localized_ui() -> void:
 	# Phase 2 Answering
 	if current_phase == GamePhase.ANSWERING:
 		$Phases/Phase2_Answering/VBox/QuestionCard/Label.text = _get_localized_question(current_question)
-	$Phases/Phase2_Answering/VBox/AnswerArea/LineEdit.placeholder_text = tr("輸入你的答案 (10~15字)...")
+	$Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit.placeholder_text = tr("輸入你的答案 (10~15字)...")
+	$Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/BtnPaste.text = tr("貼上")
 	
 	var btn_submit := $Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit
 	if btn_submit.text == "送出答案" or btn_submit.text == "Submit Answer":
@@ -2304,7 +2551,7 @@ func _update_localized_ui() -> void:
 	if q_label_p3:
 		q_label_p3.text = _quote(_get_localized_question(current_question))
 		
-	var submit_match_btn := $Phases/Phase3_Guessing/BtnSubmitMatch
+	var submit_match_btn := $Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch
 	if submit_match_btn.text == "提交配對" or submit_match_btn.text == "Submit Matches":
 		submit_match_btn.text = tr("提交配對")
 	elif submit_match_btn.text == "送出配對結果" or submit_match_btn.text == "Submit Match Results":
@@ -2319,7 +2566,9 @@ func _update_localized_ui() -> void:
 		submit_match_btn.text = tr("等待其他玩家...")
 
 	# Phase 4 Revelation
-	$Phases/Phase4_Revelation/VBox/TitleLabel.text = tr("結果揭曉")
+	$Phases/Phase4_Revelation/VBox/TitleLabel.text = tr("結果揭曉 (第 %d 輪)") % round_count
+	var score_label := $Phases/Phase4_Revelation/VBox/ScoreLabel
+	score_label.text = tr("本輪結果：猜中 ") + str(last_correct_count) + " / " + str(last_guess_total) + tr(" 題") + tr("，被猜中 ") + str(last_round_guessed_by) + tr(" 次")
 	if current_phase == GamePhase.REVELATION:
 		_render_phase4_ui(false)
 	else:
@@ -2396,3 +2645,17 @@ func _update_localized_ui() -> void:
 				btn_continue.text = tr("載入中...")
 			else:
 				btn_continue.text = tr("繼續")
+
+func _on_network_next_round_countdown(seconds: int) -> void:
+	var btn = $Phases/Phase4_Revelation/VBox/BtnNextRound
+	if btn:
+		btn.text = tr("即將進入下一輪... (") + str(seconds) + tr("秒)")
+
+func _increase_font_sizes_recursively(node: Node) -> void:
+	var offset = 12 if OS.has_feature("web") else 10
+	if node is Label or node is Button or node is LineEdit or node is RichTextLabel:
+		var current_size = node.get_theme_font_size("font_size")
+		node.add_theme_font_size_override("font_size", current_size + offset)
+		
+	for child in node.get_children():
+		_increase_font_sizes_recursively(child)
