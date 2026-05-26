@@ -14,7 +14,7 @@ Hello 接下來接手的 AI：
 >    * 因此，在中文語系下，所有支援折行的 Label **必須動態切換為 `TextServer.AUTOWRAP_ARBITRARY`**。
 > 2. **英文語系折行模式限制 (必須為 AUTOWRAP_WORD_SMART)**：
 >    * 在**英文語系**下，若使用 `AUTOWRAP_ARBITRARY` 會使英文單字在任意字元截斷（如 `notifications` 被劈開成兩行）。
->    * 因此，英文語系下必須使用 `TextServer.AUTOWRAP_WORD_SMART` 以確保單字完整折行。
+>    * Therefore，英文語系下必須使用 `TextServer.AUTOWRAP_WORD_SMART` 以確保單字完整折行。
 > 3. **動態更新驗證**：
 >    * 修改 UI 後，確認已在對應的初始化/語言變更處（如 `_update_localized_ui`）執行 `_update_all_autowrap_modes_recursively(self)` 或透過 `_get_local_autowrap_mode()` 動態給予 `autowrap_mode`。
 > 4. **前置測試流程**：
@@ -59,88 +59,12 @@ Hello 接下來接手的 AI：
 - **倒數計時強制切換與 1、2 分鐘倒數強制前進功能 (2026-05-26 玩家實測已驗證完成)**：
   - **修復內容**：在 `SELECTION`、`GUESSING` 及 `REVELATION` 階段在本地倒數歸零時主動執行強制預設操作（隊長隨機選題、強制送出已配對答案、宣告下一輪準備完畢），且結果揭曉階段為 120 秒；配合後端 fly.io 記錄 `started_at` 與重連精確扣除已耗時間，多端測試運作正常。
 - **彈出視窗 (Dialog Cards) 佈局塌陷與首頁卡死修復 (2026-05-26 玩家實測已驗證完成)**：
-  - **問題原因**：因 Godot `ScrollContainer` 在 `CenterContainer` 下預設最小高度為 0，且無法自動向子節點撐開，導致「遊戲說明」、「設定選項」及「廣告聲明」等卡片塌陷為極窄灰色橫線。此問題亦會阻礙「創立圈圈」輸入暱稱後點選「進入圈圈」顯示廣告提示卡片的正常點擊，造成首頁流程死鎖。
-  - **已修復內容**：在 [main.gd](file:///C:/FriendAndMe/FriendAndMe/main.gd) 中，藉由 `_on_dialog_viewport_resized` 內的 `_adjust_single_dialog_card()` 機制，動態計算內容高度 `vbox.get_combined_minimum_size().y` 與最大容許高度 `viewport_height - 200` 取較小者設給 `ScrollContainer` 的 `custom_minimum_size.y`。並已在顯示/更動各個 Dialog Panel 時主動呼叫大小調整函數，避免塌陷跑版，已更新 Web 伺服器並重新打包 Android debug [FriendAndMe.apk](file:///C:/FriendAndMe/FriendAndMe.apk)。
+  - **修復內容**：在 [main.gd](file:///C:/FriendAndMe/FriendAndMe/main.gd) 中，藉由 `_on_dialog_viewport_resized` 內的 `_adjust_single_dialog_card()` 機制，動態計算內容高度 `vbox.get_combined_minimum_size().y` 與最大容許高度 `viewport_height - 200` 取較小者設給 `ScrollContainer` 的 `custom_minimum_size.y`，解決了遊戲說明、設定選項、廣告聲明卡片塌陷成一條窄線的問題。
 - **英文版折行單字截斷與遊戲說明自適應/排版跑掉修復 (2026-05-26 玩家實測已驗證完成)**：
-  - **問題原因**：
-    1. **折行字元截斷**：Label 使用 `TextServer.AUTOWRAP_ARBITRARY` 導致英文單字在折行時被截斷。
-    2. **上一頁/下一頁及語系切換排版跑掉**：在「遊戲說明」點擊上/下一頁或在首頁切換語系時，僅更新了 Label 內容，卻未重新呼叫 `_adjust_single_dialog_card()`，使 ScrollContainer 高度與佈局依然維持前一次舊文字的長度，造成排版凌亂。
-    3. **第一次打開異常拉長**：Godot 排版引擎特性中，啟用自動折行且 `custom_minimum_size.x` 設為 0 的 Label，在尚未完成一次完整渲染時，其回報的 combined_minimum_size 高度是依極窄折行寬度計算出的極大值。
-  - **已修復內容**：
-    1. **多語系動態斷行機制**：在 [main.gd](file:///C:/FriendAndMe/FriendAndMe/main.gd) 中實作 `_get_local_autowrap_mode()`，當語系為 English 時動態採用 `TextServer.AUTOWRAP_WORD_SMART`，中文語系下採用 `TextServer.AUTOWRAP_ARBITRARY`。
-    2. **全域遞迴自動套用**：在 `_update_localized_ui` 尾端執行 `_update_all_autowrap_modes_recursively(self)`，確保語系切換時所有靜態與動態文字元件的斷行規則自動變更，免去跑版與折行截斷。
-    3. **預先寬度限制與動態重新計算**：在 `_adjust_single_dialog_card()` 中預先限制 Label 的 custom_minimum_size.x 寬度，並在說明的翻頁與語系切換時主動呼叫 viewport resize，完全解決首次打開視窗高度異常拉高的排版問題。
+  - **修復內容**：實作中英文雙語折行模式動態切換（中文為 `AUTOWRAP_ARBITRARY`，英文為 `AUTOWRAP_WORD_SMART`），並在切換語系及翻頁時重新觸發 `_adjust_single_dialog_card()` 調整高度，徹底解決首次打開高度拉長及折行單字在英文字元截斷的排版問題。
 - **貼上功能與字體大小優化驗證完成 (2026-05-25)**：
-  - **貼上按鈕優化與 Prompt 備用方案**：為了解決行動瀏覽器（特別是 iOS Safari / Android Chrome）因為安全限制無法讀取剪貼簿的限制，實作了 JavaScriptBridge 配合 Clipboard API。當被瀏覽器安全沙盒阻擋時，將自動彈出原生 `prompt()` 彈窗供玩家直接長按貼上，實現 100% 行動端網頁剪貼簿支援。
-  - **暱稱貼上支援**：在「玩家暱稱」輸入框右側新增「貼上」按鈕，並對對應的 `main.tscn` 節點進行了 HBox 包裹，更新全域引用路徑與多語系支援。
-  - **回答超時卡死修復**：修正了 `is_answer_submitted` 逾時防呆判斷，確保玩家即使在 60 秒倒數完畢時「沒有輸入任何字」，也會正確自動提交「不回答」並推進遊戲，防止所有人卡死在答題場景。
-  - **碼錶亂碼修復**：移除了剩餘時間字串中的 `⏱️` 碼錶 Emoji，解決 Web Canvas 因系統缺字產生的 tofu 豆腐塊亂碼。
-  - **全域字體動態縮放**：實作了 `_increase_font_sizes_recursively(node)` 遞迴遍歷字體縮放，自動將全域文字字體在網頁端增加 `12`、手機端增加 `10` 單位偏移，成功讓所有 static 與 dynamic 產生的文字與按鈕（包括配對藥丸 Pill）大小明顯變大，大幅增強了易用性。
-- **階段一 (Phase 1) 實測驗證完成 (2026-05-24)**：
-  - **說明頁面自適應換行**：對說明頁面 `ContentLabel` 水平寬度限制拉伸至 760px，並使用 `AUTOWRAP_WORD_SMART`，解決中英文跳行/出框問題。
-  - **答案回覆字型加大**：Phase 3 pill 按鈕字體放大 4 單位，並開啟 word smart 換行防跑版；Phase 4 結果顯示列字體亦放大 4 單位，並限制 760px 寬度以防溢出。
-  - **關卡名稱更名**：已將 `LV 1: 日話家常` 修正為 `閒話家常`（涵蓋程式碼、翻譯檔及題庫 JSON）。
-  - **個人結算文字截斷修正**：為 Phase 5 的歷史問答 `q_label` / `a_label` 強制加上 760px 寬度限制、`SIZE_EXPAND_FILL` 與 smart word-wrap，使長文字可正確折行。
-  - **題庫問號優化標記**：掃描題庫並標記僅有 `L1Q14` 有多重問號，已於下方標記優化建議。
-  - **本地多端測試環境**：新增本機 localhost、無痕視窗以及同 Wi-Fi 局域網路 IP 實機測試指南，成功於 Web 埠口 8080 運作本地測試。
-- **Web 瀏覽器端實測驗證 (2026-05-23)**：
-  - **字體變大變粗**：NotoSansTC-Bold 成功透過 Wasm/PCK Cache-Busting 載入，解決字型大小/粗細問題。
-  - **退回首頁正常**：廣告警語面板順利在退出房間時關閉並銷毀，不會卡死在大廳畫面上。
-  - **雲端連線正常**：網頁端可順利與 Fly.io 雲端伺服器 (`friends-and-me.fly.dev`) 連接，無 CORS 阻擋。
-  - **亂碼豆腐塊修復**：
-    - Emoji 已成功降級為純文字，Android 直角引號已自動轉為標準雙引號。
-    - 將 Phase 4 結果揭曉清單前面的 `✓` 與 `✗` 成功變更為安全通用的 `O` 與 `X` 字元，徹底解決思源黑體缺字產生的豆腐塊亂碼。
-  - **手機端輸入焦點遮擋與釋放焦點優化 (Answering Focus & Tap-Dismiss)**：
-    - 輸入框獲得焦點時完全隱藏題目卡與不回答按鈕（輸入框置頂避開虛擬鍵盤遮擋）。
-    - 點擊或碰碰輸入框外部時會自動調用 `release_focus()` 關閉鍵盤並還原畫面。
-  - **WebGL 2.0 相容性檢測與引導阻斷**：當使用者的裝置（如舊版 iPad/iOS Safari）未啟用 WebGL 2.0 時，主動攔截 Godot 載入，並在前端以精美的毛玻璃卡片引導玩家如何開啟 WebGL 2.0 或關閉多餘分頁釋放記憶體，避免出現 `gl.getContextAttributes().antialias` 引擎崩潰條。
-  - **中英文雙語支援 (Bilingual Localization)**：
-    - 於主畫面左下角加入 Language 切換按鈕與滑出式選單，支援「中文/English」即時切換與保存。
-    - 解決了英文排版換行與按鈕高度自適應問題（關卡選擇按鈕動態高度計算）。
-- [x] **1. 中文說明排版優化 (全端) (已完成 ✅)**
-  - 遊戲說明第一頁第 3 點被跳行（已將 ContentLabel 水平寬度伸展至 760px 撐滿，並設定 font_size=30 與 AUTOWRAP_WORD_SMART 徹底解決）
-  - 第二頁第 3 點跳行且超出框框（已修復）
-  - 第三頁排版錯亂（已修復）
-- [x] **2. 使用者回覆字體加大 (全端) (已完成 ✅)**
-  - 網頁端與手機端的使用者答案回覆字體偏小，需調大至少 3 個單位以上（Phase 3 pill 字型已調大至 38-50，高度至 90-130；Phase 4 結果文字亦同步調大，且皆套用 AUTOWRAP_WORD_SMART 以防跑版）。
-- [x] **3. iOS Safari 長按複製貼上與編輯限制 (網頁端) (已完成 ✅)**
-  - 蘋果手機網頁端在 LineEdit 輸入時，無法透過長按彈出「複製貼上」進行文本編輯。
-- [x] **4. 結果揭曉防卡死倒數機制 (全端 / 後端) (已完成 ✅)**
-  - 目前需要所有人點擊「下一輪」才會跳轉。若有玩家斷線重連會停在大廳，造成遊戲內其餘玩家無限等待。
-  - 應實作安全機制：在部分人按了下一輪後，若仍有玩家未按，啟動 10 秒倒數，倒數結束強制跳入下一輪。
-- [x] **5. 等級標題修正 (全端) (已完成 ✅)**
-  - 等級頁面 `LV 1: 日話家常` 的標題名稱改成 `閒話家常`。
-- [x] **6. 斷線/跳出玩家主動剔除機制 (後端) (已完成 ✅)**
-  - 斷線或關閉網頁的玩家，伺服器應主動將其剔除並廣播，防止隊友在「下一輪」或「配對」階段因等待該玩家而死鎖。
-- [x] **7. iOS 暫時背景化延遲剔除緩衝 (後端) (已完成 ✅)**
-  - 發現 iOS 網頁端玩家一旦暫時切換 App 或是手機進入背景幾秒鐘，就會立刻被伺服器剔除。
-  - 應適當延長斷線剔除的緩衝判定時間 (例如改為 30 秒至 1 分鐘)，避免頻繁誤判剔除。
-- [x] **8. 配對重選按鈕跑位卡死 Bug (全端) (已完成 ✅)**
-  - 配對答案場景中，配對完畢後若玩家反悔並重新點選配對，會導致「送出/提交」按鈕跑位或消失，導致流程死鎖。
-- [x] **9. 配對流程操作優化 (全端) (已完成 ✅)**
-  - 優化連連看操作：改成「先點選上方答案」或「先點選下方人名」皆可，雙向皆能成功進行配對。
-- [x] **10. 多人配對色彩辨識與底色優化 (全端) (已完成 ✅)**
-  - 多人遊玩時，多種配色容易混淆。優化為：最開始答案與人名皆「無底色，僅有外框線」；只有選擇並成功配對後才上底色，以便清晰辨認哪些已配對。
-- [x] **11. 揭曉輪次與單輪統計顯示 (全端) (已完成 ✅)**
-  - 公布答案場景中，除了累計的正確率外，應顯示「該輪單次」的答對統計，並在畫面顯示「本次是第 X 輪」。
-- [x] **12. 回答時間限制機制 (全端 / 後端) (已完成 ✅)**
-  - Phase 2 回答題目時，加入 1 分鐘倒數計時與秒數提示，避免個別玩家思考過久導致全房等待。
-- [x] **13. 個人結算文字截斷 Bug (全端) (已完成 ✅)**
-  - 點擊「離開圈圈」後的個人結算畫面，若題目文字太長會超出卡片邊界並被截斷（已將 Label 水平限制擴大為 760px，並啟用 AUTOWRAP_WORD_SMART，長題目可正常折行）。
-- [x] **14. 結算畫面詳細被猜統計 (全端 / 後端) (已完成 ✅)**
-  - 個人結算畫面應新增詳細數據區：顯示「自己總共被猜中幾次」、依據正確率「依序列出誰最了解你」，以及「本次遊玩共 X 輪」。
-- [x] **15. 題庫 ? 數量調整 (已完成 ✅)**
-  - 經程式碼掃描，題庫中目前僅有一題包含大於或等於 2 個問號：
-    - **L1Q14 (數位習慣)**：
-      - 中文原文：`打開你的手機，目前哪一個 App 的未讀通知數字是最多的？大約多少？` (建議精簡為：`打開你的手機，目前未讀通知數字最多的 App 是哪一個？`)
-      - 英文原文：`Open your phone right now. Which app has the highest number of unread notifications? Roughly how many is it?` (建議精簡為：`Open your phone right now and check which app has the highest number of unread notifications.`)
-- [x] **16. 本地網頁與 Wi-Fi 局域網測試指南 (已完成 ✅)**
-  - 已於本文件的「快速啟動與開發測試指南」中新增詳細的本機 localhost、無痕視窗以及同 Wi-Fi 局域網路 IP 實機測試指南，方便後續快速進行雙端/多端測試，避免消耗 Netlify 部署頻寬與時間。
-- [x] **17. 雙端（網頁與手機）「貼上」按鈕優化與暱稱貼上支援 (全端) (已完成 ✅)**
-  - 為了解決行動瀏覽器（特別是 iOS Safari）因為安全限制無法讀取剪貼簿的限制，實作了 JavaScriptBridge 配合 Clipboard API。
-  - 當 Clipboard API 被瀏覽器阻擋時，將自動彈出原生 `prompt()` 彈窗供玩家直接長按貼上，實現 100% 行動端網頁剪貼簿支援。
-  - 在「玩家暱稱」輸入框右側同樣新增「貼上」按鈕，並對對應的 `main.tscn` 節點進行了 HBox 包裹，更新全域引用路徑與多語系支援。
-- *註：未特別標註平台之項目，皆為全端 (PC/Web/Android) 適用。*
+  - 實作了 JavaScriptBridge 搭配原生 `prompt()` 彈窗做為 iOS Safari 等安全性沙盒下的 Clipboard 備用貼上方案，完成 100% 行動端貼上暱稱與房號支援。
+  - 修正了回答超時空提交防卡死，移除了亂碼碼錶 Emoji，並實作遞迴字體縮放（網頁端增加 12、手機端增加 10 單位），使全域字體明顯變大。
 
 ---
 
