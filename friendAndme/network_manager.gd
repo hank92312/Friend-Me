@@ -18,6 +18,12 @@ var USE_LOCAL := false
 var BASE_URL = "http://127.0.0.1:8000" if USE_LOCAL else "https://friends-and-me.fly.dev"
 var WS_URL   = "ws://127.0.0.1:8000/ws" if USE_LOCAL else "wss://friends-and-me.fly.dev/ws"
 
+func set_use_local(local: bool) -> void:
+	USE_LOCAL = local
+	BASE_URL = "http://127.0.0.1:8000" if USE_LOCAL else "https://friends-and-me.fly.dev"
+	WS_URL   = "ws://127.0.0.1:8000/ws" if USE_LOCAL else "wss://friends-and-me.fly.dev/ws"
+	print("[NetworkManager] Server environment set to: ", "LOCAL" if USE_LOCAL else "CLOUD")
+
 var socket = WebSocketPeer.new()
 var http_client: HTTPRequest
 var http_client_check: HTTPRequest # 用於事前檢查

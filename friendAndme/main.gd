@@ -252,6 +252,16 @@ func _ready() -> void:
 	$Phases/Phase0_Lobby/LanguagePanel/VBox/BtnLangEn.pressed.connect(_change_language.bind("en"))
 	$Phases/Phase0_Lobby/LanguagePanel/VBox/BtnLangZh.pressed.connect(_change_language.bind("zh_TW"))
  
+	# 環境切換按鈕 (僅在 Debug 模式顯示)
+	var btn_env := $Phases/Phase0_Lobby.get_node_or_null("BtnEnvToggle") as Button
+	if btn_env:
+		if OS.is_debug_build():
+			btn_env.visible = true
+			btn_env.pressed.connect(_on_btn_env_toggle_pressed)
+			_update_env_btn_text()
+		else:
+			btn_env.visible = false
+
 	# --- 網路單例訊號連接 ---
 	NetworkManager.room_created.connect(_on_network_room_created)
 	NetworkManager.join_failed.connect(_on_network_join_failed)
@@ -2593,6 +2603,16 @@ func _sync_locale_to_web() -> void:
 		if window:
 			window.godot_current_locale = TranslationServer.get_locale()
 			print("[Main] Synced locale to Web: ", TranslationServer.get_locale())
+
+func _on_btn_env_toggle_pressed() -> void:
+	AudioManager.play_tap()
+	NetworkManager.set_use_local(not NetworkManager.USE_LOCAL)
+	_update_env_btn_text()
+
+func _update_env_btn_text() -> void:
+	var btn_env := $Phases/Phase0_Lobby.get_node_or_null("BtnEnvToggle") as Button
+	if btn_env:
+		btn_env.text = "Env: Local" if NetworkManager.USE_LOCAL else "Env: Cloud"
 
 func _input(event: InputEvent) -> void:
 	var is_click_or_touch = false
