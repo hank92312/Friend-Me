@@ -111,7 +111,7 @@ const EN_MAP = {
 	"LV ??: 隨機": "LV ??: Random",
 	"(讓命運決定話題的深度)": "(Let fate decide the depth of discussion)",
 	
-	"【如何創立房間】\n\n1. 點擊「創立圈圈」按鈕。\n2. 輸入一個朋友認得的暱稱。\n3. 系統會產生一組「6 位數房間碼」，將它分享給朋友！": "【How to Create a Room】\n\n1. Tap 'Create Circle'.\n2. Enter a nickname your friends recognize.\n3. The system will generate a 6-digit room code. Share it with friends!",
+	"【如何創立房間】\n\n1. 點擊「創立圈圈」按鈕。\n2. 輸入你的名字(暱稱)。\n3. 系統會產生一組「6 位數房間碼」，將它分享給朋友！": "【How to Create a Room】\n\n1. Tap 'Create Circle'.\n2. Enter your name (nickname).\n3. The system will generate a 6-digit room code. Share it with friends!",
 	
 	"【如何加入房間】\n\n1. 點擊「加入圈圈」按鈕。\n2. 輸入朋友給你的「6 位數房間碼」。\n3. 輸入你的專屬暱稱即可進入大廳，等待房主開始遊戲。": "【How to Join a Room】\n\n1. Tap 'Join Circle'.\n2. Enter the 6-digit code shared by your friends.\n3. Enter your nickname to enter the lobby and wait for the host.",
 	

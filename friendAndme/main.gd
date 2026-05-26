@@ -101,14 +101,16 @@ var self_answer: String = ""
 var timer_label: Label = null
 var remaining_answering_seconds := 60.0
 var answering_timer_active := false
+var answering_timer_end_timestamp := 0.0
 var is_answer_submitted := false
 var _web_paste_callback = null
 var _paste_target: String = ""
 
 # 通用階段計時器（Phase 1/3/4 共用）
-var generic_timer_label: Label = null  # 目前作用的 TimerLabel（根據階段動態指向）
+var generic_timer_label: Label = null  # 目前作用 of TimerLabel
 var generic_remaining_seconds := 60.0
 var generic_timer_active := false
+var generic_timer_end_timestamp := 0.0
 var phase1_timer_label: Label = null
 var phase1w_timer_label: Label = null
 var phase3_timer_label: Label = null
@@ -517,7 +519,26 @@ func switch_phase(new_phase: GamePhase) -> void:
 
 func _on_reconnect_status(data: Dictionary) -> void:
 	var phase_str = data.get("current_phase", "")
-	print("[重連] 目前房間階段：", phase_str, "，等待本輪結束後一起加入下一輪。")
+	var remaining_sec = float(data.get("remaining_seconds", 0.0))
+	print("[重連] 目前房間階段：", phase_str, "，剩餘時間：", remaining_sec)
+	
+	# 同步最新的倒數時間
+	if remaining_sec > 0:
+		if current_phase == GamePhase.ANSWERING:
+			remaining_answering_seconds = remaining_sec
+			answering_timer_end_timestamp = Time.get_unix_time_from_system() + remaining_sec
+			answering_timer_active = true
+			if timer_label:
+				timer_label.text = tr("剩餘時間: ") + str(int(ceil(remaining_sec))) + tr(" 秒")
+				timer_label.visible = true
+		elif current_phase in [GamePhase.SELECTION, GamePhase.SELECTION_WAITING, GamePhase.GUESSING, GamePhase.REVELATION]:
+			generic_remaining_seconds = remaining_sec
+			generic_timer_end_timestamp = Time.get_unix_time_from_system() + remaining_sec
+			generic_timer_active = true
+			if generic_timer_label:
+				generic_timer_label.text = tr("剩餘時間: ") + str(int(ceil(remaining_sec))) + tr(" 秒")
+				generic_timer_label.visible = true
+
 	# 顯示重連提示（若目前在大廳畫面則直接等待）
 	if current_phase == GamePhase.WAIT_LOBBY:
 		var hint := $Phases/Phase0_WaitLobby/VBox/WaitingHint
@@ -1325,6 +1346,7 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		
 		# 啟動 1 分鐘答題倒數
 		remaining_answering_seconds = float(data.get("remaining_seconds", 60.0))
+		answering_timer_end_timestamp = Time.get_unix_time_from_system() + remaining_answering_seconds
 		answering_timer_active = true
 		if timer_label:
 			timer_label.text = tr("剩餘時間: ") + str(ceil(remaining_answering_seconds)) + tr(" 秒")
@@ -1428,9 +1450,10 @@ func _on_btn_back_pressed() -> void:
 
 func _process(delta: float) -> void:
 	if answering_timer_active:
-		remaining_answering_seconds -= delta
+		var current_time = Time.get_unix_time_from_system()
+		remaining_answering_seconds = max(0.0, answering_timer_end_timestamp - current_time)
 		if timer_label:
-			timer_label.text = tr("剩餘時間: ") + str(int(ceil(max(0.0, remaining_answering_seconds)))) + tr(" 秒")
+			timer_label.text = tr("剩餘時間: ") + str(int(ceil(remaining_answering_seconds))) + tr(" 秒")
 		if remaining_answering_seconds <= 0:
 			answering_timer_active = false
 			if timer_label:
@@ -1445,9 +1468,10 @@ func _process(delta: float) -> void:
 	
 	# 通用階段倒數計時（Phase 1/3/4）
 	if generic_timer_active:
-		generic_remaining_seconds -= delta
+		var current_time = Time.get_unix_time_from_system()
+		generic_remaining_seconds = max(0.0, generic_timer_end_timestamp - current_time)
 		if generic_timer_label:
-			generic_timer_label.text = tr("剩餘時間: ") + str(int(ceil(max(0.0, generic_remaining_seconds)))) + tr(" 秒")
+			generic_timer_label.text = tr("剩餘時間: ") + str(int(ceil(generic_remaining_seconds))) + tr(" 秒")
 		if generic_remaining_seconds <= 0:
 			generic_timer_active = false
 			if generic_timer_label:
@@ -1479,6 +1503,7 @@ func _create_phase_timer_label() -> Label:
 
 func _start_generic_timer(seconds: float) -> void:
 	generic_remaining_seconds = seconds
+	generic_timer_end_timestamp = Time.get_unix_time_from_system() + seconds
 	generic_timer_active = true
 	# 根據當前階段，顯示對應的 TimerLabel
 	_hide_all_generic_timers()
@@ -2655,7 +2680,7 @@ func _update_random_name_prefix(locale_str: String) -> void:
 
 func _update_tutorial_slides() -> void:
 	tutorial_slides = [
-		tr("【如何創立房間】\n\n1. 點擊「創立圈圈」按鈕。\n2. 輸入一個朋友認得的暱稱。\n3. 系統會產生一組「6 位數房間碼」，將它分享給朋友！"),
+		tr("【如何創立房間】\n\n1. 點擊「創立圈圈」按鈕。\n2. 輸入你的名字(暱稱)。\n3. 系統會產生一組「6 位數房間碼」，將它分享給朋友！"),
 		tr("【如何加入房間】\n\n1. 點擊「加入圈圈」按鈕。\n2. 輸入朋友給你的「6 位數房間碼」。\n3. 輸入你的專屬暱稱即可進入大廳，等待房主開始遊戲。"),
 		tr("【遊戲流程說明】\n\n- Step 1：房主選擇本次「話題深度」 (LV1~LV5)。\n- Step 2：每人根據題目輸入答案，或選擇「不回答」。\n- Step 3：配對階段！點擊上方答案，再點擊下方朋友名字，猜出誰寫了什麼。\n- Step 4：結果揭曉，看看誰才是最懂你的人！")
 	]
