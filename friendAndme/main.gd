@@ -302,7 +302,10 @@ func _ready() -> void:
 
 	# Phase 0 Lobby Wait
 	$Phases/Phase0_WaitLobby/VBox/BtnStartGame.pressed.connect(_on_btn_start_game)
-	$Phases/Phase0_WaitLobby/VBox/RoomIDHBox/BtnCopyID.pressed.connect(_on_btn_copy_id)
+	$Phases/Phase0_WaitLobby/VBox/RoomIDHBox/BtnCopyID.pressed.connect(_on_btn_copy_id.bind($Phases/Phase0_WaitLobby/VBox/RoomIDHBox/BtnCopyID))
+	var btn_copy_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDHBox/BtnCopyID")
+	if btn_copy_rev:
+		btn_copy_rev.pressed.connect(_on_btn_copy_id.bind(btn_copy_rev))
 
 	# Phase 4 ── 再玩一輪 & 離開
 	$Phases/Phase4_Revelation/VBox/BtnNextRound.pressed.connect(_on_btn_next_round)
@@ -1282,14 +1285,14 @@ func _on_btn_start_game() -> void:
 	print("Host starting game...")
 	NetworkManager.send_game_event("start_game", {})
 
-func _on_btn_copy_id() -> void:
+func _on_btn_copy_id(btn: Button) -> void:
 	if current_room_id != "":
 		AudioManager.play_copy_id()
 		DisplayServer.clipboard_set(current_room_id)
 		# 簡單的視覺回饋
-		$Phases/Phase0_WaitLobby/VBox/RoomIDHBox/BtnCopyID.text = tr("已複製")
+		btn.text = tr("已複製")
 		await get_tree().create_timer(1.5).timeout
-		$Phases/Phase0_WaitLobby/VBox/RoomIDHBox/BtnCopyID.text = tr("複製")
+		btn.text = tr("複製")
 
 func _update_player_list_ui() -> void:
 	var text = tr("已加入玩家:\n")
@@ -2160,6 +2163,11 @@ func _generate_phase4_ui() -> void:
 	_render_phase4_ui(true)
 
 func _render_phase4_ui(play_animations: bool) -> void:
+	# ── 更新房號 ──
+	var label_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDHBox/RoomIDLabel")
+	if label_rev:
+		label_rev.text = tr("房間碼: ") + current_room_id
+
 	# ── 更新輪次標題 ──
 	$Phases/Phase4_Revelation/VBox/TitleLabel.text = tr("結果揭曉 (第 %d 輪)") % round_count
 	
@@ -2682,7 +2690,7 @@ func _update_tutorial_slides() -> void:
 	tutorial_slides = [
 		tr("【如何創立房間】\n\n1. 點擊「創立圈圈」按鈕。\n2. 輸入你的名字(暱稱)。\n3. 系統會產生一組「6 位數房間碼」，將它分享給朋友！"),
 		tr("【如何加入房間】\n\n1. 點擊「加入圈圈」按鈕。\n2. 輸入朋友給你的「6 位數房間碼」。\n3. 輸入你的專屬暱稱即可進入大廳，等待房主開始遊戲。"),
-		tr("【遊戲流程說明】\n\n- Step 1：房主選擇本次「話題深度」 (LV1~LV5)。\n- Step 2：每人根據題目輸入答案，或選擇「不回答」。\n- Step 3：配對階段！點擊上方答案，再點擊下方朋友名字，猜出誰寫了什麼。\n- Step 4：結果揭曉，看看誰才是最懂你的人！")
+		tr("【遊戲流程說明】\n\n- Step 1：房主選擇「話題深度」(LV1~LV5)。\n- Step 2：每人根據題目輸入答案，或選擇「不回答」。\n- Step 3：配對階段！點擊上方答案，再點擊下方朋友名字，猜出誰寫了什麼。\n- Step 4：結果揭曉，看看誰才是最懂你的人！")
 	]
 
 func _update_localized_ui() -> void:
@@ -2834,6 +2842,16 @@ func _update_localized_ui() -> void:
 		btn_next.text = tr("等待其他人... (") + nums_str + ")"
 		
 	$Phases/Phase4_Revelation/BtnLeaveCircle.text = tr("離開圈圈")
+	
+	var label_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDHBox/RoomIDLabel")
+	if label_rev:
+		label_rev.text = tr("房間碼: ") + current_room_id
+	var btn_copy_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDHBox/BtnCopyID")
+	if btn_copy_rev:
+		if btn_copy_rev.text == "複製" or btn_copy_rev.text == "Copy":
+			btn_copy_rev.text = tr("複製")
+		elif btn_copy_rev.text == "已複製" or btn_copy_rev.text == "Copied":
+			btn_copy_rev.text = tr("已複製")
 
 	# Phase 5 Summary
 	$Phases/Phase5_Summary/VBox/Title.text = tr("個人結算")
