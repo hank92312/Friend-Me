@@ -331,7 +331,7 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 38
 text = "打上圈圈裡你朋友會認得你的名字"
 horizontal_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 3
 
 [node name="NameInputHBox" type="HBoxContainer" parent="Phases/Phase0_Lobby/NamePanel/VBox"]
 layout_mode = 2
@@ -736,7 +736,7 @@ theme_override_font_sizes/font_size = 48
 text = "(這裡會顯示從題庫載入的問題)"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 3
 
 [node name="AnswerArea" type="VBoxContainer" parent="Phases/Phase2_Answering/VBox"]
 layout_mode = 2
@@ -908,7 +908,7 @@ theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
 theme_override_font_sizes/font_size = 32
 text = "(問題會顯示在這裡)"
 horizontal_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 3
 
 [node name="ScrollContainer" type="ScrollContainer" parent="Phases/Phase4_Revelation/VBox"]
 layout_mode = 2
@@ -1018,7 +1018,7 @@ theme_override_colors/font_color = Color(0.8, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size = 32
 text = "離開後本次圈圈數據將會清空，可截圖保存紀錄。"
 horizontal_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 3
 
 [node name="BtnFinalLeave" type="Button" parent="Phases/Phase5_Summary/VBox"]
 custom_minimum_size = Vector2(400, 100)

@@ -124,6 +124,6 @@ const EN_MAP = {
 	" 次": " times",
 	"累計被猜中：": "Total Guessed by Others: ",
 	"遊戲總輪數：": "Total Rounds: ",
-	"🌟 默契排行榜 (最了解你的人)：": "🌟 Compatibility Ranking (Who knows you best):",
+	"默契排行榜 (最了解你的人)：": "Compatibility Ranking (Who knows you best):",
 	"猜中你 ": "Guessed you "
 }

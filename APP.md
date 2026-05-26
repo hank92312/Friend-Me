@@ -33,6 +33,7 @@
 ### A. 前端引擎 (Frontend) - [Godot Engine 4.6]
 - **選擇原因**：需支援跨平台 (iOS/Android，並保留 PC 版擴展性)，且便於實作 UI 動畫、特效 (VFX) 與音效，強化「桌遊儀式感」。
 - **視窗配置**：Viewport 為 `1080x1920` (直式)，開發用視窗覆寫 `540x960`，使用 `canvas_items` stretch mode + `expand` aspect。
+- **建置與打包路徑優化**：本專案已修正目錄名稱中可能阻礙 Android APK 導出的特殊符號。已廢棄舊有的同步腳本與外部建置目錄 `C:\FriendAndMe_Build`。今後所有的 Web 匯出與 Android APK 匯出作業，均直接在當前專案資料夾 `C:\FriendAndMe\friendAndme` 內完成。
 - **視覺風格**：
     - 深色穩重背景 (`#1F1C1A`)，按鈕與重要元素採溫暖橘棕色 (`#D0813C`)，hover 為亮橘 (`#E39450`)。
     - 副標題與提示文字使用淡黃色 (`#FFF2CC`)。

@@ -187,19 +187,19 @@ body {
 				if (navigator.clipboard && navigator.clipboard.readText) {
 					navigator.clipboard.readText().then(function(text) {
 						if (window.godot_on_web_paste_received) {
-							window.godot_on_web_paste_received([text]);
+							window.godot_on_web_paste_received(text);
 						}
 					}).catch(function(err) {
 						console.warn("Clipboard API failed, using prompt fallback:", err);
 						var text = prompt("請貼上複製的文字 (Paste text):", "");
 						if (text !== null && window.godot_on_web_paste_received) {
-							window.godot_on_web_paste_received([text]);
+							window.godot_on_web_paste_received(text);
 						}
 					});
 				} else {
 					var text = prompt("請貼上複製的文字 (Paste text):", "");
 					if (text !== null && window.godot_on_web_paste_received) {
-						window.godot_on_web_paste_received([text]);
+						window.godot_on_web_paste_received(text);
 					}
 				}
 			};
@@ -340,7 +340,7 @@ body {
 		</script>
 		<script>
 if (window.hasWebGL2) {
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":20586796,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":20591340,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 

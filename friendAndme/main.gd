@@ -105,6 +105,15 @@ var is_answer_submitted := false
 var _web_paste_callback = null
 var _paste_target: String = ""
 
+# 通用階段計時器（Phase 1/3/4 共用）
+var generic_timer_label: Label = null  # 目前作用的 TimerLabel（根據階段動態指向）
+var generic_remaining_seconds := 60.0
+var generic_timer_active := false
+var phase1_timer_label: Label = null
+var phase1w_timer_label: Label = null
+var phase3_timer_label: Label = null
+var phase4_timer_label: Label = null
+
 # Phase 3 狀態
 var selected_answer_btn: Button = null
 var selected_participant_btn: Button = null
@@ -192,10 +201,31 @@ func _ready() -> void:
 	timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	timer_label.add_theme_font_size_override("font_size", 36)
 	timer_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.3, 1)) # 紅橘色
-	timer_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	timer_label.autowrap_mode = _get_local_autowrap_mode()
 	answering_vbox.add_child(timer_label)
 	answering_vbox.move_child(timer_label, 0) # 放到最頂端
 	timer_label.visible = false
+	
+	# 建立其他階段的倒數 TimerLabel
+	# Phase 1 Selection (隊長選題)
+	phase1_timer_label = _create_phase_timer_label()
+	$Phases/Phase1_Selection/VBoxContainer.add_child(phase1_timer_label)
+	$Phases/Phase1_Selection/VBoxContainer.move_child(phase1_timer_label, 0)
+	
+	# Phase 1 Waiting (等待隊長)
+	phase1w_timer_label = _create_phase_timer_label()
+	$Phases/Phase1_Waiting/VBox.add_child(phase1w_timer_label)
+	$Phases/Phase1_Waiting/VBox.move_child(phase1w_timer_label, 0)
+	
+	# Phase 3 Guessing (配對)
+	phase3_timer_label = _create_phase_timer_label()
+	$Phases/Phase3_Guessing/OuterVBox.add_child(phase3_timer_label)
+	$Phases/Phase3_Guessing/OuterVBox.move_child(phase3_timer_label, 0)
+	
+	# Phase 4 Revelation (結果揭曉)
+	phase4_timer_label = _create_phase_timer_label()
+	$Phases/Phase4_Revelation/VBox.add_child(phase4_timer_label)
+	$Phases/Phase4_Revelation/VBox.move_child(phase4_timer_label, 0)
 	
 	# 為了解決名字重複問題，隨機產生一個名字 (MVP 測試用)
 	mock_self_name = tr("玩家_") + str(randi() % 1000)
@@ -231,6 +261,10 @@ func _ready() -> void:
 	NetworkManager.player_list_updated.connect(_on_network_player_list_updated)
 	NetworkManager.phase_sync_requested.connect(_on_network_phase_sync)
 	NetworkManager.reconnect_status_received.connect(_on_reconnect_status)
+
+	# 連接視窗大小變更信號，動態調整卡片大小
+	if not get_viewport().size_changed.is_connected(_on_dialog_viewport_resized):
+		get_viewport().size_changed.connect(_on_dialog_viewport_resized)
 
 	# Phase 1
 	var p1 := $Phases/Phase1_Selection/VBoxContainer
@@ -525,17 +559,30 @@ func _on_btn_instructions_pressed() -> void:
 		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 		panel.add_child(bg_overlay)
 		
-		# 建立居中容器以防止跑版
+		# 使用 MarginContainer 作為外部容器，讓卡片自適應螢幕大小
+		var outer_margin := MarginContainer.new()
+		outer_margin.name = "OuterMargin"
+		outer_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+		outer_margin.add_theme_constant_override("margin_left", 20)
+		outer_margin.add_theme_constant_override("margin_right", 20)
+		outer_margin.add_theme_constant_override("margin_top", 30)
+		outer_margin.add_theme_constant_override("margin_bottom", 30)
+		panel.add_child(outer_margin)
+		
+		# 置中容器
 		var center_container := CenterContainer.new()
 		center_container.name = "CenterContainer"
-		center_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-		panel.add_child(center_container)
+		center_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		center_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		outer_margin.add_child(center_container)
 		
-		# 建立中央漂浮卡片
+		# 建立中央漂浮卡片（大小根據 viewport 自適應）
 		var card := PanelContainer.new()
 		card.name = "DialogCard"
-		card.custom_minimum_size = Vector2(880, 1100)
-		card.pivot_offset = Vector2(440, 550)
+		var vp_size = get_viewport_rect().size
+		var card_w = mini(880, int(vp_size.x) - 60)
+		card.custom_minimum_size = Vector2(card_w, 0)
+		card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(0.16, 0.14, 0.13, 1)
@@ -558,15 +605,26 @@ func _on_btn_instructions_pressed() -> void:
 		margin.name = "MarginContainer"
 		margin.add_theme_constant_override("margin_left", 60)
 		margin.add_theme_constant_override("margin_right", 60)
-		margin.add_theme_constant_override("margin_top", 80)
-		margin.add_theme_constant_override("margin_bottom", 80)
+		margin.add_theme_constant_override("margin_top", 60)
+		margin.add_theme_constant_override("margin_bottom", 60)
 		card.add_child(margin)
+		
+		# 加入 ScrollContainer 支援小螢幕垂直滾動
+		var scroll := ScrollContainer.new()
+		scroll.name = "ScrollContainer"
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		margin.add_child(scroll)
 		
 		var vbox := VBoxContainer.new()
 		vbox.name = "VBoxContainer"
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		vbox.add_theme_constant_override("separation", 45)
-		margin.add_child(vbox)
+		vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(vbox)
+
 		
 		var title := Label.new()
 		title.name = "TitleLabel"
@@ -580,8 +638,8 @@ func _on_btn_instructions_pressed() -> void:
 		content.name = "ContentLabel"
 		content.text = tutorial_slides[0]
 		content.add_theme_font_size_override("font_size", 30)
-		content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		content.custom_minimum_size = Vector2(760, 480)
+		content.autowrap_mode = _get_local_autowrap_mode()
+		content.custom_minimum_size = Vector2(0, 0)
 		vbox.add_child(content)
 		
 		var hbox := HBoxContainer.new()
@@ -630,7 +688,8 @@ func _on_btn_instructions_pressed() -> void:
 	
 	# 播放開場動畫
 	panel.visible = true
-	var card_node = panel.get_node("CenterContainer/DialogCard")
+	_on_dialog_viewport_resized()
+	var card_node = panel.get_node("OuterMargin/CenterContainer/DialogCard")
 	card_node.scale = Vector2(0.9, 0.9)
 	card_node.modulate.a = 0.0
 	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -653,7 +712,7 @@ func _on_tutorial_close() -> void:
 	AudioManager.play_cancel()
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
 	if panel:
-		var card_node = panel.get_node("CenterContainer/DialogCard")
+		var card_node = panel.get_node("OuterMargin/CenterContainer/DialogCard")
 		var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 		tw.tween_property(card_node, "scale", Vector2(0.9, 0.9), 0.18)
 		tw.tween_property(card_node, "modulate:a", 0.0, 0.18)
@@ -665,17 +724,19 @@ func _update_tutorial_ui() -> void:
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
 	if not panel: return
 	
-	var content: Label = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/ContentLabel")
+	var content: Label = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/ContentLabel")
 	content.text = tutorial_slides[tutorial_current_slide]
 	
-	var btn_prev: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnPrev")
-	var btn_next: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnNext")
+	var btn_prev: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer/BtnPrev")
+	var btn_next: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer/BtnNext")
 	
 	btn_prev.disabled = (tutorial_current_slide == 0)
 	btn_next.disabled = (tutorial_current_slide == tutorial_slides.size() - 1)
 	
 	_set_btn_color(btn_prev, COLOR_BTN_NORMAL if not btn_prev.disabled else COLOR_BTN_DISABLED)
 	_set_btn_color(btn_next, COLOR_BTN_NORMAL if not btn_next.disabled else COLOR_BTN_DISABLED)
+	
+	_on_dialog_viewport_resized()
 
 # ── 選項 (Options) 邏輯 ──
 func _on_btn_options_pressed() -> void:
@@ -694,17 +755,30 @@ func _on_btn_options_pressed() -> void:
 		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 		panel.add_child(bg_overlay)
 		
-		# 建立居中容器以防止跑版
+		# 使用 MarginContainer 作為外部容器，讓卡片自適應螢幕大小
+		var outer_margin := MarginContainer.new()
+		outer_margin.name = "OuterMargin"
+		outer_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+		outer_margin.add_theme_constant_override("margin_left", 20)
+		outer_margin.add_theme_constant_override("margin_right", 20)
+		outer_margin.add_theme_constant_override("margin_top", 30)
+		outer_margin.add_theme_constant_override("margin_bottom", 30)
+		panel.add_child(outer_margin)
+		
+		# 置中容器
 		var center_container := CenterContainer.new()
 		center_container.name = "CenterContainer"
-		center_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-		panel.add_child(center_container)
+		center_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		center_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		outer_margin.add_child(center_container)
 		
-		# 建立中央漂浮卡片
+		# 建立中央漂浮卡片（大小根據 viewport 自適應）
 		var card := PanelContainer.new()
 		card.name = "DialogCard"
-		card.custom_minimum_size = Vector2(880, 1000)
-		card.pivot_offset = Vector2(440, 500)
+		var vp_size = get_viewport_rect().size
+		var card_w = mini(880, int(vp_size.x) - 60)
+		card.custom_minimum_size = Vector2(card_w, 0)
+		card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(0.16, 0.14, 0.13, 1)
@@ -727,15 +801,25 @@ func _on_btn_options_pressed() -> void:
 		margin.name = "MarginContainer"
 		margin.add_theme_constant_override("margin_left", 60)
 		margin.add_theme_constant_override("margin_right", 60)
-		margin.add_theme_constant_override("margin_top", 80)
-		margin.add_theme_constant_override("margin_bottom", 80)
+		margin.add_theme_constant_override("margin_top", 60)
+		margin.add_theme_constant_override("margin_bottom", 60)
 		card.add_child(margin)
+		
+		# 加入 ScrollContainer 支援小螢幕垂直滾動
+		var scroll := ScrollContainer.new()
+		scroll.name = "ScrollContainer"
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		margin.add_child(scroll)
 		
 		var vbox := VBoxContainer.new()
 		vbox.name = "VBoxContainer"
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		vbox.add_theme_constant_override("separation", 45)
-		margin.add_child(vbox)
+		vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(vbox)
 		
 		var title := Label.new()
 		title.name = "TitleLabel"
@@ -781,17 +865,18 @@ func _on_btn_options_pressed() -> void:
 		_register_button_animations(card)
 	
 	# 每次開啟時更新按鈕文字（防止在其他地方修改了靜音）
-	var btn_audio: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnAudio")
+	var btn_audio: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnAudio")
 	if btn_audio:
 		btn_audio.text = tr("音效：關閉") if AudioManager.is_muted else tr("音效：開啟")
 	
-	var btn_feedback: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnFeedback")
+	var btn_feedback: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnFeedback")
 	if btn_feedback:
 		btn_feedback.text = tr("問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)")
 	
 	# 播放開場動畫
 	panel.visible = true
-	var card_node = panel.get_node("CenterContainer/DialogCard")
+	_on_dialog_viewport_resized()
+	var card_node = panel.get_node("OuterMargin/CenterContainer/DialogCard")
 	card_node.scale = Vector2(0.9, 0.9)
 	card_node.modulate.a = 0.0
 	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -803,7 +888,7 @@ func _on_options_audio_toggled() -> void:
 	AudioManager.play_tap() # 若開啟音效，就會播放一聲作為回饋
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if panel:
-		var btn_audio: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnAudio")
+		var btn_audio: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnAudio")
 		btn_audio.text = tr("音效：關閉") if AudioManager.is_muted else tr("音效：開啟")
 
 func _on_options_feedback_pressed() -> void:
@@ -811,7 +896,7 @@ func _on_options_feedback_pressed() -> void:
 	DisplayServer.clipboard_set("hank92312@gmail.com")
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if panel:
-		var btn_feedback: Button = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnFeedback")
+		var btn_feedback: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnFeedback")
 		btn_feedback.text = tr("已複製信箱！")
 		await get_tree().create_timer(1.5).timeout
 		if btn_feedback and is_instance_valid(btn_feedback):
@@ -821,7 +906,7 @@ func _on_options_close() -> void:
 	AudioManager.play_cancel()
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if panel:
-		var card_node = panel.get_node("CenterContainer/DialogCard")
+		var card_node = panel.get_node("OuterMargin/CenterContainer/DialogCard")
 		var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 		tw.tween_property(card_node, "scale", Vector2(0.9, 0.9), 0.18)
 		tw.tween_property(card_node, "modulate:a", 0.0, 0.18)
@@ -838,7 +923,7 @@ func _show_join_error(msg: String) -> void:
 		error_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		error_label.add_theme_font_size_override("font_size", 40)
 		error_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3, 1))
-		error_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		error_label.autowrap_mode = _get_local_autowrap_mode()
 		vbox.add_child(error_label)
 		vbox.move_child(error_label, 1) # 放在標題下方
 	error_label.text = tr("錯誤：") + msg
@@ -925,17 +1010,31 @@ func _show_ad_disclaimer() -> void:
 		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 		panel.add_child(bg_overlay)
 		
-		# 建立居中容器以防止跑版
+		# 使用 MarginContainer 作為外部容器，讓卡片自適應螢幕大小
+		var outer_margin := MarginContainer.new()
+		outer_margin.name = "OuterMargin"
+		outer_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+		outer_margin.add_theme_constant_override("margin_left", 20)
+		outer_margin.add_theme_constant_override("margin_right", 20)
+		outer_margin.add_theme_constant_override("margin_top", 30)
+		outer_margin.add_theme_constant_override("margin_bottom", 30)
+		panel.add_child(outer_margin)
+		
+		# 置中容器
 		var center_container := CenterContainer.new()
 		center_container.name = "CenterContainer"
-		center_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-		panel.add_child(center_container)
+		center_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		center_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		outer_margin.add_child(center_container)
 		
-		# 建立中央漂浮卡片
+		# 建立中央漂浮卡片（大小根據 viewport 自適應）
 		var card := PanelContainer.new()
 		card.name = "DialogCard"
-		card.custom_minimum_size = Vector2(880, 1000)
-		card.pivot_offset = Vector2(440, 500)
+		var vp_size = get_viewport_rect().size
+		var card_w = mini(880, int(vp_size.x) - 60)
+		var card_h = mini(1000, int(vp_size.y) - 80)
+		card.custom_minimum_size = Vector2(card_w, 0)
+		card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(0.16, 0.14, 0.13, 1)
@@ -958,19 +1057,29 @@ func _show_ad_disclaimer() -> void:
 		margin.name = "MarginContainer"
 		margin.add_theme_constant_override("margin_left", 60)
 		margin.add_theme_constant_override("margin_right", 60)
-		margin.add_theme_constant_override("margin_top", 100)
-		margin.add_theme_constant_override("margin_bottom", 100)
+		margin.add_theme_constant_override("margin_top", 60)
+		margin.add_theme_constant_override("margin_bottom", 60)
 		card.add_child(margin)
+		
+		# 加入 ScrollContainer 支援小螢幕垂直滾動
+		var scroll := ScrollContainer.new()
+		scroll.name = "ScrollContainer"
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		margin.add_child(scroll)
 		
 		var vbox := VBoxContainer.new()
 		vbox.name = "VBoxContainer"
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		vbox.add_theme_constant_override("separation", 40)
-		margin.add_child(vbox)
+		vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(vbox)
 		
 		var icon_label := Label.new()
 		icon_label.name = "IconLabel"
-		icon_label.text = _emoji("📢", tr("-- 廣告通知 --"))
+		icon_label.text = _emoji("", tr("-- 廣告通知 --"))
 		icon_label.add_theme_font_size_override("font_size", 72 if OS.get_name() != "Android" else 36)
 		if OS.get_name() == "Android":
 			icon_label.add_theme_color_override("font_color", Color(0.7, 0.6, 0.5, 0.8))
@@ -983,15 +1092,16 @@ func _show_ad_disclaimer() -> void:
 		title.add_theme_font_size_override("font_size", 56)
 		title.add_theme_color_override("font_color", COLOR_HIGHLIGHT)
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		title.autowrap_mode = _get_local_autowrap_mode()
 		vbox.add_child(title)
 		
 		var desc := Label.new()
 		desc.name = "DescLabel"
-		desc.text = tr("您的每次觀看，都是對我們\n維持伺服器運作的支持。\n\n感謝您的體諒與陪伴 ") + _emoji("❤️", "")
+		desc.text = tr("您的每次觀看，都是對我們\n維持伺服器運作的支持。\n\n感謝您的體諒與陪伴 ") + _emoji("", "")
 		desc.add_theme_font_size_override("font_size", 44)
 		desc.add_theme_color_override("font_color", Color(1, 0.95, 0.8, 0.9))
 		desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		desc.autowrap_mode = TextServer.AUTOWRAP_WORD
+		desc.autowrap_mode = _get_local_autowrap_mode()
 		vbox.add_child(desc)
 		
 		var spacer := Control.new()
@@ -1025,18 +1135,24 @@ func _show_ad_disclaimer() -> void:
 		
 		lobby.add_child(panel)
 		_increase_font_sizes_recursively(panel)
+		
+		# 連接視窗大小變更信號，動態調整卡片大小
+		if not get_viewport().size_changed.is_connected(_on_dialog_viewport_resized):
+			get_viewport().size_changed.connect(_on_dialog_viewport_resized)
+
 	
 	panel.visible = true
+	_on_dialog_viewport_resized()
 	
 	# 確保每次顯示時按鈕狀態是正確的（防止上一輪殘留的「載入中」狀態）
-	var btn = panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnHBox/BtnContinue")
+	var btn = panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnHBox/BtnContinue")
 	if btn:
 		btn.text = tr("繼續")
 		btn.disabled = false
 		_set_btn_color(btn, COLOR_BTN_NORMAL)
 	
 	# 清除錯誤訊息
-	var error_label = panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/ErrorLabel")
+	var error_label = panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/ErrorLabel")
 	if error_label:
 		error_label.text = ""
 
@@ -1064,7 +1180,7 @@ func _on_ad_disclaimer_continue() -> void:
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("AdDisclaimerPanel")
 	if not panel: return
 	
-	var btn = panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnHBox/BtnContinue")
+	var btn = panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnHBox/BtnContinue")
 	if btn:
 		btn.text = tr("載入中...")
 		btn.disabled = true
@@ -1088,13 +1204,13 @@ func _on_network_join_failed(reason: String) -> void:
 	# 優先尋找警語面板中的 ErrorLabel
 	var panel = $Phases/Phase0_Lobby.get_node_or_null("AdDisclaimerPanel")
 	if panel:
-		var btn = panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnHBox/BtnContinue")
+		var btn = panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnHBox/BtnContinue")
 		if btn:
 			btn.text = tr("重試")
 			btn.disabled = false
 			_set_btn_color(btn, COLOR_BTN_NORMAL)
 		
-		var vbox = panel.get_node("CenterContainer/DialogCard/MarginContainer/VBoxContainer")
+		var vbox = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer")
 		if vbox:
 			var error_label = vbox.get_node_or_null("ErrorLabel")
 			if not error_label:
@@ -1103,7 +1219,7 @@ func _on_network_join_failed(reason: String) -> void:
 				error_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 				error_label.add_theme_font_size_override("font_size", 40)
 				error_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3, 1))
-				error_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+				error_label.autowrap_mode = _get_local_autowrap_mode()
 				vbox.add_child(error_label)
 				vbox.move_child(error_label, 1) # 置於標題下方
 			
@@ -1180,6 +1296,9 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 			$Phases/Phase1_Waiting/VBox/CaptainInfoLabel.text = tr("目前隊長：") + current_captain
 			switch_phase(GamePhase.SELECTION_WAITING)
 			
+		var seconds = float(data.get("remaining_seconds", 60.0))
+		_start_generic_timer(seconds)
+			
 	elif new_phase == "ANSWERING":
 		is_answer_submitted = false
 		current_level = data.get("level", 1)
@@ -1188,7 +1307,7 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		q_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var q_label := $Phases/Phase2_Answering/VBox/QuestionCard/Label
 		q_label.text = _get_localized_question(current_question)
-		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		q_label.autowrap_mode = _get_local_autowrap_mode()
 		q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		q_label.custom_minimum_size = Vector2(100, 0)
 		var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit as LineEdit
@@ -1216,6 +1335,8 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		submit_btn.text = tr("送出答案")
 		_set_btn_color(submit_btn, COLOR_BTN_DISABLED)
 		
+		_stop_generic_timer()
+		
 		# 通知：新題目來了
 		NotifManager.notify_answering()
 		switch_phase(GamePhase.ANSWERING)
@@ -1226,6 +1347,9 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		# 通知：配對階段開始
 		NotifManager.notify_guessing()
 		switch_phase(GamePhase.GUESSING)
+		
+		var seconds = float(data.get("remaining_seconds", 60.0))
+		_start_generic_timer(seconds)
 
 	elif new_phase == "REVELATION":
 		all_room_guesses = data.get("all_guesses", {})
@@ -1236,6 +1360,11 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		# 通知：結果揭曉
 		NotifManager.notify_revelation()
 		switch_phase(GamePhase.REVELATION)
+		
+		var seconds = float(data.get("remaining_seconds", 120.0))
+		_start_generic_timer(seconds)
+	else:
+		_stop_generic_timer()
 
 # ── Phase 1 ───────────────────────────────────────────────────────────────────
 func _on_btn_level_pressed(level: int) -> void:
@@ -1303,6 +1432,69 @@ func _process(delta: float) -> void:
 					_on_btn_submit_answer()
 				else:
 					_on_btn_no_answer()
+	
+	# 通用階段倒數計時（Phase 1/3/4）
+	if generic_timer_active:
+		generic_remaining_seconds -= delta
+		if generic_timer_label:
+			generic_timer_label.text = tr("剩餘時間: ") + str(int(ceil(max(0.0, generic_remaining_seconds)))) + tr(" 秒")
+		if generic_remaining_seconds <= 0:
+			generic_timer_active = false
+			if generic_timer_label:
+				generic_timer_label.text = tr("時間到！等待伺服器推進...")
+			
+			# 如果在 SELECTION 階段且我是隊長，自動選題
+			if current_phase == GamePhase.SELECTION:
+				_on_btn_level_pressed(0) # 隨機選題
+			# 如果在 GUESSING 階段且尚未提交配對，自動提交
+			elif current_phase == GamePhase.GUESSING:
+				var submit_btn := $Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch as Button
+				if submit_btn and not submit_btn.disabled:
+					_on_btn_submit_match()
+			# 如果在 REVELATION 階段且尚未準備好下一輪，自動準備
+			elif current_phase == GamePhase.REVELATION:
+				var btn_next := $Phases/Phase4_Revelation/VBox/BtnNextRound as Button
+				if btn_next and not btn_next.disabled:
+					_on_btn_next_round()
+
+func _create_phase_timer_label() -> Label:
+	var lbl := Label.new()
+	lbl.name = "PhaseTimerLabel"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 36)
+	lbl.add_theme_color_override("font_color", Color(0.9, 0.4, 0.3, 1))
+	lbl.autowrap_mode = _get_local_autowrap_mode()
+	lbl.visible = false
+	return lbl
+
+func _start_generic_timer(seconds: float) -> void:
+	generic_remaining_seconds = seconds
+	generic_timer_active = true
+	# 根據當前階段，顯示對應的 TimerLabel
+	_hide_all_generic_timers()
+	if current_phase == GamePhase.SELECTION:
+		generic_timer_label = phase1_timer_label
+	elif current_phase == GamePhase.SELECTION_WAITING:
+		generic_timer_label = phase1w_timer_label
+	elif current_phase == GamePhase.GUESSING:
+		generic_timer_label = phase3_timer_label
+	elif current_phase == GamePhase.REVELATION:
+		generic_timer_label = phase4_timer_label
+	else:
+		generic_timer_label = null
+	if generic_timer_label:
+		generic_timer_label.text = tr("剩餘時間: ") + str(int(ceil(seconds))) + tr(" 秒")
+		generic_timer_label.visible = true
+
+func _stop_generic_timer() -> void:
+	generic_timer_active = false
+	_hide_all_generic_timers()
+
+func _hide_all_generic_timers() -> void:
+	if phase1_timer_label: phase1_timer_label.visible = false
+	if phase1w_timer_label: phase1w_timer_label.visible = false
+	if phase3_timer_label: phase3_timer_label.visible = false
+	if phase4_timer_label: phase4_timer_label.visible = false
 
 func _on_btn_paste_pressed() -> void:
 	AudioManager.play_tap()
@@ -1539,14 +1731,14 @@ func _generate_phase3_ui() -> void:
 		q_label.add_theme_font_size_override("font_size", 42)
 		q_label.add_theme_color_override("font_color", Color(1, 0.95, 0.8, 1))
 		q_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		q_label.autowrap_mode = _get_local_autowrap_mode()
 		q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		q_label.custom_minimum_size = Vector2(100, 0) # 確保它能夠換行
 		outer_vbox.add_child(q_label)
 		outer_vbox.move_child(q_label, 0)
 	else:
 		q_label.add_theme_font_size_override("font_size", 42)
-		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		q_label.autowrap_mode = _get_local_autowrap_mode()
 		q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	q_label.text = _quote(_get_localized_question(current_question))
 
@@ -1574,14 +1766,14 @@ func _generate_phase3_ui() -> void:
 
 	# ── 自適應調整：根據人數調整按鈕大小與字體 ──
 	var player_count := all_participants.size()
-	var pill_font_size := 44
-	var pill_min_height := 110
+	var pill_font_size := 26
+	var pill_min_height := 70
 	if player_count <= 3:
-		pill_font_size = 56
-		pill_min_height = 150
+		pill_font_size = 36
+		pill_min_height = 90
 	elif player_count <= 5:
-		pill_font_size = 48
-		pill_min_height = 120
+		pill_font_size = 30
+		pill_min_height = 80
 
 	var self_paired := false
 	# 生成答案 pill
@@ -1591,7 +1783,7 @@ func _generate_phase3_ui() -> void:
 		btn.custom_minimum_size = Vector2(0, pill_min_height)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL # 讓它佔滿寬度
 		btn.add_theme_font_size_override("font_size", pill_font_size)
-		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		btn.autowrap_mode = _get_local_autowrap_mode()
 
 		if ans_text == self_ans and not self_paired:
 			_set_pill_style(btn, COLOR_AUTO_PAIRED, true)
@@ -1612,7 +1804,7 @@ func _generate_phase3_ui() -> void:
 		btn.custom_minimum_size = Vector2(0, pill_min_height)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL # 讓它佔滿寬度
 		btn.add_theme_font_size_override("font_size", pill_font_size)
-		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		btn.autowrap_mode = _get_local_autowrap_mode()
 
 		if p_name == mock_self_name:
 			_set_pill_style(btn, COLOR_AUTO_PAIRED, true)
@@ -1625,7 +1817,6 @@ func _generate_phase3_ui() -> void:
 		participant_buttons.append(btn)
 		participant_btn_map[btn] = p_name
 
-	_increase_font_sizes_recursively($Phases/Phase3_Guessing)
 	print("Phase 3 UI generated: ", all_answers.size(), " answers, ", all_participants.size(), " participants")
 
 # ── Phase 3：點擊配對邏輯 ─────────────────────────────────────────────────────
@@ -1828,6 +2019,10 @@ func _on_btn_submit_match() -> void:
 	var submit_btn := $Phases/Phase3_Guessing/OuterVBox/BtnSubmitMatch
 	submit_btn.disabled = true
 	submit_btn.text = tr("等待其他玩家...")
+	
+	generic_timer_active = false
+	if generic_timer_label:
+		generic_timer_label.text = tr("已提交，等待其他玩家...")
 
 # ── Phase 4：戲劇性結果揭曉與計分 ────────────────────────────────────────────
 func _generate_phase4_ui() -> void:
@@ -1927,15 +2122,17 @@ func _generate_phase4_ui() -> void:
 	last_my_accuracy_pct = my_accuracy_pct
 	last_guessed_by_pct = guessed_by_pct
 
-	_increase_font_sizes_recursively($Phases/Phase4_Revelation)
 	_render_phase4_ui(true)
 
 func _render_phase4_ui(play_animations: bool) -> void:
+	# ── 更新輪次標題 ──
+	$Phases/Phase4_Revelation/VBox/TitleLabel.text = tr("結果揭曉 (第 %d 輪)") % round_count
+	
 	# ── 調整字體大小 ──
 	var q_label := $Phases/Phase4_Revelation/VBox/QuestionLabel
 	q_label.text = _quote(_get_localized_question(current_question))
 	q_label.add_theme_font_size_override("font_size", 33) # 題目加大 1 單位 (原本 32)
-	q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	q_label.autowrap_mode = _get_local_autowrap_mode()
 	q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	q_label.custom_minimum_size = Vector2(100, 0) # 確保它能夠換行
 	
@@ -2070,7 +2267,7 @@ func _create_result_row(ans_text: String, correct_player: String, guessed_player
 	ans_label.text = _quote(tr(ans_text))
 	ans_label.add_theme_font_size_override("font_size", font_ans)
 	ans_label.add_theme_color_override("font_color", Color(1, 0.95, 0.8, 1))
-	ans_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ans_label.autowrap_mode = _get_local_autowrap_mode()
 	ans_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ans_label.custom_minimum_size.x = 760
 	vbox.add_child(ans_label)
@@ -2090,7 +2287,7 @@ func _create_result_row(ans_text: String, correct_player: String, guessed_player
 			result_label.text = "X 你猜 " + guessed_player + "，正確答案是 " + correct_player
 		result_label.add_theme_color_override("font_color", COLOR_WRONG)
 	result_label.add_theme_font_size_override("font_size", font_res)
-	result_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	result_label.autowrap_mode = _get_local_autowrap_mode()
 	result_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	result_label.custom_minimum_size.x = 760
 	vbox.add_child(result_label)
@@ -2107,6 +2304,10 @@ func _on_btn_next_round() -> void:
 	
 	print("Ready for next round...")
 	NetworkManager.send_game_event("ready_for_next_round", {})
+	
+	generic_timer_active = false
+	if generic_timer_label:
+		generic_timer_label.text = tr("已準備，等待中...")
 
 func _on_network_next_round_status(ready: int, total: int) -> void:
 	var btn = $Phases/Phase4_Revelation/VBox/BtnNextRound
@@ -2133,7 +2334,7 @@ func _generate_phase5_ui() -> void:
 		q_label.text = tr("問：") + _get_localized_question(record["question"])
 		q_label.add_theme_font_size_override("font_size", 32)
 		q_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1))
-		q_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		q_label.autowrap_mode = _get_local_autowrap_mode()
 		q_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		q_label.custom_minimum_size.x = 760
 		history_vbox.add_child(q_label)
@@ -2142,7 +2343,7 @@ func _generate_phase5_ui() -> void:
 		a_label.text = tr("答：") + tr(record["answer"])
 		a_label.add_theme_font_size_override("font_size", 36)
 		a_label.add_theme_color_override("font_color", Color(0.98, 0.82, 0.2, 1))
-		a_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		a_label.autowrap_mode = _get_local_autowrap_mode()
 		a_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		a_label.custom_minimum_size.x = 760
 		history_vbox.add_child(a_label)
@@ -2170,7 +2371,7 @@ func _generate_phase5_ui() -> void:
 	# 組合排行榜字串
 	var ranking_str := ""
 	if ranking_list.size() > 0:
-		ranking_str = "\n" + tr("🌟 默契排行榜 (最了解你的人)：")
+		ranking_str = "\n" + _emoji("", "★") + " " + tr("默契排行榜 (最了解你的人)：")
 		for i in range(ranking_list.size()):
 			var item = ranking_list[i]
 			ranking_str += "\n" + str(i + 1) + ". " + item["name"] + " (" + tr("猜中你 ") + str(item["count"]) + tr(" 次") + ")"
@@ -2181,8 +2382,7 @@ func _generate_phase5_ui() -> void:
 	
 	var stats_lbl = vbox.get_node("StatsLabel") as Label
 	stats_lbl.text = stats_text
-	stats_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_increase_font_sizes_recursively($Phases/Phase5_Summary)
+	stats_lbl.autowrap_mode = _get_local_autowrap_mode()
 
 func _on_btn_final_leave_pressed() -> void:
 	AudioManager.play_final_leave() # 播放確定離開音效
@@ -2513,8 +2713,12 @@ func _update_localized_ui() -> void:
 		var btn = p1.get_node(btn_name) as Button
 		if btn:
 			var vbox = btn.get_node("VBox") as VBoxContainer
+			var title = vbox.get_node("Title") as Label
 			var subtitle = vbox.get_node("SubTitle") as Label
-			subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD
+			var offset = 6 if OS.has_feature("web") else 4
+			title.add_theme_font_size_override("font_size", 44 + offset)
+			subtitle.add_theme_font_size_override("font_size", 30 + offset)
+			subtitle.autowrap_mode = _get_local_autowrap_mode()
 			# Determine target wrapping width: button width is 800 normally.
 			var target_width = btn.size.x - 40 if btn.size.x > 0 else 760
 			subtitle.custom_minimum_size.x = target_width
@@ -2596,66 +2800,148 @@ func _update_localized_ui() -> void:
 	# Dynamic dialog panels update
 	var tutorial_panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
 	if tutorial_panel and tutorial_panel.visible:
-		var title: Label = tutorial_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/TitleLabel")
+		var title: Label = tutorial_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/TitleLabel")
 		if title:
 			title.text = tr("遊戲說明")
-		var btn_prev: Button = tutorial_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnPrev")
+		var btn_prev: Button = tutorial_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer/BtnPrev")
 		if btn_prev:
 			btn_prev.text = tr("上一頁")
-		var btn_next_tut: Button = tutorial_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/HBoxContainer/BtnNext")
+		var btn_next_tut: Button = tutorial_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer/BtnNext")
 		if btn_next_tut:
 			btn_next_tut.text = tr("下一頁")
-		var btn_close: Button = tutorial_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnClose")
+		var btn_close: Button = tutorial_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnClose")
 		if btn_close:
 			btn_close.text = tr("關閉說明")
 		_update_tutorial_ui()
 
 	var options_panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	if options_panel and options_panel.visible:
-		var title: Label = options_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/TitleLabel")
+		var title: Label = options_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/TitleLabel")
 		if title:
 			title.text = tr("設定選項")
-		var btn_audio: Button = options_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnAudio")
+		var btn_audio: Button = options_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnAudio")
 		if btn_audio:
 			btn_audio.text = tr("音效：關閉") if AudioManager.is_muted else tr("音效：開啟")
-		var btn_feedback: Button = options_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnFeedback")
+		var btn_feedback: Button = options_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnFeedback")
 		if btn_feedback:
 			btn_feedback.text = tr("問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)")
-		var btn_close_opt: Button = options_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnClose")
+		var btn_close_opt: Button = options_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnClose")
 		if btn_close_opt:
 			btn_close_opt.text = tr("關閉設定")
 
+
 	var ad_panel = $Phases/Phase0_Lobby.get_node_or_null("AdDisclaimerPanel")
 	if ad_panel and ad_panel.visible:
-		var icon_label: Label = ad_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/IconLabel")
+		var icon_label: Label = ad_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/IconLabel")
 		if icon_label:
-			icon_label.text = _emoji("📢", tr("-- 廣告通知 --"))
-		var title: Label = ad_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/TitleLabel")
+			icon_label.text = _emoji("", tr("-- 廣告通知 --"))
+		var title: Label = ad_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/TitleLabel")
 		if title:
 			title.text = tr("即將播放一則短廣告")
-		var desc: Label = ad_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/DescLabel")
+		var desc: Label = ad_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/DescLabel")
 		if desc:
-			desc.text = tr("您的每次觀看，都是對我們\n維持伺服器運作的支持。\n\n感謝您的體諒與陪伴 ") + _emoji("❤️", "")
-		var btn_cancel: Button = ad_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnHBox/BtnCancel")
+			desc.text = tr("您的每次觀看，都是對我們\n維持伺服器運作的支持。\n\n感謝您的體諒與陪伴 ") + _emoji("", "")
+		var btn_cancel: Button = ad_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnHBox/BtnCancel")
 		if btn_cancel:
 			btn_cancel.text = tr("返回")
-		var btn_continue: Button = ad_panel.get_node_or_null("CenterContainer/DialogCard/MarginContainer/VBoxContainer/BtnHBox/BtnContinue")
+		var btn_continue: Button = ad_panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnHBox/BtnContinue")
 		if btn_continue:
 			if btn_continue.disabled:
 				btn_continue.text = tr("載入中...")
 			else:
 				btn_continue.text = tr("繼續")
+	
+	_update_all_autowrap_modes_recursively(self)
+	_on_dialog_viewport_resized()
 
 func _on_network_next_round_countdown(seconds: int) -> void:
 	var btn = $Phases/Phase4_Revelation/VBox/BtnNextRound
 	if btn:
 		btn.text = tr("即將進入下一輪... (") + str(seconds) + tr("秒)")
 
+# ── 視窗大小變更時，動態調整所有浮動彈窗卡片大小 ──
+func _on_dialog_viewport_resized() -> void:
+	var vp_size = get_viewport_rect().size
+	
+	# 調整廣告面板卡片
+	var ad_panel = $Phases/Phase0_Lobby.get_node_or_null("AdDisclaimerPanel")
+	_adjust_single_dialog_card(ad_panel, vp_size)
+		
+	# 調整說明面板卡片
+	var tut_panel = $Phases/Phase0_Lobby.get_node_or_null("TutorialPanel")
+	_adjust_single_dialog_card(tut_panel, vp_size)
+		
+	# 調整設定面板卡片
+	var opt_panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
+	_adjust_single_dialog_card(opt_panel, vp_size)
+
+func _adjust_single_dialog_card(panel: Control, vp_size: Vector2) -> void:
+	if not is_inside_tree():
+		return
+	if panel and panel.visible:
+		var card = panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard")
+		if card:
+			# 寬度限制
+			var card_w = mini(880, int(vp_size.x) - 60)
+			card.custom_minimum_size.x = card_w
+			
+			var scroll = card.get_node_or_null("MarginContainer/ScrollContainer")
+			var vbox = scroll.get_node_or_null("VBoxContainer") if scroll else null
+			if scroll and vbox:
+				# 動態為 vbox 內所有啟用折行的 Label 設定正確的寬度限制，以取得精準的折行高度
+				var target_content_w = card_w - 120 # 扣除 margin (60 * 2)
+				for child in vbox.get_children():
+					if child is Label and child.autowrap_mode != TextServer.AUTOWRAP_OFF:
+						child.custom_minimum_size.x = target_content_w
+			
+			# 等待一幀，讓 Godot 引擎更新排版並套用寬度限制，以取得正確的自動折行高度
+			await get_tree().process_frame
+			# 再次確保節點在等待後仍然有效且可見
+			if not is_instance_valid(panel) or not panel.visible or not is_inside_tree():
+				return
+				
+			if scroll and vbox:
+				# 取得內部長度
+				var content_h = vbox.get_combined_minimum_size().y
+				# 計算最大可允許高度（視窗高度減去邊界與 margin）
+				var max_h = max(200, int(vp_size.y) - 200)
+				# 設定 ScrollContainer 自適應高度
+				scroll.custom_minimum_size.y = mini(content_h, max_h)
+				print("DEBUG: Dialog resized -> name: ", panel.name, " width: ", card_w, " height: ", scroll.custom_minimum_size.y, " (content: ", content_h, ", max: ", max_h, ")")
+
 func _increase_font_sizes_recursively(node: Node) -> void:
-	var offset = 12 if OS.has_feature("web") else 10
+	# 排除關卡選擇按鈕及其子節點，防止文字跑出框外
+	var p = node
+	while p != null:
+		if p.name.begins_with("BtnLevel") or p.name == "BtnRandom":
+			return
+		p = p.get_parent()
+		
+	var offset = 6 if OS.has_feature("web") else 4
 	if node is Label or node is Button or node is LineEdit or node is RichTextLabel:
 		var current_size = node.get_theme_font_size("font_size")
 		node.add_theme_font_size_override("font_size", current_size + offset)
 		
 	for child in node.get_children():
 		_increase_font_sizes_recursively(child)
+
+func _get_local_autowrap_mode() -> TextServer.AutowrapMode:
+	if TranslationServer.get_locale().begins_with("en"):
+		return TextServer.AUTOWRAP_WORD_SMART
+	else:
+		return TextServer.AUTOWRAP_ARBITRARY
+
+func _update_all_autowrap_modes_recursively(node: Node) -> void:
+	# 排除 godot_ai 插件的 UI，避免干涉工具介面
+	var p = node
+	while p != null:
+		if p.name == "godot_ai":
+			return
+		p = p.get_parent()
+		
+	if node is Label or node is Button or node is LinkButton:
+		if node.autowrap_mode != TextServer.AUTOWRAP_OFF:
+			node.autowrap_mode = _get_local_autowrap_mode()
+			
+	for child in node.get_children():
+		_update_all_autowrap_modes_recursively(child)

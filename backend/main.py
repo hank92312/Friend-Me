@@ -3,17 +3,172 @@ from room_manager import manager
 import uuid
 import asyncio
 import time
+import json as json_module
+import random
+import os
 from database import AsyncSessionLocal, init_db
 from sqlalchemy import select
 import models
 from contextlib import asynccontextmanager
 
 countdown_tasks: dict[str, asyncio.Task] = {}
+phase_timeout_tasks: dict[str, asyncio.Task] = {}
+
+# 載入題庫供超時自動選題用
+question_bank = {}
+def load_question_bank():
+    global question_bank
+    # 嘗試從多個可能的路徑載入
+    paths = [
+        os.path.join(os.path.dirname(__file__), "..", "FriendAndMe", "data", "question_bank.json"),
+        os.path.join(os.path.dirname(__file__), "..", "friendAndme", "data", "question_bank.json"),
+    ]
+    for path in paths:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json_module.load(f)
+                question_bank = data.get("levels", {})
+                print(f"[QuestionBank] Loaded {len(question_bank)} levels from {path}")
+                return
+    print("[QuestionBank] WARNING: question_bank.json not found!")
+
+def get_random_question_from_bank():
+    """從題庫隨機選一個 level 和問題"""
+    if not question_bank:
+        return 1, "(自動選題 - 題庫未載入)"
+    level_key = random.choice(list(question_bank.keys()))
+    level = int(level_key)
+    questions = question_bank[level_key].get("questions", [])
+    if not questions:
+        return level, "(自動選題 - 無題目)"
+    q = random.choice(questions)
+    return level, q.get("text", "(自動選題)")
+
+def start_phase_timeout(room_id: str, phase: str, seconds: int = 60):
+    """啟動一個階段超時任務，超時後自動推進"""
+    cancel_phase_timeout(room_id)
+    task = asyncio.create_task(run_phase_timeout(room_id, phase, seconds))
+    phase_timeout_tasks[room_id] = task
+
+def cancel_phase_timeout(room_id: str):
+    """取消該房間的超時任務"""
+    task = phase_timeout_tasks.pop(room_id, None)
+    if task and not task.done():
+        task.cancel()
+
+async def run_phase_timeout(room_id: str, phase: str, seconds: int):
+    """等待 seconds 秒後，根據 phase 自動推進"""
+    try:
+        await asyncio.sleep(seconds)
+        current_phase = manager.room_states.get(room_id, {}).get("phase", "")
+        if current_phase != phase:
+            return  # 階段已被手動推進，不再處理
+
+        print(f"[PhaseTimeout] Room {room_id} phase {phase} timed out after {seconds}s. Auto-advancing...")
+
+        if phase == "SELECTION":
+            # 自動選題
+            level, question = get_random_question_from_bank()
+            captain = manager.room_captains.get(room_id, "")
+            if room_id in manager.room_answers:
+                manager.room_answers[room_id] = {}
+            if room_id in manager.room_guesses:
+                manager.room_guesses[room_id] = {}
+            await manager.create_round(room_id, question, level, captain)
+            manager.room_states[room_id]["phase"] = "ANSWERING"
+            manager.room_states[room_id]["started_at"] = time.time()
+            await manager.broadcast_to_room(room_id, {
+                "event": "phase_changed",
+                "new_phase": "ANSWERING",
+                "level": level,
+                "question": question,
+                "remaining_seconds": 60
+            })
+            start_phase_timeout(room_id, "ANSWERING", 60)
+
+        elif phase == "ANSWERING":
+            # 自動提交空答案
+            active_names = manager.get_active_player_names(room_id)
+            waiting = manager.waiting_for_next_round.get(room_id, [])
+            eligible = [n for n in active_names if n not in waiting]
+            submitted = manager.room_answers.get(room_id, {})
+            for name in eligible:
+                if name not in submitted:
+                    await manager.submit_answer(room_id, name, "未填寫")
+            manager.room_states[room_id]["phase"] = "GUESSING"
+            manager.room_states[room_id]["started_at"] = time.time()
+            await manager.broadcast_to_room(room_id, {
+                "event": "phase_changed",
+                "new_phase": "GUESSING",
+                "answers": manager.room_answers[room_id],
+                "remaining_seconds": 60
+            })
+            start_phase_timeout(room_id, "GUESSING", 60)
+
+        elif phase == "GUESSING":
+            # 自動提交空配對
+            active_names = manager.get_active_player_names(room_id)
+            waiting = manager.waiting_for_next_round.get(room_id, [])
+            eligible = [n for n in active_names if n not in waiting]
+            submitted = manager.room_guesses.get(room_id, {})
+            for name in eligible:
+                if name not in submitted:
+                    await manager.submit_guesses(room_id, name, {})
+            manager.room_states[room_id]["phase"] = "REVELATION"
+            manager.room_states[room_id]["started_at"] = time.time()
+            
+            all_stats = {}
+            async with AsyncSessionLocal() as db:
+                for name in active_names:
+                    res = await db.execute(select(models.User).where(models.User.name == name))
+                    u = res.scalars().first()
+                    if u:
+                        all_stats[name] = {
+                            "total_guesses": u.total_guesses,
+                            "correct_guesses": u.correct_guesses,
+                            "total_disclosures": u.total_disclosures,
+                            "recognized_disclosures": u.recognized_disclosures
+                        }
+            await manager.broadcast_to_room(room_id, {
+                "event": "phase_changed",
+                "new_phase": "REVELATION",
+                "all_guesses": manager.room_guesses.get(room_id, {}),
+                "all_answers": manager.room_answers.get(room_id, {}),
+                "player_stats": all_stats,
+                "remaining_seconds": 120
+            })
+            start_phase_timeout(room_id, "REVELATION", 120)
+
+        elif phase == "REVELATION":
+            # 強制進入下一輪
+            if room_id in countdown_tasks:
+                countdown_tasks[room_id].cancel()
+                countdown_tasks.pop(room_id, None)
+            new_captain = manager.rotate_captain(room_id)
+            manager.room_states[room_id]["phase"] = "SELECTION"
+            manager.room_states[room_id]["started_at"] = time.time()
+            active_names = manager.get_active_player_names(room_id)
+            manager.room_ready_players[room_id] = set()
+            await manager.broadcast_to_room(room_id, {
+                "event": "phase_changed",
+                "new_phase": "SELECTION",
+                "captain": new_captain,
+                "players": active_names,
+                "remaining_seconds": 60
+            })
+            start_phase_timeout(room_id, "SELECTION", 60)
+
+    except asyncio.CancelledError:
+        pass
+    except Exception as e:
+        print(f"[PhaseTimeout] Error in room {room_id} phase {phase}: {e}")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 啟動時：自動建表
     await init_db()
+    load_question_bank()
     yield
     # 關閉時：可以在此處清理資源
 
@@ -83,6 +238,36 @@ async def get_player_stats(player_name: str):
 
 # --- WebSocket: 處理房間內的即時互動 ---
 
+async def start_next_round_countdown(room_id: str):
+    try:
+        # 倒數 10 秒
+        for seconds_left in range(10, 0, -1):
+            await manager.broadcast_to_room(room_id, {
+                "event": "next_round_countdown",
+                "seconds": seconds_left
+            })
+            await asyncio.sleep(1)
+        
+        # 倒數結束，強制進入下一輪
+        print(f"[Countdown Force] Room {room_id} next round countdown finished. Forcing next round.")
+        new_captain = manager.rotate_captain(room_id)
+        manager.room_states[room_id]["phase"] = "SELECTION"
+        manager.room_states[room_id]["started_at"] = time.time()
+        active_names = manager.get_active_player_names(room_id)
+        await manager.broadcast_to_room(room_id, {
+            "event": "phase_changed",
+            "new_phase": "SELECTION",
+            "captain": new_captain,
+            "players": active_names,
+            "remaining_seconds": 60
+        })
+        countdown_tasks.pop(room_id, None)
+        cancel_phase_timeout(room_id)
+        start_phase_timeout(room_id, "SELECTION", 60)
+    except asyncio.CancelledError:
+        print(f"[Countdown Cancelled] Room {room_id} next round countdown cancelled.")
+        pass
+
 @app.websocket("/ws/{room_id}/{player_name}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: str):
     # 嘗試重連（若為斷線重連，回傳 True）
@@ -106,10 +291,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
         captain = manager.room_captains.get(room_id, "")
         
         # 計算剩餘時間
-        remaining = 60
-        if current_phase == "ANSWERING":
-            started_at = manager.room_states.get(room_id, {}).get("started_at", time.time())
-            remaining = max(0, 60 - int(time.time() - started_at))
+        started_at = manager.room_states.get(room_id, {}).get("started_at", time.time())
+        duration = 120 if current_phase == "REVELATION" else 60
+        remaining = max(0, duration - int(time.time() - started_at))
             
         await manager.send_to_player(room_id, player_name, {
             "event": "reconnect_status",
@@ -127,11 +311,14 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
             if data.get("event") == "start_game":
                 captain = manager.room_captains.get(room_id)
                 manager.room_states[room_id]["phase"] = "SELECTION"
+                manager.room_states[room_id]["started_at"] = time.time()
                 await manager.broadcast_to_room(room_id, {
                     "event": "phase_changed",
                     "new_phase": "SELECTION",
-                    "captain": captain
+                    "captain": captain,
+                    "remaining_seconds": 60
                 })
+                start_phase_timeout(room_id, "SELECTION", 60)
 
             # 隊長選題
             elif data.get("event") == "topic_selected":
@@ -156,6 +343,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                     "question": question,
                     "remaining_seconds": 60
                 })
+                cancel_phase_timeout(room_id)  # 取消 SELECTION 超時
+                start_phase_timeout(room_id, "ANSWERING", 60)
 
             # 提交答案
             elif data.get("event") == "answer_submitted":
@@ -174,12 +363,16 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                 })
 
                 if all_done:
+                    cancel_phase_timeout(room_id)  # 取消 ANSWERING 超時
                     manager.room_states[room_id]["phase"] = "GUESSING"
+                    manager.room_states[room_id]["started_at"] = time.time()
                     await manager.broadcast_to_room(room_id, {
                         "event": "phase_changed",
                         "new_phase": "GUESSING",
-                        "answers": manager.room_answers[room_id]
+                        "answers": manager.room_answers[room_id],
+                        "remaining_seconds": 60
                     })
+                    start_phase_timeout(room_id, "GUESSING", 60)
 
             # 提交猜測結果
             elif data.get("event") == "guesses_submitted":
@@ -188,6 +381,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
 
                 if all_done:
                     manager.room_states[room_id]["phase"] = "REVELATION"
+                    manager.room_states[room_id]["started_at"] = time.time()
                     
                     # 抓取目前連線中所有玩家的最新累計數據
                     active_players = manager.get_active_player_names(room_id)
@@ -209,34 +403,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                         "new_phase": "REVELATION",
                         "all_guesses": manager.room_guesses[room_id],
                         "all_answers": manager.room_answers[room_id],
-                        "player_stats": all_stats
+                        "player_stats": all_stats,
+                        "remaining_seconds": 120
                     })
-
-async def start_next_round_countdown(room_id: str):
-    try:
-        # 倒數 10 秒
-        for seconds_left in range(10, 0, -1):
-            await manager.broadcast_to_room(room_id, {
-                "event": "next_round_countdown",
-                "seconds": seconds_left
-            })
-            await asyncio.sleep(1)
-        
-        # 倒數結束，強制進入下一輪
-        print(f"[Countdown Force] Room {room_id} next round countdown finished. Forcing next round.")
-        new_captain = manager.rotate_captain(room_id)
-        manager.room_states[room_id]["phase"] = "SELECTION"
-        active_names = manager.get_active_player_names(room_id)
-        await manager.broadcast_to_room(room_id, {
-            "event": "phase_changed",
-            "new_phase": "SELECTION",
-            "captain": new_captain,
-            "players": active_names
-        })
-        countdown_tasks.pop(room_id, None)
-    except asyncio.CancelledError:
-        print(f"[Countdown Cancelled] Room {room_id} next round countdown cancelled.")
-        pass
+                    cancel_phase_timeout(room_id)  # 取消 GUESSING 超時
+                    start_phase_timeout(room_id, "REVELATION", 120)
 
             # 準備接續下一輪
             elif data.get("event") == "ready_for_next_round":
@@ -271,13 +442,17 @@ async def start_next_round_countdown(room_id: str):
                     
                     new_captain = manager.rotate_captain(room_id)
                     manager.room_states[room_id]["phase"] = "SELECTION"
+                    manager.room_states[room_id]["started_at"] = time.time()
                     active_names = manager.get_active_player_names(room_id)
                     await manager.broadcast_to_room(room_id, {
                         "event": "phase_changed",
                         "new_phase": "SELECTION",
                         "captain": new_captain,
-                        "players": active_names
+                        "players": active_names,
+                        "remaining_seconds": 60
                     })
+                    cancel_phase_timeout(room_id)  # 取消 REVELATION 超時
+                    start_phase_timeout(room_id, "SELECTION", 60)
                 elif ready_count >= total_count - 1 and total_count > 1:
                     # 剩下最後一個玩家未點擊，啟動 10 秒倒數計時
                     if room_id not in countdown_tasks:
@@ -289,13 +464,17 @@ async def start_next_round_countdown(room_id: str):
             elif data.get("event") == "next_round":
                 new_captain = manager.rotate_captain(room_id)
                 manager.room_states[room_id]["phase"] = "SELECTION"
+                manager.room_states[room_id]["started_at"] = time.time()
                 active_names = manager.get_active_player_names(room_id)
                 await manager.broadcast_to_room(room_id, {
                     "event": "phase_changed",
                     "new_phase": "SELECTION",
                     "captain": new_captain,
-                    "players": active_names
+                    "players": active_names,
+                    "remaining_seconds": 60
                 })
+                cancel_phase_timeout(room_id)
+                start_phase_timeout(room_id, "SELECTION", 60)
 
             # 離開房間
             elif data.get("event") == "leave_room":
@@ -328,11 +507,15 @@ async def _check_phase_progress_after_disconnect(room_id: str):
         submitted = manager.room_answers.get(room_id, {})
         if eligible and all(n in submitted for n in eligible):
             manager.room_states[room_id]["phase"] = "GUESSING"
+            manager.room_states[room_id]["started_at"] = time.time()
             await manager.broadcast_to_room(room_id, {
                 "event": "phase_changed",
                 "new_phase": "GUESSING",
-                "answers": manager.room_answers[room_id]
+                "answers": manager.room_answers[room_id],
+                "remaining_seconds": 60
             })
+            cancel_phase_timeout(room_id)
+            start_phase_timeout(room_id, "GUESSING", 60)
 
     elif current_phase == "GUESSING":
         active_names = manager.get_active_player_names(room_id)
@@ -341,6 +524,7 @@ async def _check_phase_progress_after_disconnect(room_id: str):
         submitted = manager.room_guesses.get(room_id, {})
         if eligible and all(n in submitted for n in eligible):
             manager.room_states[room_id]["phase"] = "REVELATION"
+            manager.room_states[room_id]["started_at"] = time.time()
             
             # 同樣需要抓取累計數據
             all_stats = {}
@@ -361,8 +545,11 @@ async def _check_phase_progress_after_disconnect(room_id: str):
                 "new_phase": "REVELATION",
                 "all_guesses": manager.room_guesses[room_id],
                 "all_answers": manager.room_answers[room_id],
-                "player_stats": all_stats
+                "player_stats": all_stats,
+                "remaining_seconds": 120
             })
+            cancel_phase_timeout(room_id)
+            start_phase_timeout(room_id, "REVELATION", 120)
 
     elif current_phase == "REVELATION":
         # 檢查是否剩下的人都已經 ready
@@ -393,13 +580,17 @@ async def _check_phase_progress_after_disconnect(room_id: str):
                     
                 new_captain = manager.rotate_captain(room_id)
                 manager.room_states[room_id]["phase"] = "SELECTION"
+                manager.room_states[room_id]["started_at"] = time.time()
                 active_names = manager.get_active_player_names(room_id)
                 await manager.broadcast_to_room(room_id, {
                     "event": "phase_changed",
                     "new_phase": "SELECTION",
                     "captain": new_captain,
-                    "players": active_names
+                    "players": active_names,
+                    "remaining_seconds": 60
                 })
+                cancel_phase_timeout(room_id)
+                start_phase_timeout(room_id, "SELECTION", 60)
             elif ready_count >= total_count - 1 and total_count > 1:
                 # 剩最後一個人，啟動倒數計時
                 if room_id not in countdown_tasks:

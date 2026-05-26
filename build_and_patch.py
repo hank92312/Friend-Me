@@ -98,19 +98,19 @@ def main():
 				if (navigator.clipboard && navigator.clipboard.readText) {
 					navigator.clipboard.readText().then(function(text) {
 						if (window.godot_on_web_paste_received) {
-							window.godot_on_web_paste_received([text]);
+							window.godot_on_web_paste_received(text);
 						}
 					}).catch(function(err) {
 						console.warn("Clipboard API failed, using prompt fallback:", err);
 						var text = prompt("請貼上複製的文字 (Paste text):", "");
 						if (text !== null && window.godot_on_web_paste_received) {
-							window.godot_on_web_paste_received([text]);
+							window.godot_on_web_paste_received(text);
 						}
 					});
 				} else {
 					var text = prompt("請貼上複製的文字 (Paste text):", "");
 					if (text !== null && window.godot_on_web_paste_received) {
-						window.godot_on_web_paste_received([text]);
+						window.godot_on_web_paste_received(text);
 					}
 				}
 			};
