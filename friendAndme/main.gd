@@ -254,10 +254,16 @@ func _ready() -> void:
 	$Phases/Phase0_Lobby/LanguagePanel/VBox/BtnLangEn.pressed.connect(_change_language.bind("en"))
 	$Phases/Phase0_Lobby/LanguagePanel/VBox/BtnLangZh.pressed.connect(_change_language.bind("zh_TW"))
  
-	# 環境切換按鈕 (僅在 Debug 模式顯示)
+	# 環境切換按鈕 (在 Debug 模式或本地 Web 測試時顯示)
+	var is_debug_env := OS.is_debug_build()
+	if OS.has_feature("web"):
+		var hostname = JavaScriptBridge.eval("window.location.hostname")
+		if hostname != null and (hostname == "localhost" or hostname == "127.0.0.1" or hostname.contains("192.168.") or hostname.contains("10.")):
+			is_debug_env = true
+
 	var btn_env := $Phases/Phase0_Lobby.get_node_or_null("BtnEnvToggle") as Button
 	if btn_env:
-		if OS.is_debug_build():
+		if is_debug_env:
 			btn_env.visible = true
 			btn_env.pressed.connect(_on_btn_env_toggle_pressed)
 			_update_env_btn_text()
