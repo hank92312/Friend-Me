@@ -303,7 +303,7 @@ func _ready() -> void:
 	# Phase 0 Lobby Wait
 	$Phases/Phase0_WaitLobby/VBox/BtnStartGame.pressed.connect(_on_btn_start_game)
 	$Phases/Phase0_WaitLobby/VBox/RoomIDHBox/BtnCopyID.pressed.connect(_on_btn_copy_id.bind($Phases/Phase0_WaitLobby/VBox/RoomIDHBox/BtnCopyID))
-	var btn_copy_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDHBox/BtnCopyID")
+	var btn_copy_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDVBox/BtnCopyID")
 	if btn_copy_rev:
 		btn_copy_rev.pressed.connect(_on_btn_copy_id.bind(btn_copy_rev))
 
@@ -2164,7 +2164,7 @@ func _generate_phase4_ui() -> void:
 
 func _render_phase4_ui(play_animations: bool) -> void:
 	# ── 更新房號 ──
-	var label_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDHBox/RoomIDLabel")
+	var label_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDVBox/RoomIDLabel")
 	if label_rev:
 		label_rev.text = tr("房間碼: ") + current_room_id
 
@@ -2843,10 +2843,10 @@ func _update_localized_ui() -> void:
 		
 	$Phases/Phase4_Revelation/BtnLeaveCircle.text = tr("離開圈圈")
 	
-	var label_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDHBox/RoomIDLabel")
+	var label_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDVBox/RoomIDLabel")
 	if label_rev:
 		label_rev.text = tr("房間碼: ") + current_room_id
-	var btn_copy_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDHBox/BtnCopyID")
+	var btn_copy_rev = $Phases/Phase4_Revelation.get_node_or_null("RoomIDVBox/BtnCopyID")
 	if btn_copy_rev:
 		if btn_copy_rev.text == "複製" or btn_copy_rev.text == "Copy":
 			btn_copy_rev.text = tr("複製")

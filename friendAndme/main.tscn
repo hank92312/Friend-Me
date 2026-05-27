@@ -969,27 +969,26 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_btn_outline")
 theme_override_font_sizes/font_size = 32
 text = "離開圈圈"
 
-[node name="RoomIDHBox" type="HBoxContainer" parent="Phases/Phase4_Revelation"]
+[node name="RoomIDVBox" type="VBoxContainer" parent="Phases/Phase4_Revelation"]
 layout_mode = 1
 offset_left = 40.0
-offset_top = 40.0
-offset_right = 440.0
-offset_bottom = 120.0
-theme_override_constants/separation = 16
+offset_top = 30.0
+offset_right = 260.0
+offset_bottom = 160.0
+theme_override_constants/separation = 8
 alignment = 0
 
-[node name="RoomIDLabel" type="Label" parent="Phases/Phase4_Revelation/RoomIDHBox"]
+[node name="RoomIDLabel" type="Label" parent="Phases/Phase4_Revelation/RoomIDVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.82, 0.2, 1)
 theme_override_font_sizes/font_size = 32
 text = "房間碼: ------"
-vertical_alignment = 1
 
-[node name="BtnCopyID" type="Button" parent="Phases/Phase4_Revelation/RoomIDHBox"]
-custom_minimum_size = Vector2(100, 60)
+[node name="BtnCopyID" type="Button" parent="Phases/Phase4_Revelation/RoomIDVBox"]
+custom_minimum_size = Vector2(120, 50)
 layout_mode = 2
-size_flags_vertical = 4
-theme_override_font_sizes/font_size = 28
+size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 26
 text = "複製"
 
 
