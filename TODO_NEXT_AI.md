@@ -14,4 +14,6 @@ Hello 接下來接手的 AI：
 - **廣告平台正式切換**：
   - 驗證 CrazyGames SDK 或 Google AdSense H5 廣告的載入速度，並在 `index.html` 將廣告平台 `AD_PLATFORM` 由測試模式 (MOCK) 切換為正式上線模式。
 - **Android APK 簽章與 Google Play 準備**：
-  - 配置正式的 Release keystore 簽章金鑰，更新 `export_presets.cfg`，準備進行上架 Google Play 的 Release AAB/APK 打包。
+  - **F1.0 階段 APK 打包方案決策**：在匯出正式 Release APK 時需要配置安全性簽章金鑰（否則會回報找不到發行 keystore 的錯誤），目前有以下兩個方案待下階段評估執行：
+    * **方案 A（測試首選，直接匯出）**：使用 `--export-debug` 匯出。此方案直接使用 Godot 內建之 debug 金鑰進行自動簽署，產出的 APK 在遊戲功能、邏輯與效能上與正式版 100% 相同，可直接安裝至實機上進行完整測試，最適合目前的測試與體驗期。
+    * **方案 B（發布首選，配置正式金鑰）**：在本地使用 `keytool` 生成正式的 `release.keystore` 密鑰檔案，配置於 `export_presets.cfg` 的 keystore 屬性中，並執行 `--export-release`。此方案產出的 APK/AAB 專供上架 Google Play 商店使用，金鑰一旦產生需妥善保存（遺失將無法更新商店上的 App）。
