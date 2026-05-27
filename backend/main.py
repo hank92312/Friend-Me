@@ -20,6 +20,7 @@ def load_question_bank():
     global question_bank
     # 嘗試從多個可能的路徑載入
     paths = [
+        os.path.join(os.path.dirname(__file__), "data", "question_bank.json"),
         os.path.join(os.path.dirname(__file__), "..", "FriendAndMe", "data", "question_bank.json"),
         os.path.join(os.path.dirname(__file__), "..", "friendAndme", "data", "question_bank.json"),
     ]

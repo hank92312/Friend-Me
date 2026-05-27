@@ -1,0 +1,564 @@
+{
+  "levels": {
+    "1": {
+      "name": "Everyday Chit-Chat",
+      "subtitle": "Daily habits & lifestyle",
+      "description": "Establish basic psychological safety and observe each other's daily rhythms and micro-habits.",
+      "questions": [
+        {
+          "id": "L1Q01",
+          "tag": "Breakfast Preference",
+          "text": "If you had to eat the exact same thing for breakfast every day without getting sick of it, what specific food would you choose?"
+        },
+        {
+          "id": "L1Q02",
+          "tag": "Wind-down Ritual",
+          "text": "Describe your typical \"wind-down ritual\" in the last 30 minutes before you go to sleep."
+        },
+        {
+          "id": "L1Q03",
+          "tag": "Shower Routine",
+          "text": "When you take a shower, what is the very first body part you wash?"
+        },
+        {
+          "id": "L1Q04",
+          "tag": "Phone Dependency",
+          "text": "When you wake up, what is the very first app you open on your phone?"
+        },
+        {
+          "id": "L1Q05",
+          "tag": "Food Taboo",
+          "text": "Name one ingredient that absolutely does not belong on a pizza (or in your favorite dish), and briefly explain why."
+        },
+        {
+          "id": "L1Q06",
+          "tag": "Commute",
+          "text": "What is your most common habit or activity when riding public transportation or commuting?"
+        },
+        {
+          "id": "L1Q07",
+          "tag": "Wardrobe Style",
+          "text": "If you open your closet right now, what specific color or style of clothing takes up the most space?"
+        },
+        {
+          "id": "L1Q08",
+          "tag": "Dream Home",
+          "text": "With an unlimited budget, what does your absolute dream living environment look like (e.g., a beachfront cabin, a high-rise penthouse)?"
+        },
+        {
+          "id": "L1Q09",
+          "tag": "Shopping Habit",
+          "text": "What was the last item you bought as a pure \"impulse purchase\"?"
+        },
+        {
+          "id": "L1Q10",
+          "tag": "Exercise",
+          "text": "If you were forced to work out, what specific physical activity would you dread the least?"
+        },
+        {
+          "id": "L1Q11",
+          "tag": "Coffee Order",
+          "text": "When you go to a coffee shop or cafe, what is your exact, highly specific go-to order?"
+        },
+        {
+          "id": "L1Q12",
+          "tag": "Cleaning Habit",
+          "text": "How often do you do a deep, thorough clean of your bedroom or apartment?"
+        },
+        {
+          "id": "L1Q13",
+          "tag": "Travel Role",
+          "text": "In a group trip, what specific role do you unconsciously take on (e.g., the human GPS, the foodie, the one who sleeps in)?"
+        },
+        {
+          "id": "L1Q14",
+          "tag": "Digital Habits",
+          "text": "How many unread notifications do you currently have on your messaging app?"
+        },
+        {
+          "id": "L1Q15",
+          "tag": "Weather Preference",
+          "text": "What specific type of weather or temperature instantly puts you in a good mood?"
+        },
+        {
+          "id": "L1Q16",
+          "tag": "Travel Essential",
+          "text": "When traveling far from home, what specific \"non-essential, but comforting\" item must you pack in your suitcase?"
+        },
+        {
+          "id": "L1Q17",
+          "tag": "Signature Dish",
+          "text": "If you had to cook your signature dish to host friends today, what specific meal would you make?"
+        },
+        {
+          "id": "L1Q18",
+          "tag": "Gaming Quirk",
+          "text": "When playing video games or board games, what specific quirky habit do you have (e.g., exploring every corner of the map, hoarding items, or rushing the main quest)?"
+        },
+        {
+          "id": "L1Q19",
+          "tag": "Pet Fantasy",
+          "text": "If you could adopt any pet right now (ignoring space, money, or climate constraints), what specific animal would you choose?"
+        },
+        {
+          "id": "L1Q20",
+          "tag": "Convenience Store",
+          "text": "If you walk into a convenience store or gas station just to grab a quick craving, what is your go-to snack or drink?"
+        },
+        {
+          "id": "L1Q21",
+          "tag": "Morning Trigger",
+          "text": "Within the first hour of waking up, what is the one specific thing you must do, otherwise your day hasn't \"truly started\"?"
+        },
+        {
+          "id": "L1Q22",
+          "tag": "Desk Ecosystem",
+          "text": "What specific, non-practical item must you have on your desk or workspace just to make yourself happy?"
+        },
+        {
+          "id": "L1Q23",
+          "tag": "Fashion Fixation",
+          "text": "When shopping for clothes, shoes, or bags, what specific \"design detail\" or \"material\" inexplicably draws you in?"
+        },
+        {
+          "id": "L1Q24",
+          "tag": "Appliance Choice",
+          "text": "If you could only keep one non-essential \"quality-of-life\" small appliance in your home, which one would it be?"
+        },
+        {
+          "id": "L1Q25",
+          "tag": "Street Observation",
+          "text": "When walking alone down the street, what specific thing usually catches your eye (e.g., typography on signs, people's outfits, stray animals)?"
+        }
+      ]
+    },
+    "2": {
+      "name": "Happy Hour / Pub Talk",
+      "subtitle": "Personal flair & social preferences",
+      "description": "Showcase unique tastes, project interests, and share views on the outside world.",
+      "questions": [
+        {
+          "id": "L2Q01",
+          "tag": "Dream Vacation",
+          "text": "With an unlimited budget and a full week off, which country would you most want to visit?"
+        },
+        {
+          "id": "L2Q02",
+          "tag": "First Impression",
+          "text": "What do you think is the most common first impression people have of you?"
+        },
+        {
+          "id": "L2Q03",
+          "tag": "Social Battery",
+          "text": "When your social battery runs out at a large gathering, what specific excuse or method do you use to slip away?"
+        },
+        {
+          "id": "L2Q04",
+          "tag": "Movie Taste",
+          "text": "What is a movie you love so much that you've watched it more than three times?"
+        },
+        {
+          "id": "L2Q05",
+          "tag": "Work Motivation",
+          "text": "Aside from the paycheck, what specific aspect of your job gives you the most sense of accomplishment?"
+        },
+        {
+          "id": "L2Q06",
+          "tag": "Idol/Role Model",
+          "text": "Which public figure or fictional character do you admire the most?"
+        },
+        {
+          "id": "L2Q07",
+          "tag": "Gifting Philosophy",
+          "text": "What is the most successful, surprising gift you've ever given someone that you are still proud of?"
+        },
+        {
+          "id": "L2Q08",
+          "tag": "Comfort Food",
+          "text": "When you're feeling mildly stressed, what specific food instantly comforts you?"
+        },
+        {
+          "id": "L2Q09",
+          "tag": "Instant Skill",
+          "text": "If you could instantly master a new language or musical instrument, which one would you choose?"
+        },
+        {
+          "id": "L2Q10",
+          "tag": "Social Red Flag",
+          "text": "In a social setting, what specific behavior instantly makes you lose respect for someone?"
+        },
+        {
+          "id": "L2Q11",
+          "tag": "Ideal Weekend",
+          "text": "What does your perfect Saturday afternoon look like?"
+        },
+        {
+          "id": "L2Q12",
+          "tag": "Animal Alter Ego",
+          "text": "If you had to describe yourself as an animal, what would you be?"
+        },
+        {
+          "id": "L2Q13",
+          "tag": "Fire Rescue",
+          "text": "If your house were on fire and you could only save one non-electronic personal item, what would it be?"
+        },
+        {
+          "id": "L2Q14",
+          "tag": "Restaurant Dealbreaker",
+          "text": "When picking a restaurant for a group dinner, what specific type of place or \"red flag\" would make you absolutely avoid it?"
+        },
+        {
+          "id": "L2Q15",
+          "tag": "Social Media",
+          "text": "Which social media platform do you use the most frequently?"
+        },
+        {
+          "id": "L2Q16",
+          "tag": "AI Assistant",
+          "text": "If an AI robot could take over exactly one daily chore you despise, what specific task would you assign it?"
+        },
+        {
+          "id": "L2Q17",
+          "tag": "Side Hustle",
+          "text": "If you were to start a completely unprofitable, niche \"side hustle\" or hobby, what would it be?"
+        },
+        {
+          "id": "L2Q18",
+          "tag": "Virtual Isekai",
+          "text": "If you could live inside the universe of any video game, movie, or anime for a month, which specific world would you choose?"
+        },
+        {
+          "id": "L2Q19",
+          "tag": "Saving the Vibe",
+          "text": "In a group hangout, if the conversation suddenly goes dead silent, what specific topic or action do you use to save the vibe?"
+        },
+        {
+          "id": "L2Q20",
+          "tag": "Found Money",
+          "text": "If you found $50 on the street and had to blow it purely on entertainment today, what exactly would you do with it?"
+        },
+        {
+          "id": "L2Q21",
+          "tag": "Content Creator",
+          "text": "If you were forced to start a YouTube channel or Podcast today, what specific topic would you cover?"
+        },
+        {
+          "id": "L2Q22",
+          "tag": "VIP Tickets",
+          "text": "If you could get free, front-row VIP tickets to any live event (concert, theater, sports), who or what would you go see?"
+        },
+        {
+          "id": "L2Q23",
+          "tag": "Micro-Achievement",
+          "text": "In the past year, what is the smallest, most trivial achievement that you felt secretly proud of for a long time?"
+        },
+        {
+          "id": "L2Q24",
+          "tag": "Internet Rabbit Hole",
+          "text": "When browsing the internet, what specific type of clickbait title or video genre always gets you to click and go down a rabbit hole?"
+        },
+        {
+          "id": "L2Q25",
+          "tag": "Nostalgia Track",
+          "text": "Name a specific song or soundtrack that instantly teleports you back to a specific memory from your school days."
+        }
+      ]
+    },
+    "3": {
+      "name": "Deep Conversations",
+      "subtitle": "Emotional resonance & life complaints",
+      "description": "Lower defenses, share emotional experiences, and reveal inner turbulence.",
+      "questions": [
+        {
+          "id": "L3Q01",
+          "tag": "Tearjerker",
+          "text": "What was the last movie or book that actually made you cry?"
+        },
+        {
+          "id": "L3Q02",
+          "tag": "Workplace Grievance",
+          "text": "What specific behavior from a boss or coworker is absolutely intolerable to you?"
+        },
+        {
+          "id": "L3Q03",
+          "tag": "Romance Priority",
+          "text": "When looking for a partner, what specific trait or core value do you prioritize above all else?"
+        },
+        {
+          "id": "L3Q04",
+          "tag": "Time Machine",
+          "text": "If you could turn back time, which specific stage of your life would you return to and make a different choice?"
+        },
+        {
+          "id": "L3Q05",
+          "tag": "Safety Net",
+          "text": "When you are feeling anxious, who is the very first person you want to call for comfort?"
+        },
+        {
+          "id": "L3Q06",
+          "tag": "Friendship Boundary",
+          "text": "What specific action by a friend would make you cut ties with them completely?"
+        },
+        {
+          "id": "L3Q07",
+          "tag": "Childhood Insecurity",
+          "text": "Growing up, what specific trait of yours were you the most insecure about?"
+        },
+        {
+          "id": "L3Q08",
+          "tag": "Love Language",
+          "text": "What is a specific small detail—something your partner did or said—that made you feel profoundly loved?"
+        },
+        {
+          "id": "L3Q09",
+          "tag": "Career Low",
+          "text": "What was the single most regretful job you’ve ever taken?"
+        },
+        {
+          "id": "L3Q10",
+          "tag": "Anger Expression",
+          "text": "When you are extremely angry, what specific behavior or reaction do you typically display?"
+        },
+        {
+          "id": "L3Q11",
+          "tag": "Peer Pressure",
+          "text": "Describe a time you pretended to like something just to fit in or please a group."
+        },
+        {
+          "id": "L3Q12",
+          "tag": "Family Impact",
+          "text": "Which specific aspect of your parents' personalities has had the deepest impact on you?"
+        },
+        {
+          "id": "L3Q13",
+          "tag": "First Love",
+          "text": "When you think of your first love, what is the very first keyword that pops into your head?"
+        },
+        {
+          "id": "L3Q14",
+          "tag": "Life Motivation",
+          "text": "When you are completely exhausted, what is the core motivation that keeps you pushing forward?"
+        },
+        {
+          "id": "L3Q15",
+          "tag": "Solo Adventure",
+          "text": "What is the most \"out-of-your-comfort-zone\" activity you have ever done completely by yourself (e.g., going to a concert, eating at a fancy sit-down restaurant)?"
+        },
+        {
+          "id": "L3Q16",
+          "tag": "Breaking Point",
+          "text": "What recent, specific life event gave you a deep sense of powerlessness or almost made you \"snap\"?"
+        },
+        {
+          "id": "L3Q17",
+          "tag": "Unsaid Apology",
+          "text": "Looking back at your past relationships, what specific kind of person (or specific individual) do you feel you owe a sincere apology to?"
+        },
+        {
+          "id": "L3Q18",
+          "tag": "Relationship Friction",
+          "text": "In an intimate relationship (partner or best friend), what kind of \"trivial everyday thing\" most easily makes you secretly sulk?"
+        },
+        {
+          "id": "L3Q19",
+          "tag": "Peer Anxiety",
+          "text": "Seeing people around you achieve what \"specific milestone or status\" most easily triggers your own anxiety?"
+        },
+        {
+          "id": "L3Q20",
+          "tag": "Rock Bottom Support",
+          "text": "After experiencing a terrible setback, what \"specific action\" do you want friends to take to support you (instead of just saying \"cheer up\")?"
+        },
+        {
+          "id": "L3Q21",
+          "tag": "Stereotype",
+          "text": "What is the most common misconception people have about your personality, which is entirely untrue on the inside?"
+        },
+        {
+          "id": "L3Q22",
+          "tag": "Fork in the Road",
+          "text": "Looking back, what seemingly insignificant \"tiny decision\" ended up drastically altering the trajectory of your life?"
+        },
+        {
+          "id": "L3Q23",
+          "tag": "Compromise",
+          "text": "What is the biggest \"break of your own rules\" or compromise you’ve ever made for a friend or partner?"
+        },
+        {
+          "id": "L3Q24",
+          "tag": "Closure Ritual",
+          "text": "When dealing with \"loss\" (a relationship, an environment, or an object), what specific ritual do you need to go through to truly move on?"
+        },
+        {
+          "id": "L3Q25",
+          "tag": "Secret Pride",
+          "text": "Name a slightly \"dark\" or \"arrogant\" trait in your personality that you actually kind of like about yourself."
+        }
+      ]
+    },
+    "4": {
+      "name": "Late Night Confessions",
+      "subtitle": "Secrets, hidden worries & true vulnerability",
+      "description": "Deep disclosure, touching upon the vulnerable self and hidden truths.",
+      "questions": [
+        {
+          "id": "L4Q01",
+          "tag": "Deepest Fear",
+          "text": "What is the deepest fear hidden in your heart that you are always avoiding facing?"
+        },
+        {
+          "id": "L4Q02",
+          "tag": "Midnight Secret",
+          "text": "Share a tiny secret you’ve buried in your heart for a long time and never confessed to your friends."
+        },
+        {
+          "id": "L4Q03",
+          "tag": "Hidden Quirk",
+          "text": "Write down a specific quirk or habit you have that nobody in this room knows about."
+        },
+        {
+          "id": "L4Q04",
+          "tag": "Final Words",
+          "text": "If you were to pass away tomorrow, who is the one person you most want to say \"I'm sorry\" to right now?"
+        },
+        {
+          "id": "L4Q05",
+          "tag": "Self-Criticism",
+          "text": "What is the one flaw in your own personality that you hate the most?"
+        },
+        {
+          "id": "L4Q06",
+          "tag": "Social Mask",
+          "text": "What kind of facade do you typically use to protect yourself when around strangers?"
+        },
+        {
+          "id": "L4Q07",
+          "tag": "Rebellious Streak",
+          "text": "What is the craziest, most unconventional thing you have ever done in your life?"
+        },
+        {
+          "id": "L4Q08",
+          "tag": "Building Trust",
+          "text": "In interpersonal relationships, what specific event or behavior instantly makes you build deep trust with someone?"
+        },
+        {
+          "id": "L4Q09",
+          "tag": "Unfulfilled Dream",
+          "text": "What is a dream you were forced to abandon for practical reasons, but still long for?"
+        },
+        {
+          "id": "L4Q10",
+          "tag": "Alienation",
+          "text": "When was the last time you felt completely out of place and disconnected from the world?"
+        },
+        {
+          "id": "L4Q11",
+          "tag": "Selfish Moment",
+          "text": "Confess the most selfish thing you have ever done but never told anyone about."
+        },
+        {
+          "id": "L4Q12",
+          "tag": "Psychological Shadow",
+          "text": "What specific childhood experience still impacts your adult life today?"
+        },
+        {
+          "id": "L4Q13",
+          "tag": "Social Burnout",
+          "text": "When you are completely burnt out from socializing and just want to disappear, where do you go or what do you do to heal yourself?"
+        },
+        {
+          "id": "L4Q14",
+          "tag": "Defining Success",
+          "text": "Setting fame and wealth aside, what does true \"success\" look like in your heart?"
+        },
+        {
+          "id": "L4Q15",
+          "tag": "Flashes of Jealousy",
+          "text": "Honestly speaking, what specific achievement or possession of a close friend has ever caused you to feel a brief flash of jealousy?"
+        }
+      ]
+    },
+    "5": {
+      "name": "Soul Interrogation",
+      "subtitle": "Core values & extreme challenges",
+      "description": "Challenge boundaries, explore the meaning of life, and test moral limits.",
+      "questions": [
+        {
+          "id": "L5Q01",
+          "tag": "Value Sorting",
+          "text": "If you had to trade the most important thing in your life (tangible or intangible) for absolute freedom, what would you trade away?"
+        },
+        {
+          "id": "L5Q02",
+          "tag": "Trolley Problem",
+          "text": "If the world were ending and you could only bring one person onto Noah's Ark, what cruel criteria would you use to choose that person?"
+        },
+        {
+          "id": "L5Q03",
+          "tag": "Memory Erasure",
+          "text": "If someone offered you ten million dollars on the condition that they erase one specific memory from your life, which memory would you choose to erase?"
+        },
+        {
+          "id": "L5Q04",
+          "tag": "Meaning of Life",
+          "text": "If you knew for a fact you only had one year left to live, exactly how would you plan your next 365 days?"
+        },
+        {
+          "id": "L5Q05",
+          "tag": "Immortality Choice",
+          "text": "If you gained the power of immortality, what \"ultimate life mission\" would you set for yourself?"
+        },
+        {
+          "id": "L5Q06",
+          "tag": "Boundary of Justice",
+          "text": "Name a specific action that you believe is \"morally or legally wrong, but under certain circumstances, you would absolutely do it.\""
+        },
+        {
+          "id": "L5Q07",
+          "tag": "Essence of Self",
+          "text": "If you had to reintroduce \"who you are\" to a completely amnesiac version of yourself, what would be the three most important sentences you write down?"
+        },
+        {
+          "id": "L5Q08",
+          "tag": "Value of Pain",
+          "text": "Name a specific setback that caused you immense pain, but looking back now, you are glad it happened."
+        },
+        {
+          "id": "L5Q09",
+          "tag": "Hero's Sacrifice",
+          "text": "If your sacrifice could buy one specific change for the world, what exact change would you want your life to be traded for?"
+        },
+        {
+          "id": "L5Q10",
+          "tag": "Scale of Betrayal",
+          "text": "Under what extreme circumstances would you choose to betray your most cherished principles?"
+        },
+        {
+          "id": "L5Q11",
+          "tag": "Future Generations",
+          "text": "If the world is doomed to be destroyed in fifty years, what final message or advice would you leave for today's younger generation?"
+        },
+        {
+          "id": "L5Q12",
+          "tag": "Defining Loneliness",
+          "text": "Describe the specific moment in your life where you felt the most \"ultimate, absolute loneliness.\""
+        },
+        {
+          "id": "L5Q13",
+          "tag": "Limits of Forgiveness",
+          "text": "Name a specific action that, even if done by your closest friend or family member, you could absolutely never forgive."
+        },
+        {
+          "id": "L5Q14",
+          "tag": "Trading Lifespan",
+          "text": "If you could trade ten years of your life for one supernatural ability, what exact power would you choose?"
+        },
+        {
+          "id": "L5Q15",
+          "tag": "The Final Question",
+          "text": "If you had to engrave a short phrase summarizing your entire life on your tombstone, what would you engrave?"
+        }
+      ]
+    }
+  }
+}
