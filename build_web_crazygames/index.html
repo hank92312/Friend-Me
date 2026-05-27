@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- Social Media Preview (Open Graph) -->
+		<meta property="og:title" content="Friends & Me - 異步社交探索桌遊" />
+		<meta property="og:description" content="透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。" />
+		<meta property="og:image" content="https://friendandme.netlify.app/index.icon.png" />
+		<meta property="og:url" content="https://friendandme.netlify.app/" />
+		<meta property="og:type" content="website" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="Friends & Me - 異步社交探索桌遊" />
+		<meta name="twitter:description" content="透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。" />
+		<meta name="twitter:image" content="https://friendandme.netlify.app/index.icon.png" />
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+		<title>Friend&Me</title>
+		<style>
+html, body, #canvas {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+body {
+	color: white;
+	background-color: black;
+	overflow: hidden;
+	touch-action: none;
+}
+
+#canvas {
+	display: block;
+}
+
+#canvas:focus {
+	outline: none;
+}
+
+#status, #status-splash, #status-progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
+#status, #status-splash {
+	top: 0;
+	bottom: 0;
+}
+
+#status {
+	background-color: #242424;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	visibility: hidden;
+}
+
+#status-splash {
+	max-height: 100%;
+	max-width: 100%;
+	margin: auto;
+}
+
+#status-splash.show-image--false {
+	display: none;
+}
+
+#status-splash.fullsize--true {
+	height: 100%;
+	width: 100%;
+	object-fit: contain;
+}
+
+#status-splash.use-filter--false {
+	image-rendering: pixelated;
+}
+
+#status-progress, #status-notice {
+	display: none;
+}
+
+#status-progress {
+	bottom: 10%;
+	width: 50%;
+	margin: 0 auto;
+}
+
+#status-notice {
+	background-color: #5b3943;
+	border-radius: 0.5rem;
+	border: 1px solid #9b3943;
+	color: #e0e0e0;
+	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+	line-height: 1.3;
+	margin: 0 2rem;
+	overflow: hidden;
+	padding: 1rem;
+	text-align: center;
+	z-index: 1;
+}
+		</style>
+		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+
+	</head>
+	<body>
+		<canvas id="canvas">
+			Your browser does not support the canvas tag.
+		</canvas>
+
+		<noscript>
+			Your browser does not support JavaScript.
+		</noscript>
+
+		<div id="status">
+			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="index.png" alt="">
+			<progress id="status-progress"></progress>
+			<div id="status-notice"></div>
+		</div>
+
+		<style>
+			/* 行動端輸入與長按優化補丁 */
+			input, textarea {
+				-webkit-user-select: text !important;
+				user-select: text !important;
+				touch-action: auto !important;
+				pointer-events: auto !important;
+			}
+		</style>
+		<script>
+			(function() {
+				function patchInputs() {
+					const inputs = document.querySelectorAll('input, textarea');
+					inputs.forEach(input => {
+						if (input.dataset.patched) return;
+						input.dataset.patched = "true";
+						
+						input.style.setProperty('user-select', 'text', 'important');
+						input.style.setProperty('-webkit-user-select', 'text', 'important');
+						input.style.setProperty('pointer-events', 'auto', 'important');
+						
+						input.addEventListener('focus', function() {
+							console.log("[Input Patch] Input focused:", input);
+							input.style.setProperty('opacity', '0.01', 'important');
+							input.style.setProperty('z-index', '99999', 'important');
+							input.style.setProperty('position', 'absolute', 'important');
+							input.style.setProperty('top', '10px', 'important');
+							input.style.setProperty('left', '10px', 'important');
+							input.style.setProperty('width', 'calc(100% - 20px)', 'important');
+							input.style.setProperty('height', '80px', 'important');
+						});
+						
+						input.addEventListener('blur', function() {
+							input.style.setProperty('z-index', '-1', 'important');
+							input.style.setProperty('opacity', '0', 'important');
+						});
+					});
+				}
+				setInterval(patchInputs, 500);
+			})();
+		</script>
+		<script>
+			// 攔截 fetch 以強行對 Godot 的資源請求（如 .wasm 和 .pck 檔案）進行 Cache-Busting
+			(function() {
+				const originalFetch = window.fetch;
+				window.fetch = function (input, init) {
+					let url = (typeof input === 'string') ? input : input.url;
+					if (url.endsWith('.wasm') || url.endsWith('.pck') || url.indexOf('.wasm?') !== -1 || url.indexOf('.pck?') !== -1) {
+						if (url.indexOf('v=') === -1) {
+							const separator = url.indexOf('?') !== -1 ? '&' : '?';
+							url = url + separator + 'v=' + Date.now();
+						}
+					}
+					if (typeof input === 'string') {
+						input = url;
+					} else {
+						input = new Request(url, input);
+					}
+					return originalFetch(input, init);
+				};
+			})();
+		</script>
+		<script>
+			// 全局剪貼簿貼上支援（含 Prompt 備用方案）
+			window.requestClipboard = function() {
+				if (navigator.clipboard && navigator.clipboard.readText) {
+					navigator.clipboard.readText().then(function(text) {
+						if (window.godot_on_web_paste_received) {
+							window.godot_on_web_paste_received(text);
+						}
+					}).catch(function(err) {
+						console.warn("Clipboard API failed, using prompt fallback:", err);
+						var text = prompt("請貼上複製的文字 (Paste text):", "");
+						if (text !== null && window.godot_on_web_paste_received) {
+							window.godot_on_web_paste_received(text);
+						}
+					});
+				} else {
+					var text = prompt("請貼上複製的文字 (Paste text):", "");
+					if (text !== null && window.godot_on_web_paste_received) {
+						window.godot_on_web_paste_received(text);
+					}
+				}
+			};
+		</script>
+		<script>
+			// WebGL 2.0 相容性檢測與阻斷
+			window.hasWebGL2 = (function() {
+				try {
+					var canvas = document.createElement('canvas');
+					return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
+				} catch (e) {
+					return false;
+				}
+			})();
+			
+			if (window.hasWebGL2) {
+				document.write('<script src="index.js?v=' + Date.now() + '"><\/script>');
+			} else {
+				console.error("WebGL 2.0 is not supported or disabled on this device/browser.");
+				window.addEventListener('DOMContentLoaded', function() {
+					// 隱藏原本的 status 載入區
+					var statusDiv = document.getElementById('status');
+					if (statusDiv) statusDiv.style.display = 'none';
+					
+					// 建立精美的 WebGL2 錯誤提示畫面
+					var errDiv = document.createElement('div');
+					errDiv.id = 'webgl2-error-overlay';
+					errDiv.innerHTML = `
+						<div class="err-card">
+							<h2>⚠️ 瀏覽器未啟用 WebGL 2.0</h2>
+							<p class="subtitle">WebGL 2.0 Disabled / Unsupported</p>
+							<div class="desc-box">
+								<p>您的裝置或瀏覽器目前未開啟 <strong>WebGL 2.0</strong> 繪圖功能，導致遊戲無法順利載入。這在蘋果 iOS / iPadOS Safari 瀏覽器上非常常見。</p>
+								<hr/>
+								<h3>🛠️ 解決步驟引導：</h3>
+								<ul>
+									<li><strong>開啟系統 WebGL 2.0 (iOS 15 以前)</strong>：請前往您 iPad/iPhone 的「設定」➔「Safari」➔「進階」➔「Experimental Features」，尋找並將 <strong>WebGL 2.0</strong> 開啟。</li>
+									<li><strong>檢查記憶體，關閉多餘分頁</strong>：Safari 會因為記憶體過高而拒絕提供繪圖環境。請關閉其他所有瀏覽器分頁，並「重新整理」此頁面。</li>
+									<li><strong>關閉「低耗電模式」</strong>：部分裝置在低耗電模式下會停用 WebGL，請關閉省電模式後重試。</li>
+									<li><strong>更新系統或更換設備</strong>：建議將 iOS 系統更新至最新版本，或嘗試使用電腦版 Chrome / Firefox 瀏覽器進行遊玩。</li>
+								</ul>
+							</div>
+							<button class="retry-btn" onclick="window.location.reload()">重新整理 ➔</button>
+						</div>
+					`;
+					
+					// 注入 CSS
+					var style = document.createElement('style');
+					style.innerHTML = `
+						#webgl2-error-overlay {
+							position: fixed;
+							top: 0;
+							left: 0;
+							width: 100%;
+							height: 100%;
+							background: #161413;
+							display: flex;
+							justify-content: center;
+							align-items: center;
+							z-index: 100000;
+							font-family: system-ui, -apple-system, sans-serif;
+							color: #FFF2CC;
+							padding: 20px;
+							box-sizing: border-box;
+							overflow-y: auto;
+						}
+						.err-card {
+							width: 95%;
+							max-width: 500px;
+							background: #1F1C1A;
+							border: 2px solid #D0813C;
+							border-radius: 24px;
+							padding: 25px;
+							box-sizing: border-box;
+							box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+							text-align: left;
+						}
+						.err-card h2 {
+							color: #E39450;
+							margin-top: 0;
+							margin-bottom: 5px;
+							font-size: 1.5rem;
+							text-align: center;
+						}
+						.err-card .subtitle {
+							color: #7C6858;
+							font-size: 0.9rem;
+							margin-top: 0;
+							margin-bottom: 20px;
+							text-align: center;
+							font-weight: bold;
+						}
+						.desc-box {
+							font-size: 0.95rem;
+							line-height: 1.5;
+							color: #E0E0E0;
+						}
+						.desc-box hr {
+							border: 0;
+							border-top: 1px dashed rgba(208, 129, 60, 0.3);
+							margin: 15px 0;
+						}
+						.desc-box h3 {
+							color: #FFF2CC;
+							font-size: 1.05rem;
+							margin-bottom: 10px;
+						}
+						.desc-box ul {
+							padding-left: 20px;
+							margin: 0;
+						}
+						.desc-box li {
+							margin-bottom: 12px;
+						}
+						.retry-btn {
+							background: #D0813C;
+							color: #1F1C1A;
+							border: none;
+							padding: 12px 20px;
+							font-size: 1.05rem;
+							border-radius: 40px;
+							cursor: pointer;
+							width: 100%;
+							margin-top: 20px;
+							font-weight: bold;
+							transition: all 0.2s ease;
+							box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+						}
+						.retry-btn:hover {
+							background: #E39450;
+							box-shadow: 0 6px 15px rgba(227, 148, 80, 0.4);
+						}
+					`;
+					document.head.appendChild(style);
+					document.body.appendChild(errDiv);
+				});
+			}
+		</script>
+		<script>
+if (window.hasWebGL2) {
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":20593692,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_THREADS_ENABLED = false;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const statusOverlay = document.getElementById('status');
+	const statusProgress = document.getElementById('status-progress');
+	const statusNotice = document.getElementById('status-notice');
+
+	let initializing = true;
+	let statusMode = '';
+
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) {
+			return;
+		}
+		if (mode === 'hidden') {
+			statusOverlay.remove();
+			initializing = false;
+			return;
+		}
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		statusMode = mode;
+	}
+
+	function setStatusNotice(text) {
+		while (statusNotice.lastChild) {
+			statusNotice.removeChild(statusNotice.lastChild);
+		}
+		const lines = text.split('\n');
+		lines.forEach((line) => {
+			statusNotice.appendChild(document.createTextNode(line));
+			statusNotice.appendChild(document.createElement('br'));
+		});
+	}
+
+	function displayFailureNotice(err) {
+		console.error(err);
+		if (err instanceof Error) {
+			setStatusNotice(err.message);
+		} else if (typeof err === 'string') {
+			setStatusNotice(err);
+		} else {
+			setStatusNotice('An unknown error occurred.');
+		}
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	const missing = Engine.getMissingFeatures({
+		threads: GODOT_THREADS_ENABLED,
+	});
+
+	if (missing.length !== 0) {
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+			let serviceWorkerRegistrationPromise;
+			try {
+				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+			} catch (err) {
+				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+			}
+			// There's a chance that installing the service worker would fix the issue
+			Promise.race([
+				serviceWorkerRegistrationPromise.then((registration) => {
+					if (registration != null) {
+						return Promise.reject(new Error('Service worker already exists.'));
+					}
+					return registration;
+				}).then(() => engine.installServiceWorker()),
+				// For some reason, `getRegistration()` can stall
+				new Promise((resolve) => {
+					setTimeout(() => resolve(), 2000);
+				}),
+			]).then(() => {
+				// Reload if there was no error.
+				window.location.reload();
+			}).catch((err) => {
+				console.error('Error while registering service worker:', err);
+			});
+		} else {
+			// Display the message as usual
+			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+			displayFailureNotice(missingMsg + missing.join('\n'));
+		}
+	} else {
+		setStatusMode('progress');
+		engine.startGame({
+			'onProgress': function (current, total) {
+				if (current > 0 && total > 0) {
+					statusProgress.value = current;
+					statusProgress.max = total;
+				} else {
+					statusProgress.removeAttribute('value');
+					statusProgress.removeAttribute('max');
+				}
+			},
+		}).then(() => {
+			setStatusMode('hidden');
+		}, displayFailureNotice);
+	}
+}());
+}
+		</script>
+	
+		<!-- HTML Ad Overlay -->
+		<div id="web-ad-overlay">
+			<div id="web-ad-card">
+				<h2 id="web-ad-title">📢 廣告播放中</h2>
+				<div id="web-ad-media">
+					<div class="pulsing-ring"></div>
+					<div class="pulsing-ring-inner"></div>
+					<div class="ad-symbol">Ad</div>
+				</div>
+				<div id="web-ad-timer">5 秒後可跳過廣告</div>
+				<button id="web-ad-btn" onclick="closeWebAd()" disabled>請稍候...</button>
+			</div>
+		</div>
+
+		<!-- CSS Styling -->
+		<style>
+		#web-ad-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(13, 10, 10, 0.85);
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+			display: none;
+			justify-content: center;
+			align-items: center;
+			z-index: 99999;
+			font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+		}
+		#web-ad-card {
+			width: 90%;
+			max-width: 400px;
+			background: #1F1C1A;
+			border: 2px solid #D0813C;
+			border-radius: 24px;
+			padding: 30px;
+			box-sizing: border-box;
+			text-align: center;
+			color: #FFF2CC;
+			box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+			transform: scale(0.9);
+			transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+		#web-ad-overlay.active #web-ad-card {
+			transform: scale(1);
+		}
+		#web-ad-title {
+			margin: 0 0 10px 0;
+			color: #E39450;
+			font-size: 1.6rem;
+			font-weight: bold;
+			text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+		}
+		#web-ad-media {
+			width: 100%;
+			height: 180px;
+			margin: 20px 0;
+			background: #161413;
+			border-radius: 16px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border: 1px dashed rgba(208, 129, 60, 0.3);
+			overflow: hidden;
+			position: relative;
+		}
+		#web-ad-timer {
+			font-size: 1.1rem;
+			color: #FFF2CC;
+			margin: 10px 0 20px 0;
+			font-weight: 300;
+		}
+		#web-ad-btn {
+			background: #D0813C;
+			color: #1F1C1A;
+			border: none;
+			padding: 14px 20px;
+			font-size: 1.1rem;
+			border-radius: 40px;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			font-weight: bold;
+			width: 100%;
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+		}
+		#web-ad-btn:disabled {
+			background: #3A322C;
+			color: #7C6858;
+			cursor: not-allowed;
+			box-shadow: none;
+		}
+		#web-ad-btn:not(:disabled):hover {
+			background: #E39450;
+			box-shadow: 0 6px 15px rgba(227, 148, 80, 0.4);
+			color: #1F1C1A;
+		}
+		#web-ad-btn:not(:disabled):active {
+			transform: scale(0.98);
+		}
+
+		/* Pulse Animation */
+		.pulsing-ring {
+			position: absolute;
+			width: 80px;
+			height: 80px;
+			border-radius: 50%;
+			border: 3px solid #D0813C;
+			animation: pulse-ring 2s infinite ease-out;
+		}
+		.pulsing-ring-inner {
+			position: absolute;
+			width: 60px;
+			height: 60px;
+			border-radius: 50%;
+			border: 2px solid #E39450;
+			animation: pulse-ring-inner 2s infinite ease-out;
+		}
+		.ad-symbol {
+			font-size: 1.8rem;
+			color: #FFF2CC;
+			font-weight: bold;
+			z-index: 10;
+			background: #1F1C1A;
+			padding: 10px 20px;
+			border-radius: 12px;
+			border: 1px solid #D0813C;
+			box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+		}
+
+		@keyframes pulse-ring {
+			0% {
+				transform: scale(0.8);
+				opacity: 0.8;
+			}
+			100% {
+				transform: scale(1.8);
+				opacity: 0;
+			}
+		}
+		@keyframes pulse-ring-inner {
+			0% {
+				transform: scale(0.9);
+				opacity: 0.9;
+			}
+			50% {
+				transform: scale(1.4);
+				opacity: 0.3;
+			}
+			100% {
+				transform: scale(0.9);
+				opacity: 0.9;
+			}
+		}
+		</style>
+
+		<!-- JavaScript Overlay Control -->
+		<script>
+		(function() {
+			// === 廣告平台配置 ===
+			// "MOCK" (模擬廣告) | "CRAZYGAMES" (CrazyGames SDK) | "GOOGLE_H5" (Google AdSense H5 Ads)
+			const AD_PLATFORM = "CRAZYGAMES"; 
+			const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXX"; // 替換為您的 AdSense 發布商 ID
+			
+			// === 動態載入第三方 SDK ===
+			if (AD_PLATFORM === "CRAZYGAMES") {
+				console.log("[Ad Controller] Loading CrazyGames SDK v2...");
+				const script = document.createElement("script");
+				script.src = "https://sdk.crazygames.com/crazygames-sdk-v2.js";
+				script.async = true;
+				script.onload = () => {
+					console.log("[Ad Controller] CrazyGames SDK loaded.");
+				};
+				document.head.appendChild(script);
+			} else if (AD_PLATFORM === "GOOGLE_H5") {
+				console.log("[Ad Controller] Loading Google AdSense H5 Ads SDK...");
+				const script = document.createElement("script");
+				script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+				script.async = true;
+				script.dataAdBreakTest = "on"; // 本地測試使用測試模式，上線前可刪除此屬性
+				script.onload = () => {
+					console.log("[Ad Controller] Google H5 Ads script loaded. Configuring...");
+					window.adsbygoogle = window.adsbygoogle || [];
+					window.adConfig = window.adConfig || function(p) { (window.adsbygoogle = window.adsbygoogle || []).push(p); };
+					window.adConfig({
+						sound: 'on',
+						google_ad_client: GOOGLE_AD_CLIENT,
+						google_ad_channel: "h5-games",
+						google_overlay: true
+					});
+				};
+				document.head.appendChild(script);
+			}
+
+			let countdownInterval = null;
+			
+			window.showWebAd = function() {
+				console.log("[Ad Controller] showWebAd triggered. Platform:", AD_PLATFORM);
+				
+				// --- CrazyGames SDK 廣告模式 ---
+				if (AD_PLATFORM === "CRAZYGAMES") {
+					if (window.CrazyGames && window.CrazyGames.SDK) {
+						console.log("[Ad Controller] Requesting CrazyGames Interstitial...");
+						window.CrazyGames.SDK.ad.requestAd("interstitial", {
+							adStarted: () => {
+								console.log("[CrazyGames SDK] Ad started.");
+							},
+							adFinished: () => {
+								console.log("[CrazyGames SDK] Ad finished.");
+								window.closeWebAd();
+							},
+							adError: (error) => {
+								console.warn("[CrazyGames SDK] Ad error:", error);
+								window.closeWebAd(); // 失敗也放行，避免遊戲死鎖
+							}
+						});
+					} else {
+						console.warn("[Ad Controller] CrazyGames SDK not loaded yet. Skipping.");
+						window.closeWebAd();
+					}
+					return;
+				}
+				
+				// --- Google H5 Ads 廣告模式 ---
+				if (AD_PLATFORM === "GOOGLE_H5") {
+					if (typeof window.adBreak === "function") {
+						console.log("[Ad Controller] Requesting Google H5 adBreak...");
+						window.adBreak({
+							type: "next",
+							name: "lobby_entry",
+							beforeBreak: () => { console.log("[Google H5] beforeBreak"); },
+							afterBreak: () => { console.log("[Google H5] afterBreak"); window.closeWebAd(); },
+							adDismissed: () => { console.log("[Google H5] adDismissed"); window.closeWebAd(); },
+							adBreakDone: () => { console.log("[Google H5] adBreakDone"); window.closeWebAd(); }
+						});
+					} else {
+						console.warn("[Ad Controller] Google adBreak function not found. Skipping.");
+						window.closeWebAd();
+					}
+					return;
+				}
+				
+				// --- MOCK 模擬廣告模式 ---
+				const overlay = document.getElementById("web-ad-overlay");
+				const title = document.getElementById("web-ad-title");
+				const timerLabel = document.getElementById("web-ad-timer");
+				const button = document.getElementById("web-ad-btn");
+				
+				let lang = "zh";
+				if (window.godot_current_locale) {
+					lang = window.godot_current_locale;
+				} else if (navigator.language && navigator.language.startsWith("en")) {
+					lang = "en";
+				}
+				
+				const dict = {
+					"zh": {
+						title: "📢 廣告播放中",
+						timerPattern: "{sec} 秒後可跳過廣告",
+						buttonTextWaiting: "請稍候...",
+						buttonTextReady: "跳過廣告 ➔",
+						finished: "廣告播映完畢。"
+					},
+					"en": {
+						title: "📢 Ad Playing",
+						timerPattern: "Skip in {sec} seconds",
+						buttonTextWaiting: "Please wait...",
+						buttonTextReady: "Skip Ad ➔",
+						finished: "Ad finished."
+					}
+				};
+				
+				const t = dict[lang] || dict["zh"];
+				if (lang.startsWith("zh")) {
+					const dictT = dict["zh"];
+					title.innerText = dictT.title;
+					button.innerText = dictT.buttonTextWaiting;
+				} else {
+					title.innerText = t.title;
+					button.innerText = t.buttonTextWaiting;
+				}
+				
+				button.disabled = true;
+				overlay.style.display = "flex";
+				
+				setTimeout(() => { overlay.classList.add("active"); }, 20);
+				
+				let secondsRemaining = 5;
+				timerLabel.innerText = t.timerPattern.replace("{sec}", secondsRemaining);
+				
+				if (countdownInterval) clearInterval(countdownInterval);
+				countdownInterval = setInterval(() => {
+					secondsRemaining--;
+					if (secondsRemaining <= 0) {
+						clearInterval(countdownInterval);
+						timerLabel.innerText = t.finished;
+						button.innerText = t.buttonTextReady;
+						button.disabled = false;
+					} else {
+						timerLabel.innerText = t.timerPattern.replace("{sec}", secondsRemaining);
+					}
+				}, 1000);
+			};
+			
+			window.closeWebAd = function() {
+				console.log("[Ad Controller] closing Web Ad.");
+				const overlay = document.getElementById("web-ad-overlay");
+				if (overlay) {
+					overlay.classList.remove("active");
+					setTimeout(() => {
+						overlay.style.display = "none";
+					}, 300);
+				}
+				
+				if (countdownInterval) {
+					clearInterval(countdownInterval);
+					countdownInterval = null;
+				}
+				
+				if (typeof window.godot_on_web_ad_finished === "function") {
+					window.godot_on_web_ad_finished();
+				} else {
+					console.warn("[Ad Controller] window.godot_on_web_ad_finished callback not found.");
+				}
+			};
+		})();
+		</script>
+	</body>
+</html>
+

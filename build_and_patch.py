@@ -5,7 +5,10 @@ import sys
 def main():
     godot_path = r"C:\Users\hank9\Downloads\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe"
     project_path = r"C:\FriendAndMe\friendAndme"
-    export_output = r"C:\FriendAndMe\build_web\index.html"
+    export_output = r"C:\FriendAndMe\build_web_temp\index.html"
+    
+    # 確保臨時輸出目錄存在
+    os.makedirs(os.path.dirname(export_output), exist_ok=True)
     
     print("=== Step 1: Running Godot Web Export ===")
     cmd = [
@@ -653,8 +656,33 @@ def main():
     with open(export_output, 'w', encoding='utf-8') as f:
         f.write(html)
         
-    print("=== Step 3: Creating _headers file for Netlify ===")
-    headers_path = os.path.join(os.path.dirname(export_output), "_headers")
+    print("=== Step 4: Generating Netlify and CrazyGames Releases ===")
+    import shutil
+    
+    netlify_dir = r"C:\FriendAndMe\build_web_netlify"
+    crazygames_dir = r"C:\FriendAndMe\build_web_crazygames"
+    temp_dir = r"C:\FriendAndMe\build_web_temp"
+    
+    # 複製成兩個獨立的版本目錄
+    for target_dir in [netlify_dir, crazygames_dir]:
+        if os.path.exists(target_dir):
+            print(f"Cleaning existing directory: {target_dir}")
+            shutil.rmtree(target_dir)
+        print(f"Cloning files to: {target_dir}")
+        shutil.copytree(temp_dir, target_dir)
+        
+    # 補丁 Netlify 版本的 index.html（設置為 GOOGLE_H5 平台與真實 Publisher ID）
+    netlify_html_path = os.path.join(netlify_dir, "index.html")
+    with open(netlify_html_path, 'r', encoding='utf-8') as f:
+        n_html = f.read()
+    n_html = n_html.replace('const AD_PLATFORM = "MOCK";', 'const AD_PLATFORM = "GOOGLE_H5";')
+    n_html = n_html.replace('const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXX";', 'const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXXX";')
+    with open(netlify_html_path, 'w', encoding='utf-8') as f:
+        f.write(n_html)
+    print("Successfully configured Netlify build for GOOGLE_H5 with ca-pub-XXXXXXXXXXXXXXXX.")
+    
+    # 建立 Netlify 的 _headers 檔案（SharedArrayBuffer 跨域許可標頭）
+    headers_path = os.path.join(netlify_dir, "_headers")
     headers_content = """/*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp
@@ -662,7 +690,20 @@ def main():
     with open(headers_path, 'w', encoding='utf-8') as f:
         f.write(headers_content)
     print("Successfully created _headers file for Netlify.")
-        
+    
+    # 補丁 CrazyGames 版本的 index.html（設置為 CRAZYGAMES 平台）
+    crazygames_html_path = os.path.join(crazygames_dir, "index.html")
+    with open(crazygames_html_path, 'r', encoding='utf-8') as f:
+        c_html = f.read()
+    c_html = c_html.replace('const AD_PLATFORM = "MOCK";', 'const AD_PLATFORM = "CRAZYGAMES";')
+    with open(crazygames_html_path, 'w', encoding='utf-8') as f:
+        f.write(c_html)
+    print("Successfully configured CrazyGames build for CRAZYGAMES.")
+    
+    # 清理臨時目錄
+    print("Cleaning up temporary build folder...")
+    shutil.rmtree(temp_dir)
+    
     print("=== Patching complete! ===")
 
 if __name__ == '__main__':
