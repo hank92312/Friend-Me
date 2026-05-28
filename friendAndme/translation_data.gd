@@ -81,6 +81,8 @@ const EN_MAP = {
 	"載入中...": "Loading...",
 	"重試": "Retry",
 	"已複製房號！": "Room ID Copied!",
+	"剩餘時間: ": "Time Left: ",
+	" 秒": "s",
 	" (主辦)": " (Host)",
 	" (你)": " (You)",
 	"玩家_": "Player_",
