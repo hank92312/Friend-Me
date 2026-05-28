@@ -127,5 +127,30 @@ const EN_MAP = {
 	"累計被猜中：": "Total Guessed by Others: ",
 	"遊戲總輪數：": "Total Rounds: ",
 	"默契排行榜 (最了解你的人)：": "Compatibility Ranking (Who knows you best):",
-	"猜中你 ": "Guessed you "
+	"猜中你 ": "Guessed you ",
+	"個人資料運用說明": "Privacy Policy"
 }
+
+const PRIVACY_CN = """【個人資料與隱私權保護聲明】
+
+本遊戲《Friends & Me》非常重視您的隱私權。我們致力於保護您的個人資料，請詳閱以下說明：
+
+1. 零永久儲存：本程式與連線伺服器「完全不會」永久儲存您輸入的任何個人資料（包括但不限於暱稱、自訂答案、配對選擇或遊戲對局紀錄）。
+2. 即時刪除機制：所有遊戲中的資料僅暫存於伺服器的隨機存取記憶體（RAM）中，以用於遊戲進行中的即時同步。當您關閉遊戲或離開房間後，伺服器會立即將您的所有暫存資料與個人資訊「徹底刪除」，不留任何備份。
+3. 無廣告追蹤與數據共享：我們不會收集您的裝置資訊、位置資訊，亦不會將任何數據共享或出售給第三方廣告商或機構。
+4. 本地快取：遊戲僅在您的瀏覽器或設備本地保存您的語言與音效偏好設定（儲存於本地），這些資料絕不會上傳至任何伺服器。
+
+如果您有任何隱私相關問題，歡迎聯絡製作人：
+hank92312@gmail.com"""
+
+const PRIVACY_EN = """【Privacy & Personal Data Protection Policy】
+
+We highly value your privacy. Please read our policy below:
+
+1. Zero Permanent Storage: This app and its connection servers DO NOT permanently store any of your inputted personal data (including nicknames, custom answers, matchmaking choices, or game round records).
+2. Instant Erasure: All gameplay data is temporarily cached in the server's RAM solely for real-time synchronization between players. Once you close the game or leave the room, all temporary data and personal information are immediately and permanently erased from the server.
+3. No Tracking & Sharing: We do not collect device identifiers or location data, and we never share or sell any data to third-party advertisers or organizations.
+4. Local Storage: The game only saves your language and audio preferences locally on your device. This preference data is never uploaded to any server.
+
+For privacy inquiries, please contact the developer at:
+hank92312@gmail.com"""

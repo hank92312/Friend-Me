@@ -887,6 +887,15 @@ func _on_btn_options_pressed() -> void:
 		btn_feedback.pressed.connect(_on_options_feedback_pressed)
 		vbox.add_child(btn_feedback)
 		
+		var btn_privacy := Button.new()
+		btn_privacy.name = "BtnPrivacy"
+		btn_privacy.text = tr("個人資料運用說明")
+		btn_privacy.custom_minimum_size = Vector2(450, 90)
+		btn_privacy.add_theme_font_size_override("font_size", 32)
+		_set_btn_color(btn_privacy, COLOR_BTN_NORMAL)
+		btn_privacy.pressed.connect(_on_options_privacy_pressed)
+		vbox.add_child(btn_privacy)
+		
 		var spacer := Control.new()
 		spacer.custom_minimum_size = Vector2(0, 30)
 		vbox.add_child(spacer)
@@ -912,6 +921,10 @@ func _on_btn_options_pressed() -> void:
 	var btn_feedback: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnFeedback")
 	if btn_feedback:
 		btn_feedback.text = tr("問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)")
+		
+	var btn_privacy: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnPrivacy")
+	if btn_privacy:
+		btn_privacy.text = tr("個人資料運用說明")
 	
 	# 播放開場動畫
 	panel.visible = true
@@ -922,6 +935,152 @@ func _on_btn_options_pressed() -> void:
 	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(card_node, "scale", Vector2(1.0, 1.0), 0.22)
 	tw.tween_property(card_node, "modulate:a", 1.0, 0.22)
+
+func _on_options_privacy_pressed() -> void:
+	AudioManager.play_tap()
+	var options_panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
+	if options_panel:
+		options_panel.visible = false
+	_show_privacy_policy()
+
+func _show_privacy_policy() -> void:
+	var lobby := $Phases/Phase0_Lobby
+	var panel = lobby.get_node_or_null("PrivacyPanel")
+	if not panel:
+		panel = Control.new()
+		panel.name = "PrivacyPanel"
+		panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+		
+		var bg_overlay := ColorRect.new()
+		bg_overlay.name = "BgOverlay"
+		bg_overlay.color = Color(0.05, 0.04, 0.04, 0.82)
+		bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel.add_child(bg_overlay)
+		
+		var outer_margin := MarginContainer.new()
+		outer_margin.name = "OuterMargin"
+		outer_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+		outer_margin.add_theme_constant_override("margin_left", 20)
+		outer_margin.add_theme_constant_override("margin_right", 20)
+		outer_margin.add_theme_constant_override("margin_top", 30)
+		outer_margin.add_theme_constant_override("margin_bottom", 30)
+		panel.add_child(outer_margin)
+		
+		var center_container := CenterContainer.new()
+		center_container.name = "CenterContainer"
+		center_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		center_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		outer_margin.add_child(center_container)
+		
+		var card := PanelContainer.new()
+		card.name = "DialogCard"
+		var vp_size = get_viewport_rect().size
+		var card_w = mini(880, int(vp_size.x) - 60)
+		card.custom_minimum_size = Vector2(card_w, 0)
+		card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.16, 0.14, 0.13, 1)
+		style.corner_radius_top_left = 32
+		style.corner_radius_top_right = 32
+		style.corner_radius_bottom_right = 32
+		style.corner_radius_bottom_left = 32
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color(0.815, 0.505, 0.235, 0.18)
+		style.shadow_color = Color(0, 0, 0, 0.5)
+		style.shadow_size = 24
+		style.shadow_offset = Vector2(0, 16)
+		card.add_theme_stylebox_override("panel", style)
+		center_container.add_child(card)
+		
+		var margin := MarginContainer.new()
+		margin.name = "MarginContainer"
+		margin.add_theme_constant_override("margin_left", 60)
+		margin.add_theme_constant_override("margin_right", 60)
+		margin.add_theme_constant_override("margin_top", 60)
+		margin.add_theme_constant_override("margin_bottom", 60)
+		card.add_child(margin)
+		
+		var scroll := ScrollContainer.new()
+		scroll.name = "ScrollContainer"
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		margin.add_child(scroll)
+		
+		var vbox := VBoxContainer.new()
+		vbox.name = "VBoxContainer"
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 45)
+		vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(vbox)
+		
+		var title := Label.new()
+		title.name = "TitleLabel"
+		title.text = tr("個人資料運用說明")
+		title.add_theme_font_size_override("font_size", 52)
+		title.add_theme_color_override("font_color", COLOR_HIGHLIGHT)
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(title)
+		
+		var content := Label.new()
+		content.name = "ContentLabel"
+		content.add_theme_font_size_override("font_size", 30)
+		content.autowrap_mode = _get_local_autowrap_mode()
+		vbox.add_child(content)
+		
+		var btn_close := Button.new()
+		btn_close.name = "BtnClose"
+		btn_close.text = tr("返回")
+		btn_close.custom_minimum_size = Vector2(450, 80)
+		btn_close.add_theme_font_size_override("font_size", 32)
+		_set_btn_color(btn_close, COLOR_BTN_DISABLED)
+		btn_close.pressed.connect(_on_privacy_close)
+		
+		var spacer := Control.new()
+		spacer.custom_minimum_size = Vector2(0, 30)
+		vbox.add_child(spacer)
+		vbox.add_child(btn_close)
+		
+		lobby.add_child(panel)
+		_increase_font_sizes_recursively(panel)
+		_register_button_animations(card)
+		
+	var content_lbl: Label = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/ContentLabel")
+	var is_en = TranslationServer.get_locale().begins_with("en")
+	content_lbl.text = TranslationData.PRIVACY_EN if is_en else TranslationData.PRIVACY_CN
+	
+	var btn_close: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnClose")
+	if btn_close:
+		btn_close.text = tr("返回")
+		
+	_on_dialog_viewport_resized()
+	panel.visible = true
+	var card_node = panel.get_node("OuterMargin/CenterContainer/DialogCard")
+	card_node.scale = Vector2(0.9, 0.9)
+	card_node.modulate.a = 0.0
+	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(card_node, "scale", Vector2(1.0, 1.0), 0.22)
+	tw.tween_property(card_node, "modulate:a", 1.0, 0.22)
+
+func _on_privacy_close() -> void:
+	AudioManager.play_cancel()
+	var panel = $Phases/Phase0_Lobby.get_node_or_null("PrivacyPanel")
+	if panel:
+		var card_node = panel.get_node("OuterMargin/CenterContainer/DialogCard")
+		var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tw.tween_property(card_node, "scale", Vector2(0.9, 0.9), 0.18)
+		tw.tween_property(card_node, "modulate:a", 0.0, 0.18)
+		tw.chain().tween_callback(func():
+			panel.visible = false
+			var options_panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
+			if options_panel:
+				options_panel.visible = true
+		)
 
 func _on_options_audio_toggled() -> void:
 	AudioManager.is_muted = not AudioManager.is_muted
@@ -2945,6 +3104,10 @@ func _on_dialog_viewport_resized() -> void:
 	# 調整設定面板卡片
 	var opt_panel = $Phases/Phase0_Lobby.get_node_or_null("OptionsPanel")
 	_adjust_single_dialog_card(opt_panel, vp_size)
+	
+	# 調整隱私權聲明面板卡片
+	var priv_panel = $Phases/Phase0_Lobby.get_node_or_null("PrivacyPanel")
+	_adjust_single_dialog_card(priv_panel, vp_size)
 
 func _adjust_single_dialog_card(panel: Control, vp_size: Vector2) -> void:
 	if not is_inside_tree():
