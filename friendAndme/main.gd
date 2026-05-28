@@ -2239,6 +2239,7 @@ func _render_phase4_ui(play_animations: bool) -> void:
 
 	# ── 更新 UI ──
 	var score_label := $Phases/Phase4_Revelation/VBox/ScoreLabel
+	score_label.autowrap_mode = _get_local_autowrap_mode()
 	score_label.text = tr("本輪結果：猜中 ") + str(last_correct_count) + " / " + str(last_guess_total) + tr(" 題") + tr("，被猜中 ") + str(last_round_guessed_by) + tr(" 次")
 	score_label.add_theme_font_size_override("font_size", 50) # 成績加大 2 單位 (原本 48)
 
@@ -2831,6 +2832,7 @@ func _update_localized_ui() -> void:
 	# Phase 4 Revelation
 	$Phases/Phase4_Revelation/VBox/TitleLabel.text = tr("結果揭曉 (第 %d 輪)") % round_count
 	var score_label := $Phases/Phase4_Revelation/VBox/ScoreLabel
+	score_label.autowrap_mode = _get_local_autowrap_mode()
 	score_label.text = tr("本輪結果：猜中 ") + str(last_correct_count) + " / " + str(last_guess_total) + tr(" 題") + tr("，被猜中 ") + str(last_round_guessed_by) + tr(" 次")
 	if current_phase == GamePhase.REVELATION:
 		_render_phase4_ui(false)

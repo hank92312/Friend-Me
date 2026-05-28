@@ -460,6 +460,14 @@ def main():
 				script.async = true;
 				script.onload = () => {
 					console.log("[Ad Controller] CrazyGames SDK loaded.");
+					if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.game) {
+						try {
+							window.CrazyGames.SDK.game.gameplayStart();
+							console.log("[Ad Controller] First gameplayStart triggered successfully.");
+						} catch (e) {
+							console.error("[Ad Controller] Failed to call gameplayStart:", e);
+						}
+					}
 				};
 				document.head.appendChild(script);
 			} else if (AD_PLATFORM === "GOOGLE_H5") {
