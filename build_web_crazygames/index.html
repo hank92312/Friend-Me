@@ -660,8 +660,8 @@ const engine = new Engine(GODOT_CONFIG);
 				// --- CrazyGames SDK 廣告模式 ---
 				if (AD_PLATFORM === "CRAZYGAMES") {
 					if (window.CrazyGames && window.CrazyGames.SDK) {
-						console.log("[Ad Controller] Requesting CrazyGames Interstitial...");
-						window.CrazyGames.SDK.ad.requestAd("interstitial", {
+						console.log("[Ad Controller] Requesting CrazyGames Midgame Ad...");
+						window.CrazyGames.SDK.ad.requestAd("midgame", {
 							adStarted: () => {
 								console.log("[CrazyGames SDK] Ad started.");
 							},
