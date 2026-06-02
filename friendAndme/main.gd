@@ -99,7 +99,7 @@ var self_answer: String = ""
 
 # Phase 2 計時器與貼上按鍵
 var timer_label: Label = null
-var remaining_answering_seconds := 60.0
+var remaining_answering_seconds := 120.0
 var answering_timer_active := false
 var answering_timer_end_timestamp := 0.0
 var is_answer_submitted := false
@@ -148,7 +148,7 @@ var game_history : Array = []     # 存放本局所有問答: [{"question": "...
 # ── 平台感知 Emoji 輔助函數 ──────────────────────────────────────────────────
 # Android 的 Godot Label 不支援 Emoji（缺少 Emoji 字型），但 Web 和 PC 可以正常顯示。
 # 此函數會在 Android 上回傳 fallback 文字，其他平台回傳原始 Emoji。
-func _emoji(emoji_text: String, fallback: String) -> String:
+func _emoji(_emoji_text: String, fallback: String) -> String:
 	# 由於全域字型 NotoSansTC-VF 無 Emoji 字符，因此全部平台統一回傳替代文字以防止亂碼
 	return fallback
 
@@ -869,45 +869,58 @@ func _on_btn_options_pressed() -> void:
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		vbox.add_child(title)
 		
-		var btn_audio := Button.new()
-		btn_audio.name = "BtnAudio"
-		btn_audio.text = tr("音效：關閉") if AudioManager.is_muted else tr("音效：開啟")
-		btn_audio.custom_minimum_size = Vector2(450, 90)
-		btn_audio.add_theme_font_size_override("font_size", 34)
-		_set_btn_color(btn_audio, COLOR_BTN_NORMAL)
-		btn_audio.pressed.connect(_on_options_audio_toggled)
-		vbox.add_child(btn_audio)
+		var new_btn_audio := Button.new()
+		new_btn_audio.name = "BtnAudio"
+		new_btn_audio.text = tr("音效：關閉") if AudioManager.is_muted else tr("音效：開啟")
+		new_btn_audio.custom_minimum_size = Vector2(450, 90)
+		new_btn_audio.add_theme_font_size_override("font_size", 34)
+		_set_btn_color(new_btn_audio, COLOR_BTN_NORMAL)
+		new_btn_audio.pressed.connect(_on_options_audio_toggled)
+		vbox.add_child(new_btn_audio)
 		
-		var btn_feedback := Button.new()
-		btn_feedback.name = "BtnFeedback"
-		btn_feedback.text = tr("問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)")
-		btn_feedback.custom_minimum_size = Vector2(450, 120)
-		btn_feedback.add_theme_font_size_override("font_size", 30)
-		_set_btn_color(btn_feedback, COLOR_BTN_NORMAL)
-		btn_feedback.pressed.connect(_on_options_feedback_pressed)
-		vbox.add_child(btn_feedback)
+		var new_btn_feedback := Button.new()
+		new_btn_feedback.name = "BtnFeedback"
+		new_btn_feedback.text = tr("問題回饋 / 聯絡製作人\nhank92312@gmail.com (點擊複製)")
+		new_btn_feedback.custom_minimum_size = Vector2(450, 120)
+		new_btn_feedback.add_theme_font_size_override("font_size", 30)
+		_set_btn_color(new_btn_feedback, COLOR_BTN_NORMAL)
+		new_btn_feedback.pressed.connect(_on_options_feedback_pressed)
+		vbox.add_child(new_btn_feedback)
 		
-		var btn_privacy := Button.new()
-		btn_privacy.name = "BtnPrivacy"
-		btn_privacy.text = tr("個人資料運用說明")
-		btn_privacy.custom_minimum_size = Vector2(450, 90)
-		btn_privacy.add_theme_font_size_override("font_size", 32)
-		_set_btn_color(btn_privacy, COLOR_BTN_NORMAL)
-		btn_privacy.pressed.connect(_on_options_privacy_pressed)
-		vbox.add_child(btn_privacy)
+		var new_btn_privacy := Button.new()
+		new_btn_privacy.name = "BtnPrivacy"
+		new_btn_privacy.text = tr("個人資料運用說明")
+		new_btn_privacy.custom_minimum_size = Vector2(450, 90)
+		new_btn_privacy.add_theme_font_size_override("font_size", 32)
+		_set_btn_color(new_btn_privacy, COLOR_BTN_NORMAL)
+		new_btn_privacy.pressed.connect(_on_options_privacy_pressed)
+		vbox.add_child(new_btn_privacy)
+		
+		var new_btn_thanks := Button.new()
+		new_btn_thanks.name = "BtnThanks"
+		new_btn_thanks.text = tr("特別感謝協助製作:ALICE、Benoit、縩興")
+		new_btn_thanks.custom_minimum_size = Vector2(450, 110)
+		new_btn_thanks.add_theme_font_size_override("font_size", 28)
+		# 意象是不給予點擊的感覺：給予較暗的灰色
+		_set_btn_color(new_btn_thanks, Color(0.24, 0.22, 0.20, 1))
+		new_btn_thanks.add_theme_color_override("font_color", Color(0.55, 0.50, 0.45, 1))
+		new_btn_thanks.add_theme_color_override("font_disabled_color", Color(0.55, 0.50, 0.45, 1))
+		new_btn_thanks.disabled = true
+		new_btn_thanks.autowrap_mode = _get_local_autowrap_mode()
+		vbox.add_child(new_btn_thanks)
 		
 		var spacer := Control.new()
 		spacer.custom_minimum_size = Vector2(0, 30)
 		vbox.add_child(spacer)
 		
-		var btn_close := Button.new()
-		btn_close.name = "BtnClose"
-		btn_close.text = tr("關閉設定")
-		btn_close.custom_minimum_size = Vector2(450, 80)
-		btn_close.add_theme_font_size_override("font_size", 32)
-		_set_btn_color(btn_close, COLOR_BTN_DISABLED)
-		btn_close.pressed.connect(_on_options_close)
-		vbox.add_child(btn_close)
+		var new_btn_close := Button.new()
+		new_btn_close.name = "BtnClose"
+		new_btn_close.text = tr("關閉設定")
+		new_btn_close.custom_minimum_size = Vector2(450, 80)
+		new_btn_close.add_theme_font_size_override("font_size", 32)
+		_set_btn_color(new_btn_close, COLOR_BTN_DISABLED)
+		new_btn_close.pressed.connect(_on_options_close)
+		vbox.add_child(new_btn_close)
 		
 		lobby.add_child(panel)
 		_increase_font_sizes_recursively(panel)
@@ -925,6 +938,10 @@ func _on_btn_options_pressed() -> void:
 	var btn_privacy: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnPrivacy")
 	if btn_privacy:
 		btn_privacy.text = tr("個人資料運用說明")
+		
+	var btn_thanks: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnThanks")
+	if btn_thanks:
+		btn_thanks.text = tr("特別感謝協助製作:ALICE、Benoit、縩興")
 	
 	# 播放開場動畫
 	panel.visible = true
@@ -1033,18 +1050,18 @@ func _show_privacy_policy() -> void:
 		content.autowrap_mode = _get_local_autowrap_mode()
 		vbox.add_child(content)
 		
-		var btn_close := Button.new()
-		btn_close.name = "BtnClose"
-		btn_close.text = tr("返回")
-		btn_close.custom_minimum_size = Vector2(450, 80)
-		btn_close.add_theme_font_size_override("font_size", 32)
-		_set_btn_color(btn_close, COLOR_BTN_DISABLED)
-		btn_close.pressed.connect(_on_privacy_close)
+		var new_btn_close := Button.new()
+		new_btn_close.name = "BtnClose"
+		new_btn_close.text = tr("返回")
+		new_btn_close.custom_minimum_size = Vector2(450, 80)
+		new_btn_close.add_theme_font_size_override("font_size", 32)
+		_set_btn_color(new_btn_close, COLOR_BTN_DISABLED)
+		new_btn_close.pressed.connect(_on_privacy_close)
 		
 		var spacer := Control.new()
 		spacer.custom_minimum_size = Vector2(0, 30)
 		vbox.add_child(spacer)
-		vbox.add_child(btn_close)
+		vbox.add_child(new_btn_close)
 		
 		lobby.add_child(panel)
 		_increase_font_sizes_recursively(panel)
@@ -1231,7 +1248,6 @@ func _show_ad_disclaimer() -> void:
 		card.name = "DialogCard"
 		var vp_size = get_viewport_rect().size
 		var card_w = mini(880, int(vp_size.x) - 60)
-		var card_h = mini(1000, int(vp_size.y) - 80)
 		card.custom_minimum_size = Vector2(card_w, 0)
 		card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
@@ -1512,8 +1528,8 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit as LineEdit
 		line_edit.text = ""
 		
-		# 啟動 1 分鐘答題倒數
-		remaining_answering_seconds = float(data.get("remaining_seconds", 60.0))
+		# 啟動 2 分鐘答題倒數
+		remaining_answering_seconds = float(data.get("remaining_seconds", 120.0))
 		answering_timer_end_timestamp = Time.get_unix_time_from_system() + remaining_answering_seconds
 		answering_timer_active = true
 		if timer_label:
@@ -1616,7 +1632,7 @@ func _on_btn_back_pressed() -> void:
 	
 	switch_phase(GamePhase.WAITING)
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if answering_timer_active:
 		var current_time = Time.get_unix_time_from_system()
 		remaining_answering_seconds = max(0.0, answering_timer_end_timestamp - current_time)
@@ -2518,10 +2534,10 @@ func _on_btn_next_round() -> void:
 	if generic_timer_label:
 		generic_timer_label.text = tr("已準備，等待中...")
 
-func _on_network_next_round_status(ready: int, total: int) -> void:
+func _on_network_next_round_status(ready_count: int, total: int) -> void:
 	var btn = $Phases/Phase4_Revelation/VBox/BtnNextRound
 	if btn.disabled:
-		btn.text = tr("等待其他人... (") + str(ready) + "/" + str(total) + ")"
+		btn.text = tr("等待其他人... (") + str(ready_count) + "/" + str(total) + ")"
 
 func _on_btn_leave_circle_pressed() -> void:
 	AudioManager.play_leave_circle()

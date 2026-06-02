@@ -340,7 +340,7 @@ body {
 		</script>
 		<script>
 if (window.hasWebGL2) {
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":20597900,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":20616360,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -633,21 +633,32 @@ const engine = new Engine(GODOT_CONFIG);
 				};
 				document.head.appendChild(script);
 			} else if (AD_PLATFORM === "GOOGLE_H5") {
-				console.log("[Ad Controller] Loading Google AdSense H5 Ads SDK...");
+				console.log("[Ad Controller] Loading Google AdSense H5 Ads SDK with client:", GOOGLE_AD_CLIENT);
+				
+				// 1. 在載入腳本之前，初始化全域變數與 adBreak/adConfig 函數
+				window.adsbygoogle = window.adsbygoogle || [];
+				window.adBreak = window.adConfig = function(o) {
+					window.adsbygoogle.push(o);
+				};
+				
+				// 2. 進行預設配置
+				window.adConfig({
+					sound: 'on',
+					preloadAdBreaks: 'auto'
+				});
+				
+				// 3. 建立並插入 script 標籤，src 必須帶有 ?client=
 				const script = document.createElement("script");
-				script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+				script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + GOOGLE_AD_CLIENT;
 				script.async = true;
-				script.dataAdBreakTest = "on"; // 本地測試使用測試模式，上線前可刪除此屬性
+				script.crossOrigin = "anonymous";
+				
+				// 4. 設定測試模式與廣告頻率提示屬性
+				script.setAttribute("data-ad-frequency-hint", "30s");
+				// script.setAttribute("data-ad-break-test", "on"); // 正式上線版本已註解，以播放真實廣告
+				
 				script.onload = () => {
-					console.log("[Ad Controller] Google H5 Ads script loaded. Configuring...");
-					window.adsbygoogle = window.adsbygoogle || [];
-					window.adConfig = window.adConfig || function(p) { (window.adsbygoogle = window.adsbygoogle || []).push(p); };
-					window.adConfig({
-						sound: 'on',
-						google_ad_client: GOOGLE_AD_CLIENT,
-						google_ad_channel: "h5-games",
-						google_overlay: true
-					});
+					console.log("[Ad Controller] Google H5 Ads script tag loaded successfully.");
 				};
 				document.head.appendChild(script);
 			}
@@ -683,17 +694,27 @@ const engine = new Engine(GODOT_CONFIG);
 				
 				// --- Google H5 Ads 廣告模式 ---
 				if (AD_PLATFORM === "GOOGLE_H5") {
+					// 3 秒安全計時器：防範被 AdBlock 阻擋導致 callback 永遠不被呼叫而卡死
+					let adTriggered = false;
+					const adTimeout = setTimeout(() => {
+						if (!adTriggered) {
+							console.warn("[Ad Controller] Google H5 Ads callback timeout (AdBlocker or no fill). Bypassing...");
+							window.closeWebAd();
+						}
+					}, 3000);
+					
 					if (typeof window.adBreak === "function") {
 						console.log("[Ad Controller] Requesting Google H5 adBreak...");
 						window.adBreak({
 							type: "next",
 							name: "lobby_entry",
-							beforeBreak: () => { console.log("[Google H5] beforeBreak"); },
-							afterBreak: () => { console.log("[Google H5] afterBreak"); window.closeWebAd(); },
-							adDismissed: () => { console.log("[Google H5] adDismissed"); window.closeWebAd(); },
-							adBreakDone: () => { console.log("[Google H5] adBreakDone"); window.closeWebAd(); }
+							beforeBreak: () => { adTriggered = true; console.log("[Google H5] beforeBreak"); },
+							afterBreak: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] afterBreak"); window.closeWebAd(); },
+							adDismissed: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] adDismissed"); window.closeWebAd(); },
+							adBreakDone: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] adBreakDone"); window.closeWebAd(); }
 						});
 					} else {
+						clearTimeout(adTimeout);
 						console.warn("[Ad Controller] Google adBreak function not found. Skipping.");
 						window.closeWebAd();
 					}

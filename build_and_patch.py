@@ -471,21 +471,32 @@ def main():
 				};
 				document.head.appendChild(script);
 			} else if (AD_PLATFORM === "GOOGLE_H5") {
-				console.log("[Ad Controller] Loading Google AdSense H5 Ads SDK...");
+				console.log("[Ad Controller] Loading Google AdSense H5 Ads SDK with client:", GOOGLE_AD_CLIENT);
+				
+				// 1. 在載入腳本之前，初始化全域變數與 adBreak/adConfig 函數
+				window.adsbygoogle = window.adsbygoogle || [];
+				window.adBreak = window.adConfig = function(o) {
+					window.adsbygoogle.push(o);
+				};
+				
+				// 2. 進行預設配置
+				window.adConfig({
+					sound: 'on',
+					preloadAdBreaks: 'auto'
+				});
+				
+				// 3. 建立並插入 script 標籤，src 必須帶有 ?client=
 				const script = document.createElement("script");
-				script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+				script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + GOOGLE_AD_CLIENT;
 				script.async = true;
-				script.dataAdBreakTest = "on"; // 本地測試使用測試模式，上線前可刪除此屬性
+				script.crossOrigin = "anonymous";
+				
+				// 4. 設定測試模式與廣告頻率提示屬性
+				script.setAttribute("data-ad-frequency-hint", "30s");
+				// script.setAttribute("data-ad-break-test", "on"); // 正式上線版本已註解，以播放真實廣告
+				
 				script.onload = () => {
-					console.log("[Ad Controller] Google H5 Ads script loaded. Configuring...");
-					window.adsbygoogle = window.adsbygoogle || [];
-					window.adConfig = window.adConfig || function(p) { (window.adsbygoogle = window.adsbygoogle || []).push(p); };
-					window.adConfig({
-						sound: 'on',
-						google_ad_client: GOOGLE_AD_CLIENT,
-						google_ad_channel: "h5-games",
-						google_overlay: true
-					});
+					console.log("[Ad Controller] Google H5 Ads script tag loaded successfully.");
 				};
 				document.head.appendChild(script);
 			}
@@ -521,17 +532,27 @@ def main():
 				
 				// --- Google H5 Ads 廣告模式 ---
 				if (AD_PLATFORM === "GOOGLE_H5") {
+					// 3 秒安全計時器：防範被 AdBlock 阻擋導致 callback 永遠不被呼叫而卡死
+					let adTriggered = false;
+					const adTimeout = setTimeout(() => {
+						if (!adTriggered) {
+							console.warn("[Ad Controller] Google H5 Ads callback timeout (AdBlocker or no fill). Bypassing...");
+							window.closeWebAd();
+						}
+					}, 3000);
+					
 					if (typeof window.adBreak === "function") {
 						console.log("[Ad Controller] Requesting Google H5 adBreak...");
 						window.adBreak({
 							type: "next",
 							name: "lobby_entry",
-							beforeBreak: () => { console.log("[Google H5] beforeBreak"); },
-							afterBreak: () => { console.log("[Google H5] afterBreak"); window.closeWebAd(); },
-							adDismissed: () => { console.log("[Google H5] adDismissed"); window.closeWebAd(); },
-							adBreakDone: () => { console.log("[Google H5] adBreakDone"); window.closeWebAd(); }
+							beforeBreak: () => { adTriggered = true; console.log("[Google H5] beforeBreak"); },
+							afterBreak: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] afterBreak"); window.closeWebAd(); },
+							adDismissed: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] adDismissed"); window.closeWebAd(); },
+							adBreakDone: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] adBreakDone"); window.closeWebAd(); }
 						});
 					} else {
+						clearTimeout(adTimeout);
 						console.warn("[Ad Controller] Google adBreak function not found. Skipping.");
 						window.closeWebAd();
 					}
@@ -679,15 +700,21 @@ def main():
         print(f"Cloning files to: {target_dir}")
         shutil.copytree(temp_dir, target_dir)
         
-    # 補丁 Netlify 版本的 index.html（設置為 GOOGLE_H5 平台與真實 Publisher ID）
+    # 補丁 Netlify 版本的 index.html（設置為 GOOGLE_H5 平台與真實 Publisher ID，並加上 AdSense 驗證腳本）
     netlify_html_path = os.path.join(netlify_dir, "index.html")
     with open(netlify_html_path, 'r', encoding='utf-8') as f:
         n_html = f.read()
     n_html = n_html.replace('const AD_PLATFORM = "MOCK";', 'const AD_PLATFORM = "GOOGLE_H5";')
     n_html = n_html.replace('const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXX";', 'const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXXX";')
+    
+    # 注入 AdSense 靜態驗證腳本到 <head> 中，方便 Google 驗證網站所有權
+    verification_tag = '\n\t<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>'
+    if "<head>" in n_html:
+        n_html = n_html.replace("<head>", "<head>" + verification_tag)
+        
     with open(netlify_html_path, 'w', encoding='utf-8') as f:
         f.write(n_html)
-    print("Successfully configured Netlify build for GOOGLE_H5 with ca-pub-XXXXXXXXXXXXXXXX.")
+    print("Successfully configured Netlify build for GOOGLE_H5 and injected static AdSense verification script.")
     
     # 建立 Netlify 的 _headers 檔案（SharedArrayBuffer 跨域許可標頭）
     headers_path = os.path.join(netlify_dir, "_headers")
@@ -698,6 +725,13 @@ def main():
     with open(headers_path, 'w', encoding='utf-8') as f:
         f.write(headers_content)
     print("Successfully created _headers file for Netlify.")
+    
+    # 建立 Netlify 的 ads.txt 檔案（宣告授權廣告賣方，防範廣告詐騙並提升廣告收益品質）
+    ads_txt_path = os.path.join(netlify_dir, "ads.txt")
+    ads_txt_content = "google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0\n"
+    with open(ads_txt_path, 'w', encoding='utf-8') as f:
+        f.write(ads_txt_content)
+    print("Successfully created ads.txt file for Netlify.")
     
     # 補丁 CrazyGames 版本的 index.html（設置為 CRAZYGAMES 平台）
     crazygames_html_path = os.path.join(crazygames_dir, "index.html")

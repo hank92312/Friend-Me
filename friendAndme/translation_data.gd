@@ -128,7 +128,8 @@ const EN_MAP = {
 	"遊戲總輪數：": "Total Rounds: ",
 	"默契排行榜 (最了解你的人)：": "Compatibility Ranking (Who knows you best):",
 	"猜中你 ": "Guessed you ",
-	"個人資料運用說明": "Privacy Policy"
+	"個人資料運用說明": "Privacy Policy",
+	"特別感謝協助製作:ALICE、Benoit、縩興": "Special thanks to contributors:\nALICE, Benoit, 縩興"
 }
 
 const PRIVACY_CN = """【個人資料與隱私權保護聲明】

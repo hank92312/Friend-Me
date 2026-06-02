@@ -83,9 +83,9 @@ async def run_phase_timeout(room_id: str, phase: str, seconds: int):
                 "new_phase": "ANSWERING",
                 "level": level,
                 "question": question,
-                "remaining_seconds": 60
+                "remaining_seconds": 120
             })
-            start_phase_timeout(room_id, "ANSWERING", 60)
+            start_phase_timeout(room_id, "ANSWERING", 120)
 
         elif phase == "ANSWERING":
             # 自動提交空答案
@@ -293,7 +293,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
         
         # 計算剩餘時間
         started_at = manager.room_states.get(room_id, {}).get("started_at", time.time())
-        duration = 120 if current_phase == "REVELATION" else 60
+        duration = 120 if current_phase in ("REVELATION", "ANSWERING") else 60
         remaining = max(0, duration - int(time.time() - started_at))
             
         await manager.send_to_player(room_id, player_name, {
@@ -342,10 +342,10 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                     "new_phase": "ANSWERING",
                     "level": level,
                     "question": question,
-                    "remaining_seconds": 60
+                    "remaining_seconds": 120
                 })
                 cancel_phase_timeout(room_id)  # 取消 SELECTION 超時
-                start_phase_timeout(room_id, "ANSWERING", 60)
+                start_phase_timeout(room_id, "ANSWERING", 120)
 
             # 提交答案
             elif data.get("event") == "answer_submitted":
