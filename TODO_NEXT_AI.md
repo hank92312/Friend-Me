@@ -37,23 +37,21 @@
    - 將 Android 匯出預設格式修改為 **AAB** 格式，設定版本為 `1.0.0` (Code `1`)。
    - 在 `build_and_patch.py` 中實作自動生成極具質感、支援中英雙語切換之 **隱私政策網頁 (`privacy.html`)**，並打包輸出至 Netlify 目錄。
    - 將最新程式碼與配置同步至建置目錄 `C:\FriendAndMe_Build`，並在 headless 模式下執行編譯驗證，確認除了預期的發行金鑰簽章外，無任何語法或檔案缺失錯誤。
+   - **Netlify 部署完成**：已將最新的 `build_web_netlify` 目錄（含 `privacy.html`、`ads.txt` 及更新版 HTML 廣告與驗證配置）發佈至 Netlify，目前隱私權政策網址為 `https://friendandme.netlify.app/privacy.html`。
    - 已完成所有變更的本地測試、並提交備份推送至 GitHub。
 
 ---
 
 ## 📅 下一階段工作規劃 (Next Phase Roadmaps)
 
-- **部署最新網頁版至 Netlify**：
-  - 將最新的 `build_web_netlify` 資料夾（含最新的 `index.html`、`privacy.html` 及 `ads.txt`）部署到 Netlify。
-  - 隱私權政策網址將會是：`https://friendandme.netlify.app/privacy.html`。
 - **向 Google Play Console 提交隱私權政策**：
-  - 在 Play Console 內的「隱私權政策」欄位，填入上述 Netlify 的 privacy.html 網址。
+  - 在 Play Console 內的「應用程式內容 (App Content)」->「隱私權政策 (Privacy Policy)」欄位中，填入已部署的隱私權政策連結：`https://friendandme.netlify.app/privacy.html`。
 - **在 GUI 中匯出簽名 AAB 檔案**：
-  - 開啟 Godot GUI 載入 `C:\FriendAndMe_Build` 專案。
+  - 開啟 Godot GUI 載入建置目錄 `C:\FriendAndMe_Build` 專案。
   - 點擊「專案」->「匯出」，選擇 Android 預設，點擊「匯出專案」，將輸出檔命名為 `FriendAndMe_Release.aab`（GUI 會使用本地的發行金鑰完成簽署）。
-  - 將匯出的 `.aab` 檔案上傳到 Google Play Console。
+  - 將匯出的 `.aab` 檔案上傳到 Google Play Console 中。
 - **追蹤 Google AdSense 審核狀態**：
-  - 目前 `friendandme.netlify.app` 已提交「要求複查」，且 `ads.txt` 已部署。接下來需要等待 Google 審核完畢（通常需數天到兩週），狀態變為「準備就緒」後網頁端廣告即會開始播放。
+  - 目前 `friendandme.netlify.app` 已提交「要求複查」，且新版 `ads.txt` 也已部署上線。接下來需要等待 Google 審核完畢（通常需數天到兩週），狀態變為「準備就緒」後網頁端廣告即會開始播放。
 - **多端連線與大廳重連壓力測試**：
   - 在正式環境中，利用多台手機（iOS/Android）與不同瀏覽器，進行 4-6 人的實際連線對局測試，以驗證 WebSocket 在多端高延遲下的流暢度與重連秒數同步性。
 - **廣告平台正式切換**：
