@@ -341,6 +341,9 @@ func _ready() -> void:
 	bg_rect.stretch_mode = TextureRect.STRETCH_SCALE
 	bg_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 	$Background.add_child(bg_rect)
+	
+	# ── 連結去廣告購買狀態變更信號 ──
+	AdManager.purchase_state_changed.connect(_on_purchase_state_changed)
 
 	# ── 面板與卡片樣式美化 (追加陰影與邊框) ──
 	var card_sb: StyleBoxFlat = $Phases/Phase2_Answering/VBox/QuestionCard.get_theme_stylebox("panel")
@@ -909,6 +912,15 @@ func _on_btn_options_pressed() -> void:
 		new_btn_thanks.autowrap_mode = _get_local_autowrap_mode()
 		vbox.add_child(new_btn_thanks)
 		
+		# 移除廣告按鈕 (僅限 Android 平台或除錯模式)
+		if OS.get_name() == "Android" or OS.is_debug_build():
+			var new_btn_purchase_no_ads := Button.new()
+			new_btn_purchase_no_ads.name = "BtnPurchaseNoAds"
+			new_btn_purchase_no_ads.custom_minimum_size = Vector2(450, 90)
+			new_btn_purchase_no_ads.add_theme_font_size_override("font_size", 32)
+			new_btn_purchase_no_ads.pressed.connect(_on_btn_purchase_no_ads_pressed)
+			vbox.add_child(new_btn_purchase_no_ads)
+		
 		var spacer := Control.new()
 		spacer.custom_minimum_size = Vector2(0, 30)
 		vbox.add_child(spacer)
@@ -942,6 +954,10 @@ func _on_btn_options_pressed() -> void:
 	var btn_thanks: Button = panel.get_node("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnThanks")
 	if btn_thanks:
 		btn_thanks.text = tr("特別感謝協助製作:ALICE、Benoit、縩興")
+		
+	var btn_purchase_no_ads: Button = panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnPurchaseNoAds")
+	if btn_purchase_no_ads:
+		_update_purchase_button(btn_purchase_no_ads)
 	
 	# 播放開場動畫
 	panel.visible = true
@@ -1129,6 +1145,32 @@ func _on_options_close() -> void:
 		tw.chain().tween_callback(func():
 			panel.visible = false
 		)
+
+func _on_btn_purchase_no_ads_pressed() -> void:
+	AudioManager.play_tap()
+	AdManager.purchase_remove_ads()
+
+func _update_purchase_button(btn: Button) -> void:
+	if AdManager.has_removed_ads:
+		btn.text = tr("已免除廣告 (感謝支持！)")
+		btn.disabled = true
+		_set_btn_color(btn, Color(0.24, 0.22, 0.20, 1))
+		btn.add_theme_color_override("font_color", Color(0.55, 0.50, 0.45, 1))
+		btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.50, 0.45, 1))
+	else:
+		btn.text = tr("移除廣告 (30台幣 / 1美金)")
+		btn.disabled = false
+		_set_btn_color(btn, COLOR_BTN_NORMAL)
+		btn.remove_theme_color_override("font_color")
+		btn.remove_theme_color_override("font_disabled_color")
+
+func _on_purchase_state_changed() -> void:
+	var lobby = $Phases/Phase0_Lobby
+	var panel = lobby.get_node_or_null("OptionsPanel")
+	if panel and panel.visible:
+		var btn: Button = panel.get_node_or_null("OuterMargin/CenterContainer/DialogCard/MarginContainer/ScrollContainer/VBoxContainer/BtnPurchaseNoAds")
+		if btn:
+			_update_purchase_button(btn)
 
 func _show_join_error(msg: String) -> void:
 	var vbox = $Phases/Phase0_Lobby/JoinPanel/VBox

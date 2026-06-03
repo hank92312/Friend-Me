@@ -129,7 +129,9 @@ const EN_MAP = {
 	"默契排行榜 (最了解你的人)：": "Compatibility Ranking (Who knows you best):",
 	"猜中你 ": "Guessed you ",
 	"個人資料運用說明": "Privacy Policy",
-	"特別感謝協助製作:ALICE、Benoit、縩興": "Special thanks to contributors:\nALICE, Benoit, 縩興"
+	"特別感謝協助製作:ALICE、Benoit、縩興": "Special thanks to contributors:\nALICE, Benoit, 縩興",
+	"移除廣告 (30台幣 / 1美金)": "Remove Ads (1 USD)",
+	"已免除廣告 (感謝支持！)": "Ads Removed (Thanks!)"
 }
 
 const PRIVACY_CN = """【個人資料與隱私權保護聲明】

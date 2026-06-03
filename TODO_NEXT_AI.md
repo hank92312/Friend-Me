@@ -26,6 +26,13 @@
    - 後端服務已成功部署至 Fly.io 並完成健康檢查，新版 120 秒計時器已在線運行。
    - Web 端已重新編譯並產生 cache-busting 與 Google H5 廣告的 Netlify 正式發行版 ([build_web_netlify](file:///c:/FriendAndMe/build_web_netlify)) 與 CrazyGames 版 ([build_web_crazygames](file:///c:/FriendAndMe/build_web_crazygames))。
    - Android 正式版 APK 已避開檔案鎖定，匯出並以發行金鑰完成簽章，檔案位於 [FriendAndMe_Release.apk](file:///c:/FriendAndMe/FriendAndMe_Release.apk)。
+6. **Google Play 應用內購買去廣告功能 (IAP / Remove Ads)**：
+   - 於 `export_presets.cfg` 正式啟用 `com.android.vending.BILLING` 權限。
+   - 於 `translation_data.gd` 新增中英文去廣告狀態之翻譯字典對應。
+   - 於 `ad_manager.gd` 完整串接 `GodotGooglePlayBilling` 插件與信號（交易更新、確認交易等），並實作自動確認交易（Acknowledge）機制以防自動退款。
+   - 實作本地加密快取機制，將購買結果 AES 加密儲存至 `user://settings_data.dat`，離線或無 Billing 插件平台也能安全攔截並跳過廣告。
+   - 於 `main.gd` 的設定（Options）選單中，在 Android 平台與本地 Debug 除錯模式下動態新增「移除廣告」按鈕，並精細安排於 spacer 分割線之前以符合視覺設計；若已購買則按鈕呈現灰暗停用的 `已免除廣告 (感謝支持！)`。
+   - 針對未申請 Play 開發者帳號的階段，特別在 `ad_manager.gd` 中加入 Debug 模式模擬購買成功機制，使本地測試 UI 整合邏輯百分之百順暢可行。
 
 ---
 

@@ -1,10 +1,12 @@
 extends Node
 
-# ── AdManager — 廣告管理單例 ──────────────────────────────────────────────────
+# ── AdManager — 廣告與應用內購買管理單例 ───────────────────────────────────────
 # 負責初始化 AdMob SDK、預載入 Interstitial 廣告、控制廣告播放。
+# 同時整合 Google Play Billing 實作「移除廣告」應用內購買 (IAP) 功能。
 # 非 Android 平台自動跳過廣告，廣告載入失敗時不卡住玩家。
 
 signal ad_finished  # 廣告播放完成（或跳過）後發出
+signal purchase_state_changed  # 購買狀態變更時發出（通知 UI 更新）
 
 # ── AdMob ID ─────────────────────────────────────────────────────────────────
 # 開發測試時使用 Google 官方測試 ID，正式發布前替換為真實 ID
@@ -25,6 +27,13 @@ var _interstitial_ad: InterstitialAd = null
 var _is_ad_loading := false
 var _is_showing_ad := false
 
+# ── 應用內購買 (IAP) ─────────────────────────────────────────────────────────
+const CACHE_FILE := "user://settings_data.dat"
+const ENCRYPT_PASS := "FriendAndMeSecureIAPKey"
+
+var billing_client: BillingClient = null
+var has_removed_ads := false
+
 # ── 防止 GC 回收：將廣告物件與回呼保留為類別變數 ─────────────────────────────
 var _current_showing_ad = null               # 正在播放的廣告物件
 var _current_full_screen_callback = null      # 正在使用的回呼物件
@@ -32,6 +41,9 @@ var _safety_timer: Timer = null               # 安全計時器（防止永遠�
 var _web_ad_callback = null                  # Web 平台 JavaScript 回呼物件
 
 func _ready() -> void:
+	# 載入本地加密購買快取
+	_load_purchase_locally()
+	
 	# 建立安全計時器（30 秒後如果廣告還沒回應，強制放行）
 	_safety_timer = Timer.new()
 	_safety_timer.one_shot = true
@@ -41,10 +53,148 @@ func _ready() -> void:
 	
 	if OS.get_name() == "Android":
 		_initialize_admob()
+		_initialize_billing()
 	elif OS.has_feature("web"):
 		_initialize_web_ads()
 	else:
 		print("[AdManager] Non-Android/Web platform — AdMob/Web Ads disabled.")
+
+# ── 初始化 Google Play Billing ───────────────────────────────────────────────
+func _initialize_billing() -> void:
+	if Engine.has_singleton("GodotGooglePlayBilling"):
+		print("[AdManager] Google Play Billing singleton found.")
+		billing_client = BillingClient.new()
+		add_child(billing_client)
+		
+		# 連接 BillingClient 訊號
+		billing_client.connected.connect(_on_billing_connected)
+		billing_client.connect_error.connect(_on_billing_connect_error)
+		billing_client.on_purchase_updated.connect(_on_billing_purchase_updated)
+		billing_client.query_purchases_response.connect(_on_billing_query_purchases_response)
+		billing_client.acknowledge_purchase_response.connect(_on_billing_acknowledge_response)
+		
+		# 開始與 Google Play 商店建立連線
+		billing_client.start_connection()
+	else:
+		print("[AdManager] Google Play Billing singleton NOT found (non-Play Store build or editor).")
+
+func _on_billing_connected() -> void:
+	print("[AdManager] Billing connected. Querying purchases...")
+	# 查詢使用者已購買的非消耗型/管理型商品
+	billing_client.query_purchases(BillingClient.ProductType.INAPP)
+
+func _on_billing_connect_error(response_code: int, debug_message: String) -> void:
+	print("[AdManager] Billing connection error: ", response_code, " - ", debug_message)
+
+func _on_billing_purchase_updated(response: Dictionary) -> void:
+	print("[AdManager] on_purchase_updated: ", response)
+	var response_code = response.get("response_code", -1)
+	if response_code == 0: # BillingResponseCode.OK
+		var purchases = response.get("purchases", [])
+		_process_purchases(purchases)
+	elif response_code == 7: # ITEM_ALREADY_OWNED
+		print("[AdManager] Purchase updated: Item already owned.")
+		has_removed_ads = true
+		_save_purchase_locally()
+		purchase_state_changed.emit()
+	else:
+		print("[AdManager] Purchase failed or cancelled. Response code: ", response_code)
+
+func _on_billing_query_purchases_response(response: Dictionary) -> void:
+	print("[AdManager] query_purchases_response: ", response)
+	var response_code = response.get("response_code", -1)
+	if response_code == 0: # OK
+		var purchases = response.get("purchases", [])
+		_process_purchases(purchases)
+	else:
+		print("[AdManager] query_purchases failed with response_code: ", response_code)
+
+func _on_billing_acknowledge_response(response: Dictionary) -> void:
+	print("[AdManager] acknowledge_purchase_response: ", response)
+	var response_code = response.get("response_code", -1)
+	if response_code == 0:
+		print("[AdManager] Purchase acknowledged successfully!")
+	else:
+		print("[AdManager] Acknowledge failed with response_code: ", response_code)
+
+func _process_purchases(purchases: Array) -> void:
+	var owned_remove_ads = false
+	for purchase in purchases:
+		# 檢查商品 ID 是否為 "remove_ads" 且狀態為已購買 (PURCHASED = 1)
+		var products = purchase.get("products", [])
+		var purchase_state = purchase.get("purchase_state", -1)
+		
+		# 相容舊版 API 欄位 (如 product_id 或 sku)
+		if products.is_empty() and purchase.has("product_id"):
+			products = [purchase["product_id"]]
+		elif products.is_empty() and purchase.has("sku"):
+			products = [purchase["sku"]]
+			
+		if "remove_ads" in products:
+			if purchase_state == 1: # PURCHASED
+				owned_remove_ads = true
+				var is_acknowledged = purchase.get("is_acknowledged", true)
+				# 如果尚未確認購買，必須在 3 天內確認，否則 Google 會自動退款
+				if not is_acknowledged:
+					var token = purchase.get("purchase_token", "")
+					if token != "":
+						print("[AdManager] Acknowledging purchase of remove_ads...")
+						billing_client.acknowledge_purchase(token)
+	
+	if owned_remove_ads != has_removed_ads:
+		has_removed_ads = owned_remove_ads
+		_save_purchase_locally()
+		purchase_state_changed.emit()
+
+# ── 發起購買 ──
+func purchase_remove_ads() -> void:
+	if has_removed_ads:
+		print("[AdManager] Ads already removed.")
+		return
+		
+	if billing_client == null or not billing_client.is_ready():
+		# 開發者帳號尚未申請、未連線或不支援 Billing (例如本地測試或非 Play 商店環境)
+		print("[AdManager] Billing client is not ready.")
+		if OS.is_debug_build():
+			# 除錯模式下直接放行模擬購買，便於測試 UI/選項選單轉變
+			print("[AdManager] Debug build detected. Simulating successful purchase of remove_ads...")
+			has_removed_ads = true
+			_save_purchase_locally()
+			purchase_state_changed.emit()
+		else:
+			OS.alert("無法連接至 Google Play 商店，請確認您已登入 Google 帳號並連接網路後再試一次。", "連線失敗")
+		return
+		
+	print("[AdManager] Launching purchase flow for: remove_ads")
+	var result = billing_client.purchase("remove_ads")
+	if result.get("status", -1) != 0:
+		print("[AdManager] Failed to launch purchase flow, result: ", result)
+
+# ── 本地加密快取 ──
+func _save_purchase_locally() -> void:
+	var file = FileAccess.open_encrypted_with_pass(CACHE_FILE, FileAccess.WRITE, ENCRYPT_PASS)
+	if file:
+		var data = {
+			"has_removed_ads": has_removed_ads
+		}
+		file.store_var(data)
+		file.close()
+		print("[AdManager] Purchase state saved locally: ", has_removed_ads)
+	else:
+		print("[AdManager] Failed to save purchase state locally.")
+
+func _load_purchase_locally() -> void:
+	if not FileAccess.file_exists(CACHE_FILE):
+		return
+	var file = FileAccess.open_encrypted_with_pass(CACHE_FILE, FileAccess.READ, ENCRYPT_PASS)
+	if file:
+		var data = file.get_var()
+		if data is Dictionary and data.has("has_removed_ads"):
+			has_removed_ads = data["has_removed_ads"]
+			print("[AdManager] Purchase state loaded from local cache: ", has_removed_ads)
+		file.close()
+	else:
+		print("[AdManager] Failed to load purchase state from local cache.")
 
 # ── 初始化 AdMob SDK ─────────────────────────────────────────────────────────
 func _initialize_admob() -> void:
@@ -97,6 +247,12 @@ func _load_interstitial() -> void:
 # ── 顯示廣告 ─────────────────────────────────────────────────────────────────
 # 呼叫後等待 `ad_finished` 信號即可繼續遊戲流程
 func show_interstitial() -> void:
+	# 如果已購買移除廣告，直接跳過並放行
+	if has_removed_ads:
+		print("[AdManager] Ads permanently disabled by IAP. Skipping ad.")
+		ad_finished.emit.call_deferred()
+		return
+
 	# Web 平台 → 呼叫 JavaScript 播放廣告
 	if OS.has_feature("web"):
 		_is_showing_ad = true
@@ -172,4 +328,3 @@ func _on_safety_timeout() -> void:
 	if _is_showing_ad:
 		print("[AdManager] WARNING: Safety timeout reached (30s) — force finishing ad.")
 		_finish_ad()
-
