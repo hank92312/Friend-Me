@@ -1158,7 +1158,7 @@ func _update_purchase_button(btn: Button) -> void:
 		btn.add_theme_color_override("font_color", Color(0.55, 0.50, 0.45, 1))
 		btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.50, 0.45, 1))
 	else:
-		btn.text = tr("移除廣告 (30台幣 / 1美金)")
+		btn.text = tr("贊助支持我，移除廣告")
 		btn.disabled = false
 		_set_btn_color(btn, COLOR_BTN_NORMAL)
 		btn.remove_theme_color_override("font_color")

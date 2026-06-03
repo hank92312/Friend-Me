@@ -130,7 +130,7 @@ const EN_MAP = {
 	"猜中你 ": "Guessed you ",
 	"個人資料運用說明": "Privacy Policy",
 	"特別感謝協助製作:ALICE、Benoit、縩興": "Special thanks to contributors:\nALICE, Benoit, 縩興",
-	"移除廣告 (30台幣 / 1美金)": "Remove Ads (1 USD)",
+	"贊助支持我，移除廣告": "Support me & Remove Ads",
 	"已免除廣告 (感謝支持！)": "Ads Removed (Thanks!)"
 }
 
