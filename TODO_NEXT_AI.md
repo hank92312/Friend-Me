@@ -33,16 +33,28 @@
    - 實作本地加密快取機制，將購買結果 AES 加密儲存至 `user://settings_data.dat`，離線或無 Billing 插件平台也能安全攔截並跳過廣告。
    - 於 `main.gd` 的設定（Options）選單中，在 Android 平台與本地 Debug 除錯模式下動態新增「移除廣告」按鈕，並精細安排於 spacer 分割線之前以符合視覺設計；若已購買則按鈕呈現灰暗停用的 `已免除廣告 (感謝支持！)`。
    - 針對未申請 Play 開發者帳號的階段，特別在 `ad_manager.gd` 中加入 Debug 模式模擬購買成功機制，使本地測試 UI 整合邏輯百分之百順暢可行。
+7. **Google Play Store 上架準備**：
+   - 將 Android 匯出預設格式修改為 **AAB** 格式，設定版本為 `1.0.0` (Code `1`)。
+   - 在 `build_and_patch.py` 中實作自動生成極具質感、支援中英雙語切換之 **隱私政策網頁 (`privacy.html`)**，並打包輸出至 Netlify 目錄。
+   - 將最新程式碼與配置同步至建置目錄 `C:\FriendAndMe_Build`，並在 headless 模式下執行編譯驗證，確認除了預期的發行金鑰簽章外，無任何語法或檔案缺失錯誤。
+   - 已完成所有變更的本地測試、並提交備份推送至 GitHub。
 
 ---
 
 ## 📅 下一階段工作規劃 (Next Phase Roadmaps)
 
+- **部署最新網頁版至 Netlify**：
+  - 將最新的 `build_web_netlify` 資料夾（含最新的 `index.html`、`privacy.html` 及 `ads.txt`）部署到 Netlify。
+  - 隱私權政策網址將會是：`https://friendandme.netlify.app/privacy.html`。
+- **向 Google Play Console 提交隱私權政策**：
+  - 在 Play Console 內的「隱私權政策」欄位，填入上述 Netlify 的 privacy.html 網址。
+- **在 GUI 中匯出簽名 AAB 檔案**：
+  - 開啟 Godot GUI 載入 `C:\FriendAndMe_Build` 專案。
+  - 點擊「專案」->「匯出」，選擇 Android 預設，點擊「匯出專案」，將輸出檔命名為 `FriendAndMe_Release.aab`（GUI 會使用本地的發行金鑰完成簽署）。
+  - 將匯出的 `.aab` 檔案上傳到 Google Play Console。
 - **追蹤 Google AdSense 審核狀態**：
   - 目前 `friendandme.netlify.app` 已提交「要求複查」，且 `ads.txt` 已部署。接下來需要等待 Google 審核完畢（通常需數天到兩週），狀態變為「準備就緒」後網頁端廣告即會開始播放。
 - **多端連線與大廳重連壓力測試**：
   - 在正式環境中，利用多台手機（iOS/Android）與不同瀏覽器，進行 4-6 人的實際連線對局測試，以驗證 WebSocket 在多端高延遲下的流暢度與重連秒數同步性。
 - **廣告平台正式切換**：
   - 驗證 Netlify 版的 Google AdSense H5 廣告的載入速度，並在 `index.html` 將廣告平台 `AD_PLATFORM` 由測試模式 (MOCK) 切換為正式上線模式。
-- **Android APK 上架 Google Play 準備**：
-  - 在發布正式 Google Play 商店時，需將 APK 轉換為 AAB 檔案格式並進行上傳。
