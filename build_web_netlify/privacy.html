@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Friends & Me - 隱私權政策 / Privacy Policy</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+	<style>
+		:root {
+			--bg-dark: #080707;
+			--bg-light: #161413;
+			--primary: #D0813C;
+			--text-main: #FFF2CC;
+			--text-muted: rgba(255, 242, 204, 0.7);
+			--glass-bg: rgba(30, 26, 24, 0.6);
+			--glass-border: rgba(208, 129, 60, 0.18);
+		}
+		
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+			background: radial-gradient(circle at 50% 50%, var(--bg-light) 0%, var(--bg-dark) 100%);
+			color: var(--text-main);
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: flex-start;
+			padding: 40px 20px;
+			line-height: 1.6;
+		}
+
+		.container {
+			max-width: 800px;
+			width: 100%;
+			background: var(--glass-bg);
+			backdrop-filter: blur(12px);
+			-webkit-backdrop-filter: blur(12px);
+			border: 2px solid var(--glass-border);
+			border-radius: 32px;
+			padding: 40px;
+			box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+			margin-top: 20px;
+		}
+
+		header {
+			width: 100%;
+			max-width: 800px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+		}
+
+		.logo {
+			font-size: 28px;
+			font-weight: 700;
+			color: var(--primary);
+			letter-spacing: 1px;
+		}
+
+		.lang-switch {
+			display: flex;
+			gap: 10px;
+		}
+
+		.lang-btn {
+			background: rgba(255, 255, 255, 0.05);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			color: var(--text-muted);
+			padding: 8px 16px;
+			border-radius: 20px;
+			cursor: pointer;
+			font-weight: 600;
+			font-size: 14px;
+			transition: all 0.22s ease;
+		}
+
+		.lang-btn.active, .lang-btn:hover {
+			background: var(--primary);
+			border-color: var(--primary);
+			color: #fff;
+			box-shadow: 0 4px 12px rgba(208, 129, 60, 0.3);
+		}
+
+		h1 {
+			font-size: 32px;
+			font-weight: 700;
+			color: var(--primary);
+			margin-bottom: 30px;
+			border-bottom: 1px solid var(--glass-border);
+			padding-bottom: 15px;
+			text-align: center;
+		}
+
+		h2 {
+			font-size: 20px;
+			margin-top: 30px;
+			margin-bottom: 15px;
+			color: var(--primary);
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		p {
+			font-size: 16px;
+			color: var(--text-muted);
+			margin-bottom: 15px;
+			text-align: justify;
+		}
+
+		ul {
+			margin-left: 20px;
+			margin-bottom: 20px;
+			color: var(--text-muted);
+		}
+
+		li {
+			margin-bottom: 8px;
+		}
+
+		footer {
+			margin-top: 40px;
+			text-align: center;
+			font-size: 14px;
+			color: rgba(255, 242, 204, 0.4);
+		}
+
+		/* Responsive styling */
+		@media (max-width: 600px) {
+			body {
+				padding: 20px 10px;
+			}
+			.container {
+				padding: 25px 20px;
+				border-radius: 24px;
+			}
+			h1 {
+				font-size: 24px;
+			}
+			h2 {
+				font-size: 18px;
+			}
+		}
+	</style>
+</head>
+<body>
+
+	<header>
+		<div class="logo">Friends & Me</div>
+		<div class="lang-switch">
+			<button id="btn-zh" class="lang-btn active" onclick="setLanguage('zh')">中文</button>
+			<button id="btn-en" class="lang-btn" onclick="setLanguage('en')">English</button>
+		</div>
+	</header>
+
+	<div class="container">
+		<!-- Traditional Chinese Privacy Policy -->
+		<div id="lang-zh">
+			<h1>《Friends & Me》隱私權政策</h1>
+			<p>更新日期：2026 年 6 月 3 日</p>
+			
+			<p>本遊戲《Friends & Me》（以下簡稱「本遊戲」）非常重視您的隱私權。我們致力於保護您的個人資料，請詳閱以下隱私權保護聲明：</p>
+
+			<h2>1. 零永久儲存機制</h2>
+			<p>本遊戲與遊戲連線伺服器<strong>「完全不會」</strong>永久儲存您在遊戲中輸入的任何個人對局資料（包括但不限於玩家暱稱、自訂答題文字、配對選擇或每局的投票得分紀錄）。</p>
+
+			<h2>2. 資料即時刪除與 RAM 快取</h2>
+			<p>所有遊戲中的即時數據僅暫存於伺服器的隨機存取記憶體（RAM）中，以供本局進行中的玩家即時同步。當您關閉遊戲、主動退出房間，或房間中所有玩家斷開連線後，伺服器會立即將您的所有暫存資料與個人資訊<strong>「徹底刪除」</strong>，不留任何備份或對局紀錄。</p>
+
+			<h2>3. 第三方服務與 SDK 規範</h2>
+			<p>為了維持遊戲的正常運作與基本收益，我們可能使用以下第三方 SDK 服務，其處理資訊的政策如下：</p>
+			<ul>
+				<li><strong>Google AdMob / AdSense H5 廣告</strong>：本遊戲使用 Google 提供的網頁 H5 廣告服務。Google 可能會收集並使用您的匿名設備識別碼、Cookie 或其他非個人化識別資訊，以向您投放相關廣告。</li>
+				<li><strong>Google Play Billing (應用內購買)</strong>：本遊戲的 Android APK 版本包含購買「移除廣告」的選項。所有付款與交易均直接由 Google Play 商店安全地處理。我們不會收集、儲存或接觸您的信用卡資訊或任何交易敏感性細節，僅在本地與 Google 商店伺服器核對是否已完成購買狀態。</li>
+			</ul>
+
+			<h2>4. 本地快取 (Local Storage)</h2>
+			<p>本遊戲僅在您設備本地（瀏覽器快取或 App 用戶數據區）儲存您的語言設定、音效開關偏好，以及經加密的去廣告購買狀態。這些設定僅供您本地端體驗使用，絕不會上傳或共享至任何伺服器。</p>
+
+			<h2>5. 聯絡我們</h2>
+			<p>如果您對本遊戲的隱私權政策有任何疑問，歡迎聯絡製作人：<br>
+			<strong>hank92312@gmail.com</strong></p>
+		</div>
+
+		<!-- English Privacy Policy -->
+		<div id="lang-en" style="display: none;">
+			<h1>Privacy Policy for 《Friends & Me》</h1>
+			<p>Last Updated: June 3, 2026</p>
+			
+			<p>We highly value your privacy. This Privacy Policy explains how we protect and handle your personal data when you play our game, 《Friends & Me》:</p>
+
+			<h2>1. Zero Permanent Storage</h2>
+			<p>This game and its connection servers <strong>DO NOT</strong> permanently store any of your inputted personal gameplay data (including nicknames, custom answers, matchmaking choices, or round score records).</p>
+
+			<h2>2. RAM Caching & Instant Erasure</h2>
+			<p>All in-game data is temporarily cached in the server's Random Access Memory (RAM) solely for real-time synchronization between active players. Once you close the game, leave the room, or all players disconnect, all cached data and personal information are immediately and permanently erased from the server. No backup copies are retained.</p>
+
+			<h2>3. Third-Party Services & SDKs</h2>
+			<p>To sustain server operations and support the app, we integrate third-party SDKs which handle data as follows:</p>
+			<ul>
+				<li><strong>Google AdMob / AdSense H5 Ads</strong>: The game requests H5 ads from Google. Google may collect and use anonymous device identifiers, cookies, or other non-personally identifiable information to deliver relevant advertisements.</li>
+				<li><strong>Google Play Billing (In-App Purchases)</strong>: The Android APK version provides an option to purchase "Remove Ads". All payment processing and transactions are handled securely by the Google Play Store. We do not collect, view, or store any credit card numbers or transaction details. We only query Google Play to check if you have purchased the ad-free upgrade.</li>
+			</ul>
+
+			<h2>4. Local Storage</h2>
+			<p>The game only saves your language settings, sound preferences, and encrypted ad-removal purchase status locally on your device's browser cache or local app storage. This data is strictly local and is never uploaded to any servers.</p>
+
+			<h2>5. Contact Us</h2>
+			<p>If you have any questions regarding this Privacy Policy, please contact the developer at:<br>
+			<strong>hank92312@gmail.com</strong></p>
+		</div>
+	</div>
+
+	<footer>
+		&copy; 2026 Friends & Me. All Rights Reserved.
+	</footer>
+
+	<script>
+		function setLanguage(lang) {
+			const zhDiv = document.getElementById('lang-zh');
+			const enDiv = document.getElementById('lang-en');
+			const btnZh = document.getElementById('btn-zh');
+			const btnEn = document.getElementById('btn-en');
+			
+			if (lang === 'zh') {
+				zhDiv.style.display = 'block';
+				enDiv.style.display = 'none';
+				btnZh.classList.add('active');
+				btnEn.classList.remove('active');
+				document.documentElement.lang = 'zh-TW';
+			} else {
+				zhDiv.style.display = 'none';
+				enDiv.style.display = 'block';
+				btnZh.classList.remove('active');
+				btnEn.classList.add('active');
+				document.documentElement.lang = 'en';
+			}
+		}
+	</script>
+</body>
+</html>
