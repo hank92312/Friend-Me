@@ -38,7 +38,11 @@
    - 在 `build_and_patch.py` 中實作自動生成極具質感、支援中英雙語切換之 **隱私政策網頁 (`privacy.html`)**，並打包輸出至 Netlify 目錄。
    - 將最新程式碼與配置同步至建置目錄 `C:\FriendAndMe_Build`，並在 headless 模式下執行編譯驗證，確認除了預期的發行金鑰簽章外，無任何語法或檔案缺失錯誤。
    - **Netlify 部署完成**：已將最新的 `build_web_netlify` 目錄（含 `privacy.html`、`ads.txt` 及更新版 HTML 廣告與驗證配置）發佈至 Netlify，目前隱私權政策網址為 `https://friendandme.netlify.app/privacy.html`。
-   - 已完成所有變更的本地測試、並提交備份推送至 GitHub。
+8. **Google AdSense 審核「沒有發布商內容」修正**：
+   - **問題分析**：因 Godot 網頁版為 Canvas 渲染，頁面無爬蟲可讀之 HTML 文字，導致 AdSense 判定為「沒有發布商內容」而退件。
+   - **技術方案**：於 `build_and_patch.py` 實作 **SEO 質感登陸頁面自動注入**。在 Netlify 的 `index.html` 注入擁有與遊戲一致之深色玻璃擬態說明的登陸首頁，提供遊戲介紹、喬哈里視窗理念、心理安全機制、Level 1-5 話題分級、核心步驟與 FAQ。
+   - **體驗優化**：包裝 Godot 的 `engine.startGame` 到 `window.launchGame` 函數中，使用者點擊首頁「開始遊戲」時始下載 37MB Wasm 資源，避免強制消耗行動端流量並解決爬蟲無內容判定。
+   - 已完成本地編譯與變更，並提交備份推送至 GitHub。
 
 ---
 
