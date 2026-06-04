@@ -104,8 +104,382 @@ body {
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 
-	</head>
+		<style>
+		/* Landing Page Styles */
+		#landing-page {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: radial-gradient(circle at 50% 50%, #161413 0%, #080707 100%);
+			z-index: 99990;
+			overflow-y: auto;
+			font-family: 'Outfit', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+			color: #FFF2CC;
+			padding: 40px 20px;
+			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			opacity: 1;
+			transition: opacity 0.5s ease;
+		}
+		
+		#landing-page.fade-out {
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.landing-header {
+			width: 100%;
+			max-width: 800px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 40px;
+		}
+
+		.landing-logo {
+			font-size: 28px;
+			font-weight: 700;
+			color: #D0813C;
+			letter-spacing: 1px;
+		}
+
+		.landing-lang-switch {
+			display: flex;
+			gap: 10px;
+		}
+
+		.landing-lang-btn {
+			background: rgba(255, 255, 255, 0.05);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			color: rgba(255, 242, 204, 0.7);
+			padding: 8px 16px;
+			border-radius: 20px;
+			cursor: pointer;
+			font-weight: 600;
+			font-size: 14px;
+			transition: all 0.22s ease;
+		}
+
+		.landing-lang-btn.active, .landing-lang-btn:hover {
+			background: #D0813C;
+			border-color: #D0813C;
+			color: #fff;
+			box-shadow: 0 4px 12px rgba(208, 129, 60, 0.3);
+		}
+
+		.landing-hero {
+			text-align: center;
+			max-width: 600px;
+			margin-bottom: 40px;
+		}
+
+		#landing-hero-title {
+			font-size: 38px;
+			font-weight: 700;
+			color: #E39450;
+			margin-bottom: 15px;
+			text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+		}
+
+		#landing-hero-subtitle {
+			font-size: 18px;
+			color: rgba(255, 242, 204, 0.7);
+			line-height: 1.6;
+			margin-bottom: 30px;
+		}
+
+		#landing-play-btn {
+			background: #D0813C;
+			color: #1F1C1A;
+			border: none;
+			padding: 16px 40px;
+			font-size: 1.3rem;
+			border-radius: 50px;
+			cursor: pointer;
+			font-weight: 700;
+			box-shadow: 0 8px 24px rgba(208, 129, 60, 0.4);
+			transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+		}
+
+		#landing-play-btn:hover {
+			background: #E39450;
+			transform: scale(1.05);
+			box-shadow: 0 12px 30px rgba(227, 148, 80, 0.5);
+		}
+
+		#landing-play-btn:active {
+			transform: scale(0.97);
+		}
+
+		.landing-container {
+			width: 100%;
+			max-width: 800px;
+			display: flex;
+			flex-direction: column;
+			gap: 25px;
+		}
+
+		.landing-card {
+			background: rgba(30, 26, 24, 0.6);
+			backdrop-filter: blur(12px);
+			-webkit-backdrop-filter: blur(12px);
+			border: 2px solid rgba(208, 129, 60, 0.18);
+			border-radius: 24px;
+			padding: 30px;
+			box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+		}
+
+		.landing-card h2 {
+			font-size: 22px;
+			color: #D0813C;
+			margin-bottom: 15px;
+			font-weight: 700;
+		}
+
+		.landing-card p {
+			font-size: 16px;
+			line-height: 1.7;
+			color: rgba(255, 242, 204, 0.8);
+			margin-bottom: 15px;
+		}
+
+		.landing-card p:last-child {
+			margin-bottom: 0;
+		}
+
+		.landing-card ul, .landing-card ol {
+			margin-left: 20px;
+			margin-bottom: 15px;
+			color: rgba(255, 242, 204, 0.8);
+		}
+
+		.landing-card li {
+			margin-bottom: 10px;
+			line-height: 1.6;
+		}
+
+		.landing-card li strong {
+			color: #E39450;
+		}
+
+		.landing-footer {
+			width: 100%;
+			max-width: 800px;
+			margin-top: 50px;
+			text-align: center;
+			font-size: 14px;
+			color: rgba(255, 242, 204, 0.4);
+			border-top: 1px solid rgba(208, 129, 60, 0.1);
+			padding-top: 25px;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		.landing-footer a {
+			color: #D0813C;
+			text-decoration: none;
+		}
+		.landing-footer a:hover {
+			text-decoration: underline;
+		}
+
+		@media (max-width: 600px) {
+			#landing-page {
+				padding: 30px 15px;
+			}
+			.landing-header {
+				margin-bottom: 25px;
+			}
+			.landing-logo {
+				font-size: 24px;
+			}
+			#landing-hero-title {
+				font-size: 28px;
+			}
+			#landing-hero-subtitle {
+				font-size: 16px;
+			}
+			#landing-play-btn {
+				font-size: 1.15rem;
+				padding: 14px 30px;
+			}
+			.landing-card {
+				padding: 20px;
+				border-radius: 18px;
+			}
+			.landing-card h2 {
+				font-size: 18px;
+			}
+		}
+	</style>
+</head>
 	<body>
+		<!-- Landing Page for SEO and Crawler Approval -->
+		<div id="landing-page">
+			<div class="landing-header">
+				<div class="landing-logo">Friends & Me</div>
+				<div class="landing-lang-switch">
+					<button id="landing-btn-zh" class="landing-lang-btn active" onclick="setLandingLanguage('zh')">中文</button>
+					<button id="landing-btn-en" class="landing-lang-btn" onclick="setLandingLanguage('en')">English</button>
+				</div>
+			</div>
+			
+			<div class="landing-hero">
+				<h1 id="landing-hero-title">異步社交探索桌遊</h1>
+				<p id="landing-hero-subtitle">透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。</p>
+				<button id="landing-play-btn" onclick="launchEngine()">開始遊戲 ➔</button>
+			</div>
+
+			<div class="landing-container">
+				<!-- Traditional Chinese Content -->
+				<div id="landing-content-zh">
+					<div class="landing-card">
+						<h2>🧠 遊戲設計理念</h2>
+						<p>本遊戲基於<strong>喬哈里視窗（Johari Window）</strong>心理學理論設計。透過「自我揭露」與「社交驗證」雙向互動，幫助玩家探索他人眼中的自己與真實自我之間的默契落差，開啟深度、溫馨且有意義的對話。</p>
+					</div>
+
+					<div class="landing-card">
+						<h2>🔒 心理安全與隱私保障</h2>
+						<p>我們深知揭露自我的社交焦慮，因此設計了「不回答」機制，讓玩家在不願分享特定話題時能體面拒絕，同時作為配對時的干擾項。所有對局數據僅在伺服器隨機存取記憶體 (RAM) 中暫存同步，一旦玩家離線或遊戲結束即<strong>徹底擦除</strong>，零永久儲存，保障您的絕對隱私。</p>
+					</div>
+
+					<div class="landing-card">
+						<h2>☕ 社交話題深度分級 (Level 1 - 5)</h2>
+						<p>遊戲提供 5 個不同的社交級別話題，適配各種聚會情境：</p>
+						<ul>
+							<li><strong>Level 1：閒話家常</strong> - 關於日常習慣與輕鬆偏好。</li>
+							<li><strong>Level 2：下午茶閒聊</strong> - 適合普通朋友與聚會破冰。</li>
+							<li><strong>Level 3：居酒屋微醺</strong> - 稍微深入的感情與生活交流。</li>
+							<li><strong>Level 4：深夜真心話</strong> - 屬於摯友或伴侶間的夜深小秘密。</li>
+							<li><strong>Level 5：靈魂拷問</strong> - 挑戰道德邊界或極端情境的深度思辨。</li>
+						</ul>
+					</div>
+
+					<div class="landing-card">
+						<h2>🎮 四大核心遊玩步驟</h2>
+						<ol>
+							<li><strong>創建/加入房間</strong>：快速輸入暱稱，一鍵創建 6 位數房間碼並發送給好友。</li>
+							<li><strong>選題與答題</strong>：隊長隨機選題，所有玩家在限時內填寫答案或選擇不回答。</li>
+							<li><strong>社交配對猜測</strong>：拖曳玩家大頭貼與對應的匿名答案進行配對。</li>
+							<li><strong>精彩結算揭曉</strong>：觀看精緻的猜中率百分比動畫，統計每局的默契得分。</li>
+						</ol>
+					</div>
+
+					<div class="landing-card">
+						<h2>❓ 常見問答 (FAQ)</h2>
+						<p><strong>問：這款遊戲適合多少人玩？</strong><br>答：本遊戲適合 2 至 6 人同時連線遊玩，是家庭聚會、派對或情侶互動的絕佳選擇。</p>
+						<p><strong>問：網頁版與 App 版有什麼區別？</strong><br>答：網頁版即開即玩，方便快捷；App 版效能更穩定，且支援 Google Play 應用內購買「移除廣告」方案，提供更為純淨的無廣告遊戲體驗。</p>
+					</div>
+				</div>
+
+				<!-- English Content -->
+				<div id="landing-content-en" style="display: none;">
+					<div class="landing-card">
+						<h2>🧠 Core Vision & Concept</h2>
+						<p>Designed around the psychological concept of the <strong>Johari Window</strong>. Through gameplay, players disclose aspects of themselves and verify how their friends perceive them, resolving the gap between self-perception and public-perception in a fun, meaningful way.</p>
+					</div>
+
+					<div class="landing-card">
+						<h2>🔒 Psychological Safety & Privacy</h2>
+						<p>To reduce social anxiety, players can select "Prefer Not to Answer" to skip sensitive questions. This option acts as a distractor during the matchmaking phase. All session data is cached temporarily in the server's RAM and is <strong>permanently erased</strong> once the session ends. No database records are kept.</p>
+					</div>
+
+					<div class="landing-card">
+						<h2>☕ Topics Depth Levels (Level 1 - 5)</h2>
+						<p>Features 5 progressive difficulty levels to match any social scenario:</p>
+						<ul>
+							<li><strong>Level 1: Casual Chat</strong> - Daily habits and light preferences.</li>
+							<li><strong>Level 2: Afternoon Tea</strong> - Icebreakers and casual catch-ups.</li>
+							<li><strong>Level 3: Izakaya Drunk</strong> - Relationship stories and life experiences.</li>
+							<li><strong>Level 4: Late-Night Secrets</strong> - Deep personal shares for close friends.</li>
+							<li><strong>Level 5: Soul Search</strong> - Extreme scenarios and ethical dilemmas.</li>
+						</ul>
+					</div>
+
+					<div class="landing-card">
+						<h2>🎮 Four Core Gameplay Steps</h2>
+						<ol>
+							<li><strong>Lobby Setup</strong>: Enter a nickname and generate a 6-digit room code to invite friends.</li>
+							<li><strong>Answer Questions</strong>: The leader picks a level, and players type their answers or choose to skip.</li>
+							<li><strong>Matchmaking Guess</strong>: Link player avatars with their guessed answers in a matching interface.</li>
+							<li><strong>Score Revelation</strong>: Watch real-time percentage animation counting correct guesses.</li>
+						</ol>
+					</div>
+
+					<div class="landing-card">
+						<h2>❓ Frequently Asked Questions (FAQ)</h2>
+						<p><strong>Q: How many players are supported?</strong><br>A: Best played with 2 to 6 players simultaneously, perfect for party meetups and couples.</p>
+						<p><strong>Q: What is the difference between Web and App?</strong><br>A: Web version loads instantly in browser. The App version provides offline caching and includes an optional "Remove Ads" in-app purchase (1 USD / 30 TWD) to remove all interstitial ads.</p>
+					</div>
+				</div>
+			</div>
+
+			<footer class="landing-footer">
+				<p>&copy; 2026 Friends & Me. All Rights Reserved. | <a href="/privacy.html" target="_blank">隱私權政策 (Privacy Policy)</a></p>
+				<p>開發者聯絡信箱 (Contact): <strong>hank92312@gmail.com</strong></p>
+			</footer>
+		</div>
+
+		<script>
+			function setLandingLanguage(lang) {
+				const zhDiv = document.getElementById('landing-content-zh');
+				const enDiv = document.getElementById('landing-content-en');
+				const btnZh = document.getElementById('landing-btn-zh');
+				const btnEn = document.getElementById('landing-btn-en');
+				const heroTitle = document.getElementById('landing-hero-title');
+				const heroSubtitle = document.getElementById('landing-hero-subtitle');
+				const playBtn = document.getElementById('landing-play-btn');
+				
+				if (lang === 'zh') {
+					zhDiv.style.display = 'block';
+					enDiv.style.display = 'none';
+					btnZh.classList.add('active');
+					btnEn.classList.remove('active');
+					heroTitle.innerText = '異步社交探索桌遊';
+					heroSubtitle.innerText = '透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。';
+					playBtn.innerText = '開始遊戲 ➔';
+				} else {
+					zhDiv.style.display = 'none';
+					enDiv.style.display = 'block';
+					btnZh.classList.remove('active');
+					btnEn.classList.add('active');
+					heroTitle.innerText = 'Asynchronous Social Party Game';
+					heroSubtitle.innerText = 'Align self-perception with friends\' insights through fun, secure self-disclosure.';
+					playBtn.innerText = 'Play Game ➔';
+				}
+			}
+			
+			function launchEngine() {
+				const lp = document.getElementById('landing-page');
+				lp.classList.add('fade-out');
+				setTimeout(() => {
+					lp.style.display = 'none';
+					if (typeof window.launchGame === 'function') {
+						window.launchGame();
+					} else {
+						console.error("launchGame function not found.");
+					}
+				}, 500);
+			}
+			
+			// Auto detect browser language
+			(function() {
+				let defaultLang = 'zh';
+				if (navigator.language && navigator.language.startsWith('en')) {
+					defaultLang = 'en';
+				}
+				// Wait for DOM to load
+				window.addEventListener('DOMContentLoaded', () => {
+					setLandingLanguage(defaultLang);
+				});
+			})();
+		</script>
+
 		<canvas id="canvas">
 			Your browser does not support the canvas tag.
 		</canvas>
@@ -428,6 +802,7 @@ const engine = new Engine(GODOT_CONFIG);
 			displayFailureNotice(missingMsg + missing.join('\n'));
 		}
 	} else {
+		window.launchGame = function() {
 		setStatusMode('progress');
 		engine.startGame({
 			'onProgress': function (current, total) {
@@ -442,6 +817,7 @@ const engine = new Engine(GODOT_CONFIG);
 		}).then(() => {
 			setStatusMode('hidden');
 		}, displayFailureNotice);
+	};
 	}
 }());
 }
