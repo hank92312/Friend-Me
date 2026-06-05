@@ -69,6 +69,10 @@
 - **問題**：為降低後端 API 頻寬壓力，題庫採本地打包。當選題階段逾時，後端需要能自動選題並廣播。
 - **解法**：將題庫複製到 [backend/data/](file:///C:/FriendAndMe/backend/data/) 並打包進 Docker。超時後後端加載本地 JSON 檔隨機抽取題目並廣播 question 文字給客戶端，客戶端再依據 question 文字於本地對照表進行多語系翻譯。
 
+#### 8. 單人遊玩結果揭曉防空包機制 (Single-Player Results Resolution)
+- **問題**：當房間內只有單一玩家遊玩時，由於 Phase 3 (配對階段) 不需要配對，進入 Phase 4 (結果揭曉) 後，原有的統計與配對結果邏輯會跳過本機玩家 (`mock_self_name`)，導致 `last_round_results_data` 陣列為空，造成結果揭曉頁面空白。
+- **解法**：在 `_generate_phase4_ui()` 產生結果 UI 時，優先檢查 `round_answers.size() <= 1`。若是單人遊玩，則自動建立一筆包含玩家自身回答（`mock_self_name`）且配對正確（`is_correct = true`）的結果資料，確保在單人遊玩情境下能正常渲染自己的答案，而不會出現空白畫面。
+
 ---
 
 ## 5. 檔案與場景結構 (Project Directory & Nodes)

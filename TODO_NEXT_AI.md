@@ -43,24 +43,24 @@
    - **技術方案**：於 `build_and_patch.py` 實作 **SEO 質感登陸頁面自動注入**。在 Netlify 的 `index.html` 注入擁有與遊戲一致之深色玻璃擬態說明的登陸首頁，提供遊戲介紹、喬哈里視窗理念、心理安全機制、Level 1-5 話題分級、核心步驟與 FAQ。
    - **體驗優化**：包裝 Godot 的 `engine.startGame` 到 `window.launchGame` 函數中，使用者點擊首頁「開始遊戲」時始下載 37MB Wasm 資源，避免強制消耗行動端流量並解決爬蟲無內容判定。
    - 已完成本地編譯與變更，並提交備份推送至 GitHub。
-9. **Google Play Console 開發者帳號註冊**：
-   - 已成功建立並支付 25 USD 註冊個人開發者帳號，目前正等待 Google 的身分證件與安全驗證審查。
+9. **Google Play Console 開發者帳號註冊與 AAB 上架**：
+   - 已成功建立開發者帳號、解決了上傳時 AAB 的「所有上傳套件都必須經過簽署」與「金鑰指紋不符」問題（透過在本機 `.godot/export_credentials.cfg` 中配置發行金鑰與密碼，並匯出已導出的 `upload_certificate.pem` 向 Google 申請重設上傳金鑰並獲得批准）。
+   - 已成功將簽章完成的 AAB 檔案上傳至封閉測試（Closed Testing）軌道，並順利通過 Google 審核，目前測試通道已發布上線。
+   - 在商店資訊中成功配置了自訂生成的隱私權政策連結 `https://friendandme.netlify.app/privacy.html`，且完成「應用程式存取權」、「廣告 ID 聲明（廣告與行銷理由）」等政策表單。
+10. **單人遊玩「結果揭曉」防空包修復**：
+    - 修復了單人遊玩時 Phase 4 結果頁面為空白的 Bug，在 [friendAndme/main.gd](file:///c:/FriendAndMe/friendAndme/main.gd) 中新增單人遊玩（`round_answers.size() <= 1`）的 Fallback 邏輯，能自動在結果頁面中顯示玩家自己的答案。
+    - 已完成本地編譯同步並重新產生已包含此 Bug 修復之正式簽章 AAB 套件。
 
 ---
 
 ## 📅 下一階段工作規劃 (Next Phase Roadmaps)
 
-- **追蹤與完成 Google Play 開發者帳號驗證**：
-  - 上傳身分證/護照相片，完成身分驗證（注意：證件姓名需與帳戶「蔡小花」完全一致且不加任何浮水印）。
-  - 在 Android 手機上下載安裝 Google Play Console 行動 App 並登入帳號，以完成「驗證有權使用 Android 行動裝置」。
-  - 完成聯絡電話號碼簡訊驗證。
 - **招募 20 位閉門測試 (Closed Testing) 人員**：
-  - 準備至少 20 名測試人員的 Google 帳號 Email 清單。新註冊的個人開發者帳號在發布正式版前，必須讓 20 位測試人員安裝並連續保留 App 進行測試至少 14 天。
-- **向 Google Play Console 提交隱私權政策與 AAB**（帳號審核通過後）：
-  - 於「應用程式內容」填入已部署的隱私權政策連結：`https://friendandme.netlify.app/privacy.html`。
-  - 在 Godot GUI 下載入 `C:\FriendAndMe_Build` 專案，匯出正式簽名之 `FriendAndMe_Release.aab` 並上傳至 Console 測試軌道。
+  - 目前封閉測試已審核通過。需複製「測試人員」分頁底下的**「加入測試專屬網址」**發送給 20 名測試人員。
+  - 確保這 20 位測試人員下載並在手機中**連續保留 App 至少 14 天**，以解除 Google Play 個人帳號發布正式版的限制。
+  - 可前往左側選單的 **「資訊主頁」** 查看 20 人/14 天倒數計時器的具體進度。
 - **追蹤 Google AdSense 審核狀態**：
-  - 目前已提交「要求複查」，新版 SEO 質感登陸網頁與 `ads.txt` 已部署上線，等待 Google 審核完畢後（約數天至兩週）即可正式切換為 Google H5 廣告上線模式。
+  - 目前已提交「要求複查」，新版 SEO 質感登陸網頁與 `ads.txt` 已部署上線，等待 Google 審核完畢後（約數天至兩週）即可將網頁端廣告平台由測試模式 (MOCK) 切換為正式上線模式。
 - **多端連線與大廳重連壓力測試**：
   - 在正式環境中，利用多台手機（iOS/Android）與不同瀏覽器，進行 4-6 人的實際連線對局測試，以驗證 WebSocket 在多端高延遲下的流暢度與重連秒數同步性。
 - **廣告平台正式切換**：

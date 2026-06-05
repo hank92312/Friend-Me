@@ -2310,39 +2310,55 @@ func _generate_phase4_ui() -> void:
 			unused_guesses.erase(player_name) # 標記為已使用
 			
 	last_round_results_data.clear()
-	for player_name in round_answers:
-		if player_name == mock_self_name:
-			continue
-		var ans_text: String = round_answers[player_name]
-		var is_correct: bool = correct_evals.has(player_name)
-		var guessed_player: String = "?"
-		
-		if is_correct:
-			guessed_player = player_name
-		else:
-			# 從剩下的錯誤猜測中，找一個「答案文字」符合 ans_text 的來顯示
-			for p_name in unused_guesses.keys():
-				if unused_guesses[p_name] == ans_text:
-					guessed_player = p_name
-					unused_guesses.erase(p_name)
-					break
-			# 防呆：如果數量對不上，至少隨便顯示一個
-			if guessed_player == "?":
-				for p_name in unused_guesses.keys():
-					guessed_player = p_name
-					unused_guesses.erase(p_name)
-					break
-
-		guess_total += 1
-		if is_correct:
-			correct_count += 1
-
+	
+	if round_answers.size() <= 1:
+		# 單人遊玩防空包處理：顯示玩家自己的答案
+		var ans_text: String = round_answers.get(mock_self_name, self_answer)
+		if ans_text == "":
+			ans_text = self_answer
+		guess_total = 1
+		correct_count = 1
 		last_round_results_data.append({
 			"ans_text": ans_text,
-			"correct_player": player_name,
-			"guessed_player": guessed_player,
-			"is_correct": is_correct
+			"correct_player": mock_self_name,
+			"guessed_player": mock_self_name,
+			"is_correct": true
 		})
+	else:
+		# 多人遊玩原本的邏輯
+		for player_name in round_answers:
+			if player_name == mock_self_name:
+				continue
+			var ans_text: String = round_answers[player_name]
+			var is_correct: bool = correct_evals.has(player_name)
+			var guessed_player: String = "?"
+			
+			if is_correct:
+				guessed_player = player_name
+			else:
+				# 從剩下的錯誤猜測中，找一個「答案文字」符合 ans_text 的來顯示
+				for p_name in unused_guesses.keys():
+					if unused_guesses[p_name] == ans_text:
+						guessed_player = p_name
+						unused_guesses.erase(p_name)
+						break
+				# 防呆：如果數量對不上，至少隨便顯示一個
+				if guessed_player == "?":
+					for p_name in unused_guesses.keys():
+						guessed_player = p_name
+						unused_guesses.erase(p_name)
+						break
+
+			guess_total += 1
+			if is_correct:
+				correct_count += 1
+
+			last_round_results_data.append({
+				"ans_text": ans_text,
+				"correct_player": player_name,
+				"guessed_player": guessed_player,
+				"is_correct": is_correct
+			})
 
 	last_correct_count = correct_count
 	last_guess_total = guess_total
