@@ -1837,10 +1837,9 @@ func _on_answer_text_changed(new_text: String) -> void:
 
 func _on_answer_focus_entered() -> void:
 	if OS.has_feature("mobile") or OS.has_feature("web"):
-		var q_card = $Phases/Phase2_Answering/VBox/QuestionCard
+		# 輸入時保持「題目卡」可見，讓玩家打字時仍能回看題目（輸入列已移至螢幕頂端，不需再藏題目）。
+		# 僅收起「不回答」按鈕以減少干擾並讓出空間。
 		var btn_no_ans = $Phases/Phase2_Answering/VBox/BtnNoAnswer
-		if q_card:
-			q_card.visible = false
 		if btn_no_ans:
 			btn_no_ans.visible = false
 
@@ -2774,10 +2773,19 @@ func _style_line_edit(line_edit: LineEdit) -> void:
 	line_edit.add_theme_color_override("placeholder_color", Color(0.5, 0.45, 0.4, 1))
 
 # ── App 前景/背景偵測 — 取消通知 & 語系更新監聽 ──────────────────────────────────
+var _bg_unix_time := 0.0
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_IN:
 		# App 回到前景 → 取消所有已排程的通知
 		NotifManager.cancel_all()
+		# 背景期間 WebSocket 可能已假死，回前景時若在對局中主動重連並重新同步狀態，
+		# 避免卡在「等待」畫面不前進。只有實際離開超過 2 秒才觸發，避免短暫切換造成不必要重連。
+		if _bg_unix_time > 0.0 and (Time.get_unix_time_from_system() - _bg_unix_time) >= 2.0:
+			NetworkManager.resync_on_foreground()
+		_bg_unix_time = 0.0
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_bg_unix_time = Time.get_unix_time_from_system()
 	elif what == NOTIFICATION_TRANSLATION_CHANGED:
 		_update_localized_ui()
 

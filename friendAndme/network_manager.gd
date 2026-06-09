@@ -136,6 +136,22 @@ func _attempt_reconnect():
 	last_state = WebSocketPeer.STATE_CLOSED
 	connect_to_room_ws(current_room_id, my_player_name)
 
+# 回到前景時主動重連並重新同步狀態。
+# 處理網頁/手機背景時 WebSocket 「假死」（狀態仍顯示 OPEN 但實際已斷）的情況——
+# 此時 _process 偵測不到 STATE_CLOSED，永遠不會觸發重連，玩家會卡在「等待」畫面。
+# 主動丟棄舊 socket 重連，伺服器會回傳 reconnect_status 重新同步階段與倒數。
+func resync_on_foreground():
+	if current_room_id == "" or my_player_name == "":
+		return  # 不在對局中（例如還在主選單/大廳），不需重連
+	print("[NetworkManager] Foreground resync: forcing WebSocket reconnect for room: ", current_room_id)
+	socket.close()
+	socket = WebSocketPeer.new()
+	last_state = WebSocketPeer.STATE_CLOSED
+	_is_reconnecting = true
+	_reconnect_attempts = 0
+	_reconnect_timer = 0.0
+	connect_to_room_ws(current_room_id, my_player_name)
+
 # ── 訊息處理 ──────────────────────────────────────────────────────────────────
 
 func _on_request_completed(_result, response_code, _headers, body):

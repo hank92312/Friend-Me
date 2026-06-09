@@ -142,22 +142,96 @@ body {
 						
 						input.addEventListener('focus', function() {
 							console.log("[Input Patch] Input focused:", input);
-							input.style.setProperty('opacity', '0.01', 'important');
+							// 將 Godot 建立的 HTML 輸入框改為「可見」並固定在螢幕頂端（鍵盤上方），
+							// 做成符合遊戲深色風格的輸入列，讓使用者打字時看得到自己輸入的內容，
+							// 解決手機虛擬鍵盤遮擋 Godot 文字框、導致盲打的問題。
+							input.style.setProperty('opacity', '1', 'important');
 							input.style.setProperty('z-index', '99999', 'important');
-							input.style.setProperty('position', 'absolute', 'important');
-							input.style.setProperty('top', '10px', 'important');
-							input.style.setProperty('left', '10px', 'important');
-							input.style.setProperty('width', 'calc(100% - 20px)', 'important');
-							input.style.setProperty('height', '80px', 'important');
+							input.style.setProperty('position', 'fixed', 'important');
+							input.style.setProperty('top', 'env(safe-area-inset-top, 0px)', 'important');
+							input.style.setProperty('left', '0', 'important');
+							input.style.setProperty('right', '0', 'important');
+							input.style.setProperty('width', '100%', 'important');
+							input.style.setProperty('height', '58px', 'important');
+							input.style.setProperty('box-sizing', 'border-box', 'important');
+							input.style.setProperty('margin', '0', 'important');
+							input.style.setProperty('padding', '10px 18px', 'important');
+							input.style.setProperty('font-size', '22px', 'important');
+							input.style.setProperty('font-family', "system-ui, -apple-system, sans-serif", 'important');
+							input.style.setProperty('color', '#FFF2CC', 'important');
+							input.style.setProperty('background', '#1F1C1A', 'important');
+							input.style.setProperty('border', 'none', 'important');
+							input.style.setProperty('border-bottom', '3px solid #D0813C', 'important');
+							input.style.setProperty('border-radius', '0', 'important');
+							input.style.setProperty('outline', 'none', 'important');
+							input.style.setProperty('caret-color', '#D0813C', 'important');
+							input.style.setProperty('box-shadow', '0 6px 16px rgba(0,0,0,0.5)', 'important');
+							// 輸入框需可接收觸控，這樣使用者能點文字中間移動游標、編輯內容。
+							// （按鈕被覆蓋層擋住的問題改由下方 visualViewport 在鍵盤收合時主動隱藏輸入框來解決。）
+							input.style.setProperty('pointer-events', 'auto', 'important');
 						});
 						
 						input.addEventListener('blur', function() {
 							input.style.setProperty('z-index', '-1', 'important');
 							input.style.setProperty('opacity', '0', 'important');
+							input.style.setProperty('pointer-events', 'none', 'important');
+							input.style.setProperty('top', '-1000px', 'important');
 						});
 					});
 				}
 				setInterval(patchInputs, 500);
+
+				// 鍵盤收合偵測（狀態機，修正先前「秒關鍵盤」誤判）：
+				// 只有當視窗高度「確實掉超過 150px」（代表鍵盤真的開過）之後，
+				// 才在高度回升到接近全高時主動 blur，讓 Godot focus_exited 執行、
+				// 隱藏輸入框，避免覆蓋層擋住按鈕。鍵盤開啟動畫期間不會誤觸發。
+				if (window.visualViewport) {
+					var vv = window.visualViewport;
+					var fmFullH = vv.height;
+					var fmKbWasOpen = false;
+					vv.addEventListener('resize', function() {
+						var h = vv.height;
+						if (h > fmFullH) fmFullH = h;
+						if (h < fmFullH - 150) {
+							fmKbWasOpen = true;            // 鍵盤已開啟
+						} else if (fmKbWasOpen && h >= fmFullH - 60) {
+							fmKbWasOpen = false;           // 鍵盤已收合
+							var ae = document.activeElement;
+							if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) {
+								ae.blur();
+							}
+						}
+					});
+				}
+			})();
+		</script>
+		<script>
+			// WebGL context lost 自動恢復：低記憶體 iOS 裝置（如 iPad 第9代）GPU 吃緊時會丟棄 WebGL context，
+			// 造成「WebGL context lost」死當。偵測到時自動重新載入（最多 2 次以避免無限循環），
+			// 多數情況重載後 GPU 已釋出即可順利進入；搭配 sessionStorage 的 fm_launched 會直接重啟遊戲。
+			(function() {
+				function attachGLGuard(canvas) {
+					if (!canvas || canvas.dataset.glLossPatched) return;
+					canvas.dataset.glLossPatched = "1";
+					canvas.addEventListener("webglcontextlost", function(e) {
+						var n = parseInt(sessionStorage.getItem("fm_gl_reloads") || "0", 10);
+						if (n < 2) {
+							sessionStorage.setItem("fm_gl_reloads", String(n + 1));
+							console.warn("[WebGL] context lost, auto-reloading (" + (n + 1) + "/2)...");
+							setTimeout(function() { window.location.reload(); }, 300);
+						} else {
+							console.error("[WebGL] context lost again after retries; showing default error.");
+						}
+					}, false);
+				}
+				var glIv = setInterval(function() {
+					var c = document.getElementById("canvas");
+					if (c) { attachGLGuard(c); }
+				}, 500);
+				// 成功穩定執行 15 秒後清除重試計數，讓日後若再發生 context lost 仍有完整重試額度
+				window.addEventListener("load", function() {
+					setTimeout(function() { try { sessionStorage.removeItem("fm_gl_reloads"); } catch (e) {} }, 15000);
+				});
 			})();
 		</script>
 		<script>
@@ -169,7 +243,7 @@ body {
 					if (url.endsWith('.wasm') || url.endsWith('.pck') || url.indexOf('.wasm?') !== -1 || url.indexOf('.pck?') !== -1) {
 						if (url.indexOf('v=') === -1) {
 							const separator = url.indexOf('?') !== -1 ? '&' : '?';
-							url = url + separator + 'v=' + Date.now();
+							url = url + separator + 'v=1781008022';
 						}
 					}
 					if (typeof input === 'string') {
@@ -216,7 +290,7 @@ body {
 			})();
 			
 			if (window.hasWebGL2) {
-				document.write('<script src="index.js?v=' + Date.now() + '"><\/script>');
+				document.write('<script src="index.js?v=1781008022"><\/script>');
 			} else {
 				console.error("WebGL 2.0 is not supported or disabled on this device/browser.");
 				window.addEventListener('DOMContentLoaded', function() {
@@ -340,7 +414,7 @@ body {
 		</script>
 		<script>
 if (window.hasWebGL2) {
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":20642608,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":11754700,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
