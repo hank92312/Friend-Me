@@ -1,4 +1,4 @@
-# Friends & Me Core Question Bank (Seed Question Bank - V3 International Edition)
+# Friends & Me Core Question Bank (Seed Question Bank - V4 International Edition)
 
 ## Project Info
 
@@ -37,6 +37,16 @@
 23. **Fashion Fixation**: When shopping for clothes, shoes, or bags, what specific "design detail" or "material" inexplicably draws you in?
 24. **Appliance Choice**: If you could only keep one non-essential "quality-of-life" small appliance in your home, which one would it be?
 25. **Street Observation**: When walking alone down the street, what specific thing usually catches your eye (e.g., typography on signs, people's outfits, stray animals)?
+26. **Night Market Must-Eat**: When you stroll through a night market, what is the one snack you almost always buy?
+27. **Breakfast Shop Order**: At your go-to local breakfast shop, what is your usual fixed order?
+28. **Rainy Day Gear**: When it's pouring rain and you have to go out, what is your standard gear or survival strategy?
+29. **Lunchbox Philosophy**: At a buffet or bento shop, what is the one side dish you always grab?
+30. **Typhoon Day Off**: When a surprise day off is announced (like a typhoon day), how do you usually spend it?
+31. **Bubble Tea Loyalty**: What is your one true go-to hand-shaken drink order?
+32. **Summer Survival**: When summer gets unbearably hot and humid, what is your most relied-upon way to cool down?
+33. **Reunion Dinner Dish**: At a big family reunion dinner (like Lunar New Year's Eve), which dish do you look forward to the most?
+34. **Midnight Snack**: When you suddenly get hungry late at night, what is your go-to midnight snack?
+35. **Mid-Autumn Tradition**: During the Mid-Autumn Festival, what is the one activity that always happens with your family or friends?
 
 ---
 
@@ -69,6 +79,16 @@
 23. **Micro-Achievement**: In the past year, what is the smallest, most trivial achievement that you felt secretly proud of for a long time?
 24. **Internet Rabbit Hole**: When browsing the internet, what specific type of clickbait title or video genre always gets you to click and go down a rabbit hole?
 25. **Nostalgia Track**: Name a specific song or soundtrack that instantly teleports you back to a specific memory from your school days.
+26. **Taste of Taiwan**: If you could take a foreign friend to eat one food that best represents Taiwan, what would it be?
+27. **Hidden Gem**: Which spot in Taiwan (main island or offshore) is your hidden gem that you'd love to revisit?
+28. **City Swap**: If you had to move away from where you live now, which city or county in Taiwan would you choose?
+29. **Local Screen Gem**: Which Taiwanese drama or film would you most recommend to a friend?
+30. **Karaoke Safe Pick**: At karaoke (KTV), what is your "safe bet" go-to song?
+31. **Childhood Snack**: Name one childhood snack or old-school treat you still can't resist buying today?
+32. **Nostalgic TV**: Which TV show did you never miss back when you were a student?
+33. **Worth the Line**: What specific food would you willingly queue more than 30 minutes for?
+34. **Night Market Champion**: Among night market game stalls (balloon darts, goldfish scooping, pinball...), which one are you most confident at?
+35. **New Year's Eve Plan**: What is your ideal way to spend the New Year's Eve countdown?
 
 ---
 
@@ -101,6 +121,16 @@
 23. **Compromise**: What is the biggest "break of your own rules" or compromise you’ve ever made for a friend or partner?
 24. **Closure Ritual**: When dealing with "loss" (a relationship, an environment, or an object), what specific ritual do you need to go through to truly move on?
 25. **Secret Pride**: Name a slightly "dark" or "arrogant" trait in your personality that you actually kind of like about yourself.
+26. **Relatives' Greatest Hits**: At family gatherings, which classic line of "concern" from elders makes you roll your eyes inside?
+27. **Normalized Absurdity**: What is one thing in everyday life that "everyone treats as normal" but quietly fills you with helplessness?
+28. **Comparison Shadow**: Growing up, who were you most often compared to by your parents or elders?
+29. **Workplace Unwritten Rule**: What is the one unwritten rule of workplace culture you most want to change?
+30. **Taste of Home**: When living away from home (for school, work, or long travel), what specific thing from home do you miss the most?
+31. **Left on Read**: When someone important leaves you on read, what little drama usually plays out in your head?
+32. **Student-Era Regret**: What is the one thing you most regret NOT doing back in your school days?
+33. **Friendship Expiry**: Think of a friendship that slowly faded — what do you think was the real reason it faded?
+34. **In the Name of Love**: Which "it's for your own good" line puts the most pressure on you?
+35. **Holiday Burnout**: During the big holiday season (like Lunar New Year), which part exhausts you the most?
 
 ---
 
@@ -123,6 +153,16 @@
 13. **Social Burnout**: When you are completely burnt out from socializing and just want to disappear, where do you go or what do you do to heal yourself?
 14. **Defining Success**: Setting fame and wealth aside, what does true "success" look like in your heart?
 15. **Flashes of Jealousy**: Honestly speaking, what specific achievement or possession of a close friend has ever caused you to feel a brief flash of jealousy?
+16. **Good News Only**: What real situation do you most often hide from your family?
+17. **Midnight Search**: What category of search keywords have you secretly looked up late at night that you'd never want anyone to see?
+18. **Thickest Mask**: In which recurring setting (office, family gatherings, reunions...) do you wear your thickest mask?
+19. **Money Secret**: What money situation or spending habit do you have that even your closest people don't know about?
+20. **Secret Tears**: The last time you cried in secret behind everyone's back, what was it about?
+21. **Social Alibi**: What excuse do you most often use to cover up the fact that you simply don't want to socialize?
+22. **Words of Guilt**: Share one sentence you once blurted out that still makes you feel guilty today.
+23. **Impostor Trophy**: Which achievement or advantage that others envy do you secretly feel you don't deserve?
+24. **Unspoken Words**: What is the one sentence to your family that you've kept buried and never managed to say?
+25. **Disguised Compromise**: Which part of your current life are you "pretending to like" when it's actually a compromise?
 
 ---
 
@@ -145,3 +185,13 @@
 13. **Limits of Forgiveness**: Name a specific action that, even if done by your closest friend or family member, you could absolutely never forgive.
 14. **Trading Lifespan**: If you could trade ten years of your life for one supernatural ability, what exact power would you choose?
 15. **The Final Question**: If you had to engrave a short phrase summarizing your entire life on your tombstone, what would you engrave?
+16. **Luggage for the Next Life**: If you could carry only one memory into your next life, which one would you choose?
+17. **Weight of Truth**: If you could learn one absolute truth about yourself (how people really see you, the date of your death...), what would you choose to know?
+18. **Restart Keepsake**: If your life had to completely restart but you could keep one existing thing (a relationship, an ability, a memory...), what would you keep?
+19. **The Unsellable Line**: Which one of your moral lines do you believe can never be bought, no matter the price offered?
+20. **Vanish for a Year**: If you could anonymously disappear for one year with zero consequences, what kind of life would you live?
+21. **Defending Yourself**: If you had to defend the worst thing you have ever done, what would you say?
+22. **Love's Forbidden Zone**: For the person you love most, what is the one thing you absolutely could NOT do?
+23. **One Question for God**: If you could ask a deity one question with a guaranteed true answer, what would you ask?
+24. **The Last Keepsake**: If you could leave behind only one object for the most important person after you're gone, what would it be?
+25. **Erase One Suffering**: If you could permanently erase one form of human suffering from the world (hunger, loneliness, illness, betrayal...), which would you erase?

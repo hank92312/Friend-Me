@@ -129,6 +129,56 @@
           "id": "L1Q25",
           "tag": "Street Observation",
           "text": "When walking alone down the street, what specific thing usually catches your eye (e.g., typography on signs, people's outfits, stray animals)?"
+        },
+        {
+          "id": "L1Q26",
+          "tag": "Night Market Must-Eat",
+          "text": "When you stroll through a night market, what is the one snack you almost always buy?"
+        },
+        {
+          "id": "L1Q27",
+          "tag": "Breakfast Shop Order",
+          "text": "At your go-to local breakfast shop, what is your usual fixed order?"
+        },
+        {
+          "id": "L1Q28",
+          "tag": "Rainy Day Gear",
+          "text": "When it's pouring rain and you have to go out, what is your standard gear or survival strategy?"
+        },
+        {
+          "id": "L1Q29",
+          "tag": "Lunchbox Philosophy",
+          "text": "At a buffet or bento shop, what is the one side dish you always grab?"
+        },
+        {
+          "id": "L1Q30",
+          "tag": "Typhoon Day Off",
+          "text": "When a surprise day off is announced (like a typhoon day), how do you usually spend it?"
+        },
+        {
+          "id": "L1Q31",
+          "tag": "Bubble Tea Loyalty",
+          "text": "What is your one true go-to hand-shaken drink order?"
+        },
+        {
+          "id": "L1Q32",
+          "tag": "Summer Survival",
+          "text": "When summer gets unbearably hot and humid, what is your most relied-upon way to cool down?"
+        },
+        {
+          "id": "L1Q33",
+          "tag": "Reunion Dinner Dish",
+          "text": "At a big family reunion dinner (like Lunar New Year's Eve), which dish do you look forward to the most?"
+        },
+        {
+          "id": "L1Q34",
+          "tag": "Midnight Snack",
+          "text": "When you suddenly get hungry late at night, what is your go-to midnight snack?"
+        },
+        {
+          "id": "L1Q35",
+          "tag": "Mid-Autumn Tradition",
+          "text": "During the Mid-Autumn Festival, what is the one activity that always happens with your family or friends?"
         }
       ]
     },
@@ -261,6 +311,56 @@
           "id": "L2Q25",
           "tag": "Nostalgia Track",
           "text": "Name a specific song or soundtrack that instantly teleports you back to a specific memory from your school days."
+        },
+        {
+          "id": "L2Q26",
+          "tag": "Taste of Taiwan",
+          "text": "If you could take a foreign friend to eat one food that best represents Taiwan, what would it be?"
+        },
+        {
+          "id": "L2Q27",
+          "tag": "Hidden Gem",
+          "text": "Which spot in Taiwan (main island or offshore) is your hidden gem that you'd love to revisit?"
+        },
+        {
+          "id": "L2Q28",
+          "tag": "City Swap",
+          "text": "If you had to move away from where you live now, which city or county in Taiwan would you choose?"
+        },
+        {
+          "id": "L2Q29",
+          "tag": "Local Screen Gem",
+          "text": "Which Taiwanese drama or film would you most recommend to a friend?"
+        },
+        {
+          "id": "L2Q30",
+          "tag": "Karaoke Safe Pick",
+          "text": "At karaoke (KTV), what is your \"safe bet\" go-to song?"
+        },
+        {
+          "id": "L2Q31",
+          "tag": "Childhood Snack",
+          "text": "Name one childhood snack or old-school treat you still can't resist buying today?"
+        },
+        {
+          "id": "L2Q32",
+          "tag": "Nostalgic TV",
+          "text": "Which TV show did you never miss back when you were a student?"
+        },
+        {
+          "id": "L2Q33",
+          "tag": "Worth the Line",
+          "text": "What specific food would you willingly queue more than 30 minutes for?"
+        },
+        {
+          "id": "L2Q34",
+          "tag": "Night Market Champion",
+          "text": "Among night market game stalls (balloon darts, goldfish scooping, pinball...), which one are you most confident at?"
+        },
+        {
+          "id": "L2Q35",
+          "tag": "New Year's Eve Plan",
+          "text": "What is your ideal way to spend the New Year's Eve countdown?"
         }
       ]
     },
@@ -393,6 +493,56 @@
           "id": "L3Q25",
           "tag": "Secret Pride",
           "text": "Name a slightly \"dark\" or \"arrogant\" trait in your personality that you actually kind of like about yourself."
+        },
+        {
+          "id": "L3Q26",
+          "tag": "Relatives' Greatest Hits",
+          "text": "At family gatherings, which classic line of \"concern\" from elders makes you roll your eyes inside?"
+        },
+        {
+          "id": "L3Q27",
+          "tag": "Normalized Absurdity",
+          "text": "What is one thing in everyday life that \"everyone treats as normal\" but quietly fills you with helplessness?"
+        },
+        {
+          "id": "L3Q28",
+          "tag": "Comparison Shadow",
+          "text": "Growing up, who were you most often compared to by your parents or elders?"
+        },
+        {
+          "id": "L3Q29",
+          "tag": "Workplace Unwritten Rule",
+          "text": "What is the one unwritten rule of workplace culture you most want to change?"
+        },
+        {
+          "id": "L3Q30",
+          "tag": "Taste of Home",
+          "text": "When living away from home (for school, work, or long travel), what specific thing from home do you miss the most?"
+        },
+        {
+          "id": "L3Q31",
+          "tag": "Left on Read",
+          "text": "When someone important leaves you on read, what little drama usually plays out in your head?"
+        },
+        {
+          "id": "L3Q32",
+          "tag": "Student-Era Regret",
+          "text": "What is the one thing you most regret NOT doing back in your school days?"
+        },
+        {
+          "id": "L3Q33",
+          "tag": "Friendship Expiry",
+          "text": "Think of a friendship that slowly faded — what do you think was the real reason it faded?"
+        },
+        {
+          "id": "L3Q34",
+          "tag": "In the Name of Love",
+          "text": "Which \"it's for your own good\" line puts the most pressure on you?"
+        },
+        {
+          "id": "L3Q35",
+          "tag": "Holiday Burnout",
+          "text": "During the big holiday season (like Lunar New Year), which part exhausts you the most?"
         }
       ]
     },
@@ -475,6 +625,56 @@
           "id": "L4Q15",
           "tag": "Flashes of Jealousy",
           "text": "Honestly speaking, what specific achievement or possession of a close friend has ever caused you to feel a brief flash of jealousy?"
+        },
+        {
+          "id": "L4Q16",
+          "tag": "Good News Only",
+          "text": "What real situation do you most often hide from your family?"
+        },
+        {
+          "id": "L4Q17",
+          "tag": "Midnight Search",
+          "text": "What category of search keywords have you secretly looked up late at night that you'd never want anyone to see?"
+        },
+        {
+          "id": "L4Q18",
+          "tag": "Thickest Mask",
+          "text": "In which recurring setting (office, family gatherings, reunions...) do you wear your thickest mask?"
+        },
+        {
+          "id": "L4Q19",
+          "tag": "Money Secret",
+          "text": "What money situation or spending habit do you have that even your closest people don't know about?"
+        },
+        {
+          "id": "L4Q20",
+          "tag": "Secret Tears",
+          "text": "The last time you cried in secret behind everyone's back, what was it about?"
+        },
+        {
+          "id": "L4Q21",
+          "tag": "Social Alibi",
+          "text": "What excuse do you most often use to cover up the fact that you simply don't want to socialize?"
+        },
+        {
+          "id": "L4Q22",
+          "tag": "Words of Guilt",
+          "text": "Share one sentence you once blurted out that still makes you feel guilty today."
+        },
+        {
+          "id": "L4Q23",
+          "tag": "Impostor Trophy",
+          "text": "Which achievement or advantage that others envy do you secretly feel you don't deserve?"
+        },
+        {
+          "id": "L4Q24",
+          "tag": "Unspoken Words",
+          "text": "What is the one sentence to your family that you've kept buried and never managed to say?"
+        },
+        {
+          "id": "L4Q25",
+          "tag": "Disguised Compromise",
+          "text": "Which part of your current life are you \"pretending to like\" when it's actually a compromise?"
         }
       ]
     },
@@ -557,6 +757,56 @@
           "id": "L5Q15",
           "tag": "The Final Question",
           "text": "If you had to engrave a short phrase summarizing your entire life on your tombstone, what would you engrave?"
+        },
+        {
+          "id": "L5Q16",
+          "tag": "Luggage for the Next Life",
+          "text": "If you could carry only one memory into your next life, which one would you choose?"
+        },
+        {
+          "id": "L5Q17",
+          "tag": "Weight of Truth",
+          "text": "If you could learn one absolute truth about yourself (how people really see you, the date of your death...), what would you choose to know?"
+        },
+        {
+          "id": "L5Q18",
+          "tag": "Restart Keepsake",
+          "text": "If your life had to completely restart but you could keep one existing thing (a relationship, an ability, a memory...), what would you keep?"
+        },
+        {
+          "id": "L5Q19",
+          "tag": "The Unsellable Line",
+          "text": "Which one of your moral lines do you believe can never be bought, no matter the price offered?"
+        },
+        {
+          "id": "L5Q20",
+          "tag": "Vanish for a Year",
+          "text": "If you could anonymously disappear for one year with zero consequences, what kind of life would you live?"
+        },
+        {
+          "id": "L5Q21",
+          "tag": "Defending Yourself",
+          "text": "If you had to defend the worst thing you have ever done, what would you say?"
+        },
+        {
+          "id": "L5Q22",
+          "tag": "Love's Forbidden Zone",
+          "text": "For the person you love most, what is the one thing you absolutely could NOT do?"
+        },
+        {
+          "id": "L5Q23",
+          "tag": "One Question for God",
+          "text": "If you could ask a deity one question with a guaranteed true answer, what would you ask?"
+        },
+        {
+          "id": "L5Q24",
+          "tag": "The Last Keepsake",
+          "text": "If you could leave behind only one object for the most important person after you're gone, what would it be?"
+        },
+        {
+          "id": "L5Q25",
+          "tag": "Erase One Suffering",
+          "text": "If you could permanently erase one form of human suffering from the world (hunger, loneliness, illness, betrayal...), which would you erase?"
         }
       ]
     }
