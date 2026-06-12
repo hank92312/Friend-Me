@@ -1533,7 +1533,13 @@ func _on_network_player_list_updated(players: Array) -> void:
 
 func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 	print("Network Sync: Switching to ", new_phase)
-	
+
+	# 收到任何「非答題階段」的伺服器廣播時，強制關閉答題倒數計時。
+	# 避免背景分頁殘留的過期計時器在後續階段歸零時觸發自動提交，
+	# 造成階段倒退與重複計分（多人測試 desync bug）。
+	if new_phase != "ANSWERING":
+		answering_timer_active = false
+
 	if new_phase == "SELECTION":
 		round_count += 1
 		print("Round count incremented to: ", round_count)

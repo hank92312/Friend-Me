@@ -323,6 +323,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
 
             # 隊長選題
             elif data.get("event") == "topic_selected":
+                # 階段守衛：只在 SELECTION 階段接受選題，忽略過期/重複事件
+                if manager.room_states.get(room_id, {}).get("phase") != "SELECTION":
+                    continue
                 if room_id in manager.room_answers:
                     manager.room_answers[room_id] = {}
                 if room_id in manager.room_guesses:
@@ -349,6 +352,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
 
             # 提交答案
             elif data.get("event") == "answer_submitted":
+                # 階段守衛：只在 ANSWERING 階段接受答案。
+                # 擋掉背景分頁殘留計時器送來的過期答案，避免階段從
+                # REVELATION/GUESSING 被強制退回 GUESSING。
+                if manager.room_states.get(room_id, {}).get("phase") != "ANSWERING":
+                    continue
                 answer = data.get("answer", "")
                 all_done = await manager.submit_answer(room_id, player_name, answer)
 
@@ -377,6 +385,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
 
             # 提交猜測結果
             elif data.get("event") == "guesses_submitted":
+                # 階段守衛：只在 GUESSING 階段接受配對。
+                # 擋掉過期/重複配對，避免 _persist_round_results 二次寫入
+                # 資料庫造成猜對猜錯次數重複計算。
+                if manager.room_states.get(room_id, {}).get("phase") != "GUESSING":
+                    continue
                 guesses = data.get("guesses", {})
                 all_done = await manager.submit_guesses(room_id, player_name, guesses)
 

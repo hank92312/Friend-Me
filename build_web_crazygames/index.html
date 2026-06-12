@@ -243,7 +243,7 @@ body {
 					if (url.endsWith('.wasm') || url.endsWith('.pck') || url.indexOf('.wasm?') !== -1 || url.indexOf('.pck?') !== -1) {
 						if (url.indexOf('v=') === -1) {
 							const separator = url.indexOf('?') !== -1 ? '&' : '?';
-							url = url + separator + 'v=1781232924';
+							url = url + separator + 'v=1781245889';
 						}
 					}
 					if (typeof input === 'string') {
@@ -290,7 +290,7 @@ body {
 			})();
 			
 			if (window.hasWebGL2) {
-				document.write('<script src="index.js?v=1781232924"><\/script>');
+				document.write('<script src="index.js?v=1781245889"><\/script>');
 			} else {
 				console.error("WebGL 2.0 is not supported or disabled on this device/browser.");
 				window.addEventListener('DOMContentLoaded', function() {
@@ -414,7 +414,7 @@ body {
 		</script>
 		<script>
 if (window.hasWebGL2) {
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":11770780,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":11770812,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
