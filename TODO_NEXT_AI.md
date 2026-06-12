@@ -95,3 +95,10 @@
 - **（選擇性）Android Chrome 打字時 Canvas 上推黑屏**
   - 打字當下 Godot canvas 被 Android 系統上推以空出鍵盤空間，畫面全黑但輸入列仍可見。
   - 目前使用者接受（收鍵盤即恢復），如未來需改善可研究 `viewport-fit=cover` + JS 鎖定 viewport 高度方案。
+
+- **（擱置）手機瀏覽器返回後倒數計時器不同步（純顯示問題）**
+  - 現象：手機瀏覽器縮小約 1 分鐘後返回，倒數仍從 120 秒開始，未與其他玩家同步。
+  - 根因：`resync_on_foreground()` 靠 `NOTIFICATION_APPLICATION_FOCUS_IN` 觸發，此通知在 Android 原生 App 可靠，但手機瀏覽器縮小/切走時 Godot Web 不一定收到，導致重新同步未被觸發。
+  - **已無功能性危害**：伺服器階段守衛（APP.md #16）+ 前端非答題階段關閉計時器，已確保錯誤計時器不會造成階段倒退或重複計分；階段一推進即自動修正，剩餘僅為返回後幾十秒的顯示誤差。
+  - 正解：在 `build_and_patch.py` 加 `visibilitychange` 監聽器，分頁重新可見時透過 JavaScriptBridge 呼叫 `resync_on_foreground()`。需手機實測驗證。
+  - **決議：先擱置，封測若出現類似問題導致 bug 再一併修復。**
