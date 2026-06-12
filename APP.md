@@ -93,6 +93,14 @@
 - **問題**：為降低後端 API 頻寬壓力，題庫採本地打包。當選題階段逾時，後端需要能自動選題並廣播。
 - **解法**：將題庫複製到 [backend/data/](file:///C:/FriendAndMe/backend/data/) 並打包進 Docker。超時後後端加載本地 JSON 檔隨機抽取題目並廣播 question 文字給客戶端，客戶端再依據 question 文字於本地對照表進行多語系翻譯。
 
+#### 14. 題庫擴充與多語系同步部署 (Question Bank Expansion)
+- **問題**：初始題庫每等級 15–25 題，重複率高，長時間遊玩容易遇到重複題目，降低遊戲新鮮感。
+- **解法**：每等級新增 10 題，總題數 105 → 155 題（Level 1–3 各 35 題，Level 4–5 各 25 題）。新增題目以台灣文化為主（夜市、手搖飲、颱風假、KTV、圍爐、親戚聚會等），全為開放式且單一答案。同步更新：中英文 MD 種子文件、`backend/data/` 後端 JSON（超時自動選題用）、`friendAndme/data/` 前端 JSON（打包進 PCK）；ID 格式接續舊編號（L1Q26–35 等），`_get_localized_question()` 有 fallback 不會崩潰。
+
+#### 15. Android 簽章 Keystore 密碼安全管理 (Keystore Password Security)
+- **問題**：Keystore 密碼曾被存入 `export_presets.cfg` 並遺留在 git 歷史中，有洩漏風險；且每次發布容易忘記密碼。
+- **解法**：`export_presets.cfg` 的簽章欄位保持空白，改用 Godot 支援的環境變數 `GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD` 在匯出時傳入，不寫入任何檔案。密碼更換透過 `keytool -storepasswd` 執行（PKCS12 格式 store 密碼即 key 密碼，`-keypasswd` 不適用）。密碼存放於 Google 雲端硬碟私人文件，而非 repo 內。
+
 #### 13. 單人遊玩結果揭曉防空包機制 (Single-Player Results Resolution)
 - **問題**：當房間內只有單一玩家遊玩時，由於 Phase 3 (配對階段) 不需要配對，進入 Phase 4 (結果揭曉) 後，原有的統計與配對結果邏輯會跳過本機玩家 (`mock_self_name`)，導致 `last_round_results_data` 陣列為空，造成結果揭曉頁面空白。
 - **解法**：在 `_generate_phase4_ui()` 產生結果 UI 時，優先檢查 `round_answers.size() <= 1`。若是單人遊玩，則自動建立一筆包含玩家自身回答（`mock_self_name`）且配對正確（`is_correct = true`）的結果資料，確保在單人遊玩情境下能正常渲染自己的答案，而不會出現空白畫面。

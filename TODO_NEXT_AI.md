@@ -4,7 +4,7 @@
 
 ---
 
-## ✅ 本次 Session 完成項目 (Web 端手機 Bug 修正 — 2025-06)
+## ✅ 本次 Session 完成項目 (題庫擴充 + Android v1.1.0 — 2026-06-12)
 
 1. **iOS Safari 無法輸入文字**
    - `export_presets.cfg` 啟用 `html/experimental_virtual_keyboard=true`
@@ -36,6 +36,23 @@
    - `_on_answer_focus_entered()` 改為只隱藏 BtnNoAnswer，不隱藏 QuestionCard
    - 使用者收起鍵盤或按手機返回鍵即可回到題目頁（確認可接受，無需特別實作題目鏡射）
 
+9. **題庫擴充至 155 題（每等級 +10 題）**
+   - 新題全為開放式、單一答案、台灣文化導向（夜市、手搖、颱風假、KTV、圍爐、親戚聚會等）
+   - 同步更新：中英文 MD 種子文件 + 前後端 JSON 共 6 個檔案
+   - 重新匯出 Web 版（build ver 1781232924）並部署至 Netlify
+   - 後端重新部署至 Fly.io
+
+10. **Android AAB v1.1.0 (code 3) 匯出與上傳**
+    - `export_presets.cfg` 版本號升級：`1.0.1` / code 2 → `1.1.0` / code 3
+    - 使用環境變數 `GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD` 傳入密碼（不寫入任何檔案）
+    - AAB 已匯出（41.4 MB），已上傳 Google Play 封閉測試軌道
+    - 兩則 Play Console 警告（ProGuard mapping、native debug symbols）均為非關鍵警告，可忽略
+
+11. **Keystore 密碼安全性修正**
+    - 舊密碼曾洩漏在 git 歷史中（repo 為私有，keystore 本體從未被 commit，風險低）
+    - 執行 `keytool -storepasswd` 更換密碼（PKCS12 格式，`-keypasswd` 不適用）
+    - 新密碼存放於 Google 雲端硬碟私人文件
+
 ---
 
 ## 📋 已知狀態 / 環境備忘
@@ -46,8 +63,9 @@
 | Fly.io 後端 | 正常運行 (`friends-and-me.fly.dev`) |
 | Google Play 封閉測試 | 已通過審核，進行中（需 20 人 × 14 天） |
 | Google AdSense | 已提交複查（等待審核，約數天至兩週） |
-| Android AAB 正式版 | v1.0.1 (Code 2)，已簽章，位於 `FriendAndMe_Release.aab` |
-| Web build | `C:\FriendAndMe\build_web_netlify` (最新) |
+| Android AAB 正式版 | v1.1.0 (Code 3)，已簽章，位於 `FriendAndMe_Release.aab` |
+| Web build | `C:\FriendAndMe\build_web_netlify` (最新，build ver 1781232924) |
+| 題庫 | 155 題（L1–3 各 35 題，L4–5 各 25 題），中英文同步 |
 
 ---
 
