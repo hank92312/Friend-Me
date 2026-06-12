@@ -101,6 +101,12 @@
 - **問題**：Keystore 密碼曾被存入 `export_presets.cfg` 並遺留在 git 歷史中，有洩漏風險；且每次發布容易忘記密碼。
 - **解法**：`export_presets.cfg` 的簽章欄位保持空白，改用 Godot 支援的環境變數 `GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD` 在匯出時傳入，不寫入任何檔案。密碼更換透過 `keytool -storepasswd` 執行（PKCS12 格式 store 密碼即 key 密碼，`-keypasswd` 不適用）。密碼存放於 Google 雲端硬碟私人文件，而非 repo 內。
 
+#### 16. 多人 desync 階段守衛防階段倒退與重複計分 (Server-Side Phase Guard)
+- **問題**：手機端瀏覽器切至背景約 1 分鐘後返回，因進入 GUESSING/REVELATION 時前端答題倒數 `answering_timer_active` 未被關閉，殘留的 120 秒計時器在「結果揭曉」階段歸零，觸發 `_on_btn_no_answer()` 送出過期的 `answer_submitted`。伺服器處理事件時完全未驗證當前階段，照單全收後 `all_done` 成立並**強制將所有人退回 GUESSING**；重新配對後 `guesses_submitted` 再次被接受，使 `_persist_round_results` 二次寫入資料庫，導致猜對猜錯次數超過實際輪數。
+- **解法（雙層）**：
+  - **後端（權威修補）**：在 [main.py](file:///C:/FriendAndMe/backend/main.py) 的 `topic_selected`/`answer_submitted`/`guesses_submitted` 三個 WebSocket 事件各加一道階段守衛——若 `room_states[room_id]["phase"]` 與該事件對應階段不符，一律 `continue` 忽略。單一防線擋掉所有平台、所有原因的過期/重複事件。
+  - **前端（輔助）**：在 `_on_network_phase_sync()` 開頭，收到任何非 ANSWERING 階段廣播時強制 `answering_timer_active = false`，從源頭避免殘留計時器送出過期事件。
+
 #### 13. 單人遊玩結果揭曉防空包機制 (Single-Player Results Resolution)
 - **問題**：當房間內只有單一玩家遊玩時，由於 Phase 3 (配對階段) 不需要配對，進入 Phase 4 (結果揭曉) 後，原有的統計與配對結果邏輯會跳過本機玩家 (`mock_self_name`)，導致 `last_round_results_data` 陣列為空，造成結果揭曉頁面空白。
 - **解法**：在 `_generate_phase4_ui()` 產生結果 UI 時，優先檢查 `round_answers.size() <= 1`。若是單人遊玩，則自動建立一筆包含玩家自身回答（`mock_self_name`）且配對正確（`is_correct = true`）的結果資料，確保在單人遊玩情境下能正常渲染自己的答案，而不會出現空白畫面。

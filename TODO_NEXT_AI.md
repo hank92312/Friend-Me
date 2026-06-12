@@ -53,6 +53,13 @@
     - 執行 `keytool -storepasswd` 更換密碼（PKCS12 格式，`-keypasswd` 不適用）
     - 新密碼存放於 Google 雲端硬碟私人文件
 
+12. **多人 desync 階段倒退與重複計分 bug 修正**
+    - 根因：後端 WebSocket 事件未驗證階段，背景分頁殘留計時器送出的過期事件被接受 → 階段退回 GUESSING + `_persist_round_results` 二次寫入
+    - 後端（權威）：`topic_selected`/`answer_submitted`/`guesses_submitted` 各加階段守衛，非對應階段一律忽略（`main.py`）
+    - 前端（輔助）：非 ANSWERING 廣播時強制關閉 `answering_timer_active`（`main.gd` `_on_network_phase_sync`）
+    - 已部署 Fly.io（後端）+ Netlify（前端 build 1781245889）
+    - ⚠️ 注意：此修正僅防止「未來」再發生，已污染的舊測試統計需另外清理（測試帳號可直接砍掉重來）
+
 ---
 
 ## 📋 已知狀態 / 環境備忘
