@@ -1,0 +1,60 @@
+plugins = []
+redirects = []
+
+[functions]
+
+[functions."*"]
+
+[build]
+publish = "C:\\FriendAndMe"
+publishOrigin = "default"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[[headers]]
+for = "/*"
+
+[headers.values]
+Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+
+[[headers]]
+for = "/index.html"
+
+[headers.values]
+Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+for = "/guide.html"
+
+[headers.values]
+Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+for = "/*.js"
+
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/*.wasm"
+
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/*.pck"
+
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"

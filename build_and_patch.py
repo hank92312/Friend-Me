@@ -3,6 +3,396 @@ import os
 import sys
 import time
 
+# Netlify 攻略內容頁（解決 Google AdSense「缺乏價值內容」審核問題）。
+# 提供可爬取的原創實質內容，於建置時寫入 build_web_netlify/guide.html。
+GUIDE_HTML_CONTENT = """<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Friends & Me 遊戲攻略與題目範例 ｜ 異步社交探索桌遊完整指南</title>
+	<meta name="description" content="Friends & Me 完整遊戲攻略：詳解五大社交深度等級、精選題目範例、配對猜題技巧、適合的聚會情境與玩家心理學設計理念。一款基於喬哈里視窗理論的多人連線桌遊。">
+	<meta name="keywords" content="Friends and Me, 社交桌遊, 多人連線遊戲, 派對遊戲, 喬哈里視窗, 破冰遊戲, 聚會遊戲, 心理測驗, 默契遊戲">
+	<link rel="canonical" href="https://friendandme.netlify.app/guide.html">
+	<meta property="og:title" content="Friends & Me 遊戲攻略與題目範例" />
+	<meta property="og:description" content="詳解五大社交深度等級、精選題目範例、配對猜題技巧與適合的聚會情境。" />
+	<meta property="og:type" content="article" />
+	<meta property="og:url" content="https://friendandme.netlify.app/guide.html" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+	<style>
+		:root {
+			--bg-dark: #080707;
+			--bg-light: #161413;
+			--primary: #D0813C;
+			--accent: #E39450;
+			--text-main: #FFF2CC;
+			--text-muted: rgba(255, 242, 204, 0.78);
+			--glass-bg: rgba(30, 26, 24, 0.6);
+			--glass-border: rgba(208, 129, 60, 0.18);
+		}
+
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+
+		body {
+			font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+			background: radial-gradient(circle at 50% 0%, var(--bg-light) 0%, var(--bg-dark) 100%);
+			background-attachment: fixed;
+			color: var(--text-main);
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding: 40px 20px;
+			line-height: 1.7;
+		}
+
+		header {
+			width: 100%;
+			max-width: 820px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 30px;
+			flex-wrap: wrap;
+			gap: 15px;
+		}
+
+		.logo {
+			font-size: 28px;
+			font-weight: 700;
+			color: var(--primary);
+			letter-spacing: 1px;
+		}
+
+		.nav-links { display: flex; gap: 18px; align-items: center; }
+
+		.nav-links a {
+			color: var(--text-muted);
+			text-decoration: none;
+			font-weight: 600;
+			font-size: 15px;
+			transition: color 0.2s ease;
+		}
+		.nav-links a:hover { color: var(--accent); }
+
+		.play-cta {
+			background: var(--primary);
+			color: #1F1C1A !important;
+			padding: 10px 22px;
+			border-radius: 24px;
+			font-weight: 700 !important;
+			box-shadow: 0 6px 16px rgba(208, 129, 60, 0.35);
+		}
+		.play-cta:hover { background: var(--accent); }
+
+		.container {
+			max-width: 820px;
+			width: 100%;
+		}
+
+		.hero {
+			text-align: center;
+			margin-bottom: 40px;
+			padding: 20px 0;
+		}
+
+		.hero h1 {
+			font-size: 36px;
+			font-weight: 700;
+			color: var(--accent);
+			margin-bottom: 18px;
+			line-height: 1.3;
+			text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+		}
+
+		.hero p {
+			font-size: 18px;
+			color: var(--text-muted);
+			max-width: 640px;
+			margin: 0 auto;
+		}
+
+		.card {
+			background: var(--glass-bg);
+			backdrop-filter: blur(12px);
+			-webkit-backdrop-filter: blur(12px);
+			border: 2px solid var(--glass-border);
+			border-radius: 24px;
+			padding: 32px;
+			margin-bottom: 28px;
+			box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+		}
+
+		.card h2 {
+			font-size: 24px;
+			color: var(--primary);
+			margin-bottom: 18px;
+			font-weight: 700;
+		}
+
+		.card h3 {
+			font-size: 19px;
+			color: var(--accent);
+			margin-top: 24px;
+			margin-bottom: 12px;
+			font-weight: 600;
+		}
+
+		.card p {
+			font-size: 16px;
+			color: var(--text-muted);
+			margin-bottom: 16px;
+		}
+
+		.card ul, .card ol {
+			margin-left: 22px;
+			margin-bottom: 16px;
+			color: var(--text-muted);
+		}
+
+		.card li { margin-bottom: 12px; font-size: 16px; }
+		.card li strong { color: var(--accent); }
+
+		.level-block {
+			border-left: 3px solid var(--primary);
+			padding: 4px 0 4px 20px;
+			margin-bottom: 28px;
+		}
+
+		.level-title {
+			font-size: 20px;
+			color: var(--accent);
+			font-weight: 700;
+			margin-bottom: 6px;
+		}
+
+		.level-goal {
+			font-size: 14px;
+			color: rgba(255, 242, 204, 0.55);
+			font-style: italic;
+			margin-bottom: 14px;
+		}
+
+		.example-q {
+			background: rgba(208, 129, 60, 0.08);
+			border: 1px solid rgba(208, 129, 60, 0.15);
+			border-radius: 12px;
+			padding: 12px 16px;
+			margin-bottom: 10px;
+			font-size: 15px;
+			color: var(--text-main);
+		}
+		.example-q span { color: var(--primary); font-weight: 700; margin-right: 8px; }
+
+		.faq-item { margin-bottom: 20px; }
+		.faq-q { font-size: 17px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+		.faq-a { font-size: 16px; color: var(--text-muted); }
+
+		.bottom-cta {
+			text-align: center;
+			padding: 40px 20px;
+		}
+		.bottom-cta a {
+			display: inline-block;
+			background: var(--primary);
+			color: #1F1C1A;
+			padding: 16px 44px;
+			font-size: 1.25rem;
+			border-radius: 50px;
+			text-decoration: none;
+			font-weight: 700;
+			box-shadow: 0 8px 24px rgba(208, 129, 60, 0.4);
+			transition: all 0.25s ease;
+		}
+		.bottom-cta a:hover { background: var(--accent); transform: scale(1.04); }
+
+		footer {
+			margin-top: 40px;
+			text-align: center;
+			font-size: 14px;
+			color: rgba(255, 242, 204, 0.4);
+			max-width: 820px;
+			width: 100%;
+			border-top: 1px solid var(--glass-border);
+			padding-top: 24px;
+		}
+		footer a { color: var(--primary); text-decoration: none; }
+		footer a:hover { text-decoration: underline; }
+
+		@media (max-width: 600px) {
+			body { padding: 24px 14px; }
+			.hero h1 { font-size: 27px; }
+			.hero p { font-size: 16px; }
+			.card { padding: 22px; border-radius: 18px; }
+			.card h2 { font-size: 20px; }
+			.nav-links { gap: 12px; }
+			.nav-links a { font-size: 14px; }
+		}
+	</style>
+</head>
+<body>
+
+	<header>
+		<div class="logo">Friends &amp; Me</div>
+		<nav class="nav-links">
+			<a href="/">首頁</a>
+			<a href="/privacy.html">隱私權</a>
+			<a href="/" class="play-cta">開始遊戲</a>
+		</nav>
+	</header>
+
+	<div class="container">
+
+		<div class="hero">
+			<h1>Friends &amp; Me 完整遊戲攻略與題目範例</h1>
+			<p>一款專為朋友、伴侶與家人設計的「異步社交探索桌遊」。本指南帶你了解五大社交深度等級、實際題目範例、配對猜題技巧，以及背後的心理學設計理念。</p>
+		</div>
+
+		<div class="card">
+			<h2>🧠 這是一款什麼樣的遊戲？</h2>
+			<p>《Friends &amp; Me》是一款 2 至 6 人同時連線的多人社交桌遊。它的核心玩法不在於勝負，而在於「你有多了解你的朋友，而你的朋友又有多了解你」。</p>
+			<p>遊戲流程很單純：系統出一道開放式問題，每位玩家匿名寫下自己的答案；接著進入配對階段，所有人要猜「哪一個答案是誰寫的」。猜得越準，代表你們之間的默契越高。一輪結束後，遊戲會揭曉每個人的猜中率，並排出「最懂你的人」默契排行榜。</p>
+			<p>它的設計靈感來自心理學的<strong>喬哈里視窗（Johari Window）</strong>與<strong>社交滲透理論（Social Penetration Theory）</strong>。前者描述「自己知道／他人知道」之間的認知落差，後者說明人際關係如何從表層話題，逐步深入到核心自我。這款遊戲就是把這兩個理論變成可以一起玩的對話催化劑。</p>
+		</div>
+
+		<div class="card">
+			<h2>🎮 四大核心遊玩步驟</h2>
+			<ol>
+				<li><strong>創建或加入房間</strong>：房主輸入暱稱後，系統會產生一組 6 位數房間碼。把房間碼分享給朋友，大家輸入暱稱即可進入同一個圈圈。完全免下載，瀏覽器即開即玩。</li>
+				<li><strong>選題與答題</strong>：每一輪由一位隊長隨機輪流擔任，由他選擇本輪的「話題深度」（Level 1 到 5）。系統抽出一道題目後，所有玩家在限時內寫下自己的答案，或選擇「不回答」保持神秘。</li>
+				<li><strong>配對猜題</strong>：所有答案會被打散匿名顯示。你要做的是把每一個答案，配對到你認為寫下它的那個人。這個階段最有趣——你會開始回想「這種話誰會說得出來」。</li>
+				<li><strong>結果揭曉</strong>：系統以動畫揭曉每個人的猜中率，並統計「你被多少人猜中」「你猜中了誰」。多輪累積後，會排出整個圈圈的默契排行榜。</li>
+			</ol>
+		</div>
+
+		<div class="card">
+			<h2>☕ 五大社交深度等級詳解（附題目範例）</h2>
+			<p>遊戲最大的特色，是把對話深度切成五個由淺入深的等級。你可以依照在場的人、場合的氣氛，自由選擇要聊得多深。以下是每個等級的設計目標與真實題目範例：</p>
+
+			<div class="level-block">
+				<div class="level-title">Level 1 ｜ 閒話家常</div>
+				<div class="level-goal">心理學目標：建立初步安全感，觀察對方的生活節律與微小細節。</div>
+				<p>關於食衣住行的日常習慣，沒有壓力，適合剛認識的人破冰。</p>
+				<div class="example-q"><span>例</span>如果可以每天早上吃到一樣東西且不膩，你會選擇什麼具體的食物？</div>
+				<div class="example-q"><span>例</span>逛夜市時，你每次幾乎必買的一樣小吃是什麼？</div>
+				<div class="example-q"><span>例</span>每天早上醒來，你第一件打開的手機 App 是什麼？</div>
+			</div>
+
+			<div class="level-block">
+				<div class="level-title">Level 2 ｜ 下午茶閒聊</div>
+				<div class="level-goal">心理學目標：展現獨特品味，開始分享對外界事物的看法與興趣投射。</div>
+				<p>帶有個人色彩、適合公開討論的輕鬆話題，普通朋友聚會的最佳暖場。</p>
+				<div class="example-q"><span>例</span>你最喜歡反覆觀看超過三次的電影是什麼？</div>
+				<div class="example-q"><span>例</span>如果要帶外國朋友吃一樣最能代表台灣的食物，你會帶他吃什麼？</div>
+				<div class="example-q"><span>例</span>去 KTV 時，你的「安全牌」必點歌曲是哪一首？</div>
+			</div>
+
+			<div class="level-block">
+				<div class="level-title">Level 3 ｜ 居酒屋微醺</div>
+				<div class="level-goal">心理學目標：放下武裝，分享情緒體驗、關係見解與內心波折。</div>
+				<p>稍微放下戒備，會聊到感情觀、生活抱怨與人際摩擦，適合熟識的朋友。</p>
+				<div class="example-q"><span>例</span>在尋找伴侶時，你最看重對方擁有哪一種具體的特質或價值觀？</div>
+				<div class="example-q"><span>例</span>當重要的人對你已讀不回時，你內心通常會上演什麼樣的小劇場？</div>
+				<div class="example-q"><span>例</span>哪一句「為你好」的話，最讓你感到壓力？</div>
+			</div>
+
+			<div class="level-block">
+				<div class="level-title">Level 4 ｜ 深夜真心話</div>
+				<div class="level-goal">心理學目標：深度揭露，涉及脆弱的自我與不為人知的真實面。</div>
+				<p>只在夜深人靜、面對極少數信任的人時才會吐露的秘密與隱憂。</p>
+				<div class="example-q"><span>例</span>你通常在陌生人面前用什麼樣的假象來保護自己？</div>
+				<div class="example-q"><span>例</span>你認為孤獨和寂寞有什麼不同？</div>
+				<div class="example-q"><span>例</span>在哪一個固定場合，你戴的面具最厚？</div>
+			</div>
+
+			<div class="level-block">
+				<div class="level-title">Level 5 ｜ 靈魂拷問</div>
+				<div class="level-goal">心理學目標：挑戰底線，探討生命意義與道德邊界。</div>
+				<p>觸及核心價值、挑戰底線的極端情境，適合深交的摯友與伴侶間的深夜對談。</p>
+				<div class="example-q"><span>例</span>如果你確切知道自己只剩下一年的壽命，接下來的 365 天會如何規劃？</div>
+				<div class="example-q"><span>例</span>除去名聲與財富，你心中真正的「成功」是什麼樣子？</div>
+				<div class="example-q"><span>例</span>如果要在你的墓碑上刻上一句總結你這輩子的短語，你會刻上什麼？</div>
+			</div>
+
+			<p>另外還有一個 <strong>LV ?? 隨機模式</strong>，讓命運決定本輪題目的深度——可能上一秒還在聊早餐，下一秒就被問到人生意義，是讓氣氛瞬間升溫的驚喜選項。</p>
+		</div>
+
+		<div class="card">
+			<h2>🎯 配對猜題的實戰技巧</h2>
+			<p>很多人以為這款遊戲只是「隨便猜」，但真正玩出心得的人，會運用以下幾種策略大幅提升猜中率：</p>
+			<ul>
+				<li><strong>抓用字習慣</strong>：每個人寫字都有口頭禪。有人愛用驚嘆號、有人習慣寫得很長、有人總是言簡意賅。答案的「語氣」往往比內容更能出賣作者。</li>
+				<li><strong>善用刪去法</strong>：先把你最有把握的答案配對掉，剩下不確定的選項範圍就會縮小。尤其人數越多時，越要從確定的開始猜。</li>
+				<li><strong>留意「不回答」這個干擾項</strong>：選擇不回答的人會變成配對時的神秘變數。當答案數量比人數少時，代表有人保持了神秘——這本身就是一條線索。</li>
+				<li><strong>等級越高越好猜也越難猜</strong>：深度題目（Level 4–5）的答案往往更個人化、更獨特，反而容易對應到特定的人；但若對方刻意隱藏真實想法，也可能讓你完全猜錯。</li>
+			</ul>
+		</div>
+
+		<div class="card">
+			<h2>🍻 適合的遊玩情境</h2>
+			<p>《Friends &amp; Me》沒有實體道具、不需下載 App（網頁版），只要一人開房、其他人輸入房間碼就能開始，因此特別適合以下場合：</p>
+			<ul>
+				<li><strong>朋友聚會破冰</strong>：用 Level 1–2 暖場，快速找到共同話題。</li>
+				<li><strong>情侶約會</strong>：用 Level 3–5 深入了解彼此，常常會問出交往多年都不知道的小事。</li>
+				<li><strong>家庭聚餐</strong>：過年過節時，讓不同世代的家人透過題目重新認識彼此。</li>
+				<li><strong>遠距連線</strong>：朋友各自在不同城市，也能透過房間碼一起玩，搭配視訊效果更好。</li>
+				<li><strong>團隊建立</strong>：公司團隊或社團，用輕鬆的方式拉近成員距離。</li>
+			</ul>
+		</div>
+
+		<div class="card">
+			<h2>🔒 隱私與心理安全設計</h2>
+			<p>因為遊戲會觸及私人話題，我們在設計上特別重視兩件事：</p>
+			<p>第一是<strong>心理安全</strong>。每一題都可以選擇「不回答」，讓你在不想分享某個話題時能體面地拒絕，不會被強迫揭露。這個機制同時也成為配對時的干擾項，一舉兩得。</p>
+			<p>第二是<strong>資料隱私</strong>。所有遊戲中的答案與配對紀錄，僅暫存於伺服器的隨機存取記憶體（RAM）中，用於遊戲進行中的即時同步。當你離開房間或遊戲結束，所有資料會立即被徹底刪除，零永久儲存，不留任何備份。詳細說明請見<a href="/privacy.html" style="color: var(--accent);">隱私權政策</a>。</p>
+		</div>
+
+		<div class="card">
+			<h2>❓ 常見問答（FAQ）</h2>
+
+			<div class="faq-item">
+				<div class="faq-q">Q：這款遊戲適合幾個人玩？</div>
+				<div class="faq-a">建議 2 至 6 人同時連線。2 人適合情侶深聊，4–6 人則最適合派對與聚會的熱鬧氣氛。</div>
+			</div>
+
+			<div class="faq-item">
+				<div class="faq-q">Q：需要下載嗎？要付費嗎？</div>
+				<div class="faq-a">網頁版完全免下載、免費遊玩，瀏覽器直接開啟即可。另有 Android App 版本，效能更穩定，並提供選購「移除廣告」的選項。</div>
+			</div>
+
+			<div class="faq-item">
+				<div class="faq-q">Q：網頁版和 App 版有什麼差別？</div>
+				<div class="faq-a">網頁版即開即玩、跨平台方便；App 版效能更穩定，支援 Google Play 應用內購買「移除廣告」，提供更純淨的無廣告體驗。兩者可以一起連線同一個房間。</div>
+			</div>
+
+			<div class="faq-item">
+				<div class="faq-q">Q：我的答案會被永久記錄嗎？</div>
+				<div class="faq-a">不會。所有資料只暫存在伺服器記憶體中供即時同步，離開房間或遊戲結束後立即徹底刪除，不留任何備份。</div>
+			</div>
+
+			<div class="faq-item">
+				<div class="faq-q">Q：題目會重複嗎？</div>
+				<div class="faq-a">題庫橫跨五個深度等級、超過 150 道開放式題目，並會持續擴充。同一個圈圈內，系統會自動記錄已出現過的題目，同一等級在全部出完之前不會重複，確保每一輪都是新鮮的話題。</div>
+			</div>
+		</div>
+
+		<div class="bottom-cta">
+			<a href="/">立即開始遊戲 ➔</a>
+		</div>
+
+	</div>
+
+	<footer>
+		<p>&copy; 2026 Friends &amp; Me. All Rights Reserved.</p>
+		<p><a href="/">首頁</a> ｜ <a href="/privacy.html">隱私權政策</a> ｜ 聯絡：hank92312@gmail.com</p>
+	</footer>
+
+</body>
+</html>
+"""
+
 def main():
     # 打包時版本號：同一版本所有使用者共用相同 URL，CDN 可快取；新部署才更新版本。
     # 不能在瀏覽器端用 Date.now()（每次載入都是新 URL → 瀏覽器快取/CDN 快取全無效
@@ -794,6 +1184,33 @@ def main():
     verification_tag = '\n\t<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>'
     if "<head>" in n_html:
         n_html = n_html.replace("<head>", "<head>" + verification_tag)
+
+    # 注入 SEO / AdSense 審核所需的 head 標籤：
+    # - Google Search Console 所有權驗證 meta（提交 sitemap、請求重新索引用）
+    # - meta description、canonical（內容品質與正規網址）
+    # - VideoGame JSON-LD 結構化資料（讓 Google 辨識為具實質內容的遊戲網站）
+    seo_head_tags = """
+	<meta name="google-site-verification" content="7MEfAw1kFzCexyZ8uc-XCPeyWOGw8ZLG3pNI200TN7M" />
+	<meta name="description" content="Friends & Me 是一款 2 至 6 人連線的異步社交探索桌遊，基於喬哈里視窗心理學設計。透過五大社交深度等級的開放式題目，與朋友、伴侶、家人互相猜題配對，發掘彼此的默契。免下載，瀏覽器即開即玩。" />
+	<link rel="canonical" href="https://friendandme.netlify.app/" />
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "VideoGame",
+		"name": "Friends & Me",
+		"description": "一款 2 至 6 人連線的異步社交探索桌遊，基於喬哈里視窗（Johari Window）心理學設計。透過五大社交深度等級的開放式題目互相猜題配對，發掘朋友、伴侶與家人之間的默契。",
+		"url": "https://friendandme.netlify.app/",
+		"genre": ["Party", "Social", "Casual"],
+		"playMode": "MultiPlayer",
+		"applicationCategory": "Game",
+		"operatingSystem": "Web Browser, Android",
+		"inLanguage": ["zh-TW", "en"],
+		"offers": {"@type": "Offer", "price": "0", "priceCurrency": "TWD"},
+		"author": {"@type": "Person", "name": "Hank", "email": "hank92312@gmail.com"}
+	}
+	</script>"""
+    if "<head>" in n_html:
+        n_html = n_html.replace("<head>", "<head>" + seo_head_tags)
         
     # --- 專利優化：為通過 Google AdSense「沒有發布商內容」(Valuable Inventory: No Content) 審核，注入 SEO 質感登陸頁面 ---
     import re
@@ -1126,7 +1543,8 @@ def main():
 			</div>
 
 			<footer class="landing-footer">
-				<p>&copy; 2026 Friends & Me. All Rights Reserved. | <a href="/privacy.html" target="_blank">隱私權政策 (Privacy Policy)</a></p>
+				<p><a href="/guide.html">遊戲攻略與題目範例 (Game Guide)</a> | <a href="/privacy.html" target="_blank">隱私權政策 (Privacy Policy)</a></p>
+				<p>&copy; 2026 Friends & Me. All Rights Reserved.</p>
 				<p>開發者聯絡信箱 (Contact): <strong>hank92312@gmail.com</strong></p>
 			</footer>
 		</div>
@@ -1229,6 +1647,10 @@ def main():
 # 確保新部署後玩家拿到最新 HTML（HTML 裡的 index.js/wasm/pck 都帶版本號）。
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
+
+# 攻略頁為審核期間可能更新的內容頁，同樣強制重新驗證，確保爬蟲取得最新版本。
+/guide.html
+  Cache-Control: no-cache, must-revalidate
 
 # index.js / wasm / pck 都已在 build_and_patch.py 打包時注入靜態版本號 ?v=BUILD_VER，
 # 相同版本所有人 URL 相同，CDN 只需從來源抓一次即可快取給所有後續使用者。
@@ -1507,7 +1929,50 @@ def main():
     with open(privacy_html_path, 'w', encoding='utf-8') as f:
         f.write(privacy_html_content)
     print("Successfully created privacy.html file for Netlify.")
-    
+
+    # 建立 Netlify 的 guide.html 遊戲攻略內容頁（解決 Google AdSense「缺乏價值內容」審核問題，
+    # 提供可爬取的原創實質內容：五大社交等級、題目範例、配對技巧、FAQ）
+    guide_html_path = os.path.join(netlify_dir, "guide.html")
+    with open(guide_html_path, 'w', encoding='utf-8') as f:
+        f.write(GUIDE_HTML_CONTENT)
+    print("Successfully created guide.html file for Netlify.")
+
+    # 建立 Netlify 的 sitemap.xml（讓 Googlebot 發現所有頁面）
+    sitemap_path = os.path.join(netlify_dir, "sitemap.xml")
+    sitemap_content = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+	<url>
+		<loc>https://friendandme.netlify.app/</loc>
+		<changefreq>weekly</changefreq>
+		<priority>1.0</priority>
+	</url>
+	<url>
+		<loc>https://friendandme.netlify.app/guide.html</loc>
+		<changefreq>monthly</changefreq>
+		<priority>0.9</priority>
+	</url>
+	<url>
+		<loc>https://friendandme.netlify.app/privacy.html</loc>
+		<changefreq>yearly</changefreq>
+		<priority>0.4</priority>
+	</url>
+</urlset>
+"""
+    with open(sitemap_path, 'w', encoding='utf-8') as f:
+        f.write(sitemap_content)
+    print("Successfully created sitemap.xml file for Netlify.")
+
+    # 建立 Netlify 的 robots.txt
+    robots_path = os.path.join(netlify_dir, "robots.txt")
+    robots_content = """User-agent: *
+Allow: /
+
+Sitemap: https://friendandme.netlify.app/sitemap.xml
+"""
+    with open(robots_path, 'w', encoding='utf-8') as f:
+        f.write(robots_content)
+    print("Successfully created robots.txt file for Netlify.")
+
     # 補丁 CrazyGames 版本的 index.html（設置為 CRAZYGAMES 平台）
     crazygames_html_path = os.path.join(crazygames_dir, "index.html")
     with open(crazygames_html_path, 'r', encoding='utf-8') as f:
