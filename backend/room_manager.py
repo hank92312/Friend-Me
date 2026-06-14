@@ -69,10 +69,15 @@ class RoomConnectionManager:
         if player_name not in self.room_players[room_id]:
             self.room_players[room_id].append(player_name)
 
+    # 短暫離開（如手機切出 App）的無縫回歸寬限秒數：在此時間內返回且仍為同一階段，
+    # 視為從未離開，直接續玩本輪，而非下放到「等待下一輪」。
+    RECONNECT_GRACE_SECONDS = 30.0
+
     async def reconnect(self, websocket: WebSocket, room_id: str, player_name: str) -> bool:
         """
         嘗試重連：若玩家曾存在於此房間（斷線快取中），恢復連線。
-        遊戲繼續，重連玩家加入 waiting_for_next_round，等待本輪結束後一同參與。
+        - 寬限期內（RECONNECT_GRACE_SECONDS）返回且仍為同一階段 → 無縫續玩本輪。
+        - 否則（離開過久或階段已推進）→ 加入 waiting_for_next_round，等本輪結束再參與。
         回傳 True 表示為重連，False 表示為全新加入。
         """
         is_reconnect = (
@@ -81,16 +86,26 @@ class RoomConnectionManager:
         )
 
         if is_reconnect:
+            info = self.disconnected_players[room_id].get(player_name, {})
+            elapsed = time.time() - info.get("disconnected_at", 0.0)
+            disconnect_phase = info.get("phase", "")
             # 清除斷線快取
             del self.disconnected_players[room_id][player_name]
             # 更新 websocket 對應
             self.active_rooms[room_id].append(websocket)
             self.room_ws_map[room_id][player_name] = websocket
-            # 加入「等待下一輪」名單（若遊戲進行中）
+
             current_phase = self.room_states.get(room_id, {}).get("phase", "WAITING")
-            if current_phase not in ("WAITING", "SELECTION"):
+            # 無縫回歸條件：在寬限期內返回，且回到的還是離開時的同一階段
+            # （代表本輪尚未推進過他，可安全以完整參與者身分續玩）。
+            seamless = (
+                elapsed <= self.RECONNECT_GRACE_SECONDS
+                and current_phase == disconnect_phase
+            )
+            # 不符合無縫條件，且遊戲進行中 → 下放到等待下一輪
+            if not seamless and current_phase not in ("WAITING", "SELECTION"):
                 if player_name not in self.waiting_for_next_round.get(room_id, []):
-                    self.waiting_for_next_round[room_id].append(player_name)
+                    self.waiting_for_next_round.setdefault(room_id, []).append(player_name)
             return True
 
         return False
