@@ -6,6 +6,10 @@
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
 
+# 攻略頁為審核期間可能更新的內容頁，同樣強制重新驗證，確保爬蟲取得最新版本。
+/guide.html
+  Cache-Control: no-cache, must-revalidate
+
 # index.js / wasm / pck 都已在 build_and_patch.py 打包時注入靜態版本號 ?v=BUILD_VER，
 # 相同版本所有人 URL 相同，CDN 只需從來源抓一次即可快取給所有後續使用者。
 # immutable 告知瀏覽器：同 URL 的內容永遠不會改，無需重新驗證，直接從快取服務。
