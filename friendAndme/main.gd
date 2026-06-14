@@ -89,6 +89,7 @@ var last_guess_total: int = 0
 var current_question: String = ""
 var current_level: int = 0
 var current_captain: String = ""
+var used_question_ids: Dictionary = {}  # { "1": ["L1Q01", ...], "2": [...] } — 本次連線已出現過的題目 ID
 var all_players: Array = []
 var joined_players: Array = [] # 實際連線的玩家
 var is_host: bool = false      # 是否為房主
@@ -475,9 +476,27 @@ func _get_random_question(level: int) -> String:
 	if not question_bank.has(lv_key):
 		return "(題庫載入失敗)"
 	var questions: Array = question_bank[lv_key]["questions"]
-	var idx: int = randi() % questions.size()
-	var q: Dictionary = questions[idx]
-	return q["text"]
+	var used: Array = used_question_ids.get(lv_key, [])
+	var available: Array = []
+	for q in questions:
+		if not used.has(q.get("id", "")):
+			available.append(q)
+	# 本等級全部出完才重置，開始新一輪循環
+	if available.is_empty():
+		used_question_ids[lv_key] = []
+		available = questions
+	var idx: int = randi() % available.size()
+	return available[idx]["text"]
+
+func _mark_question_used(q_text: String, level: int) -> void:
+	var q_id: String = zh_to_q_id.get(q_text, en_to_q_id.get(q_text, ""))
+	if q_id == "":
+		return
+	var lv_key: String = str(level)
+	if not used_question_ids.has(lv_key):
+		used_question_ids[lv_key] = []
+	if not used_question_ids[lv_key].has(q_id):
+		used_question_ids[lv_key].append(q_id)
 
 # ── 通用切換畫面（含縮放與淡入淡出轉場） ───────────────────────────────────────
 func switch_phase(new_phase: GamePhase) -> void:
@@ -1506,7 +1525,7 @@ func _on_network_room_created(room_id: String) -> void:
 	# 初始化玩家清單
 	joined_players = [mock_self_name]
 	_update_player_list_ui()
-	
+	used_question_ids = {}
 	switch_phase(GamePhase.WAIT_LOBBY)
 
 func _on_btn_start_game() -> void:
@@ -1572,6 +1591,7 @@ func _on_network_phase_sync(new_phase: String, data: Dictionary) -> void:
 		is_answer_submitted = false
 		current_level = data.get("level", 1)
 		current_question = data.get("question", "")
+		_mark_question_used(current_question, current_level)
 		var q_card := $Phases/Phase2_Answering/VBox/QuestionCard
 		q_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var q_label := $Phases/Phase2_Answering/VBox/QuestionCard/Label
