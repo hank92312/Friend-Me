@@ -95,7 +95,8 @@ async def run_phase_timeout(room_id: str, phase: str, seconds: int):
             submitted = manager.room_answers.get(room_id, {})
             for name in eligible:
                 if name not in submitted:
-                    await manager.submit_answer(room_id, name, "未填寫")
+                    # 時間到未作答者，視同選擇「不回答」（可正確翻譯並作為配對干擾項）
+                    await manager.submit_answer(room_id, name, "不回答")
             manager.room_states[room_id]["phase"] = "GUESSING"
             manager.room_states[room_id]["started_at"] = time.time()
             await manager.broadcast_to_room(room_id, {

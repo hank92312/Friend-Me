@@ -58,6 +58,8 @@ const EN_MAP = {
 	"房間不存在，請確認房號是否正確。": "Room does not exist. Please check your room code.",
 	"不回答": "Pass",
 	"已提交，等待其他玩家...": "Submitted. Waiting for others...",
+	"已送出 ✓ 可修改後再送": "Sent ✓ Edit & resend anytime",
+	"已選擇不回答 ✓ 可改為作答": "Pass selected ✓ Type to answer instead",
 	"送出配對結果": "Submit Matches",
 	"完成配對！送出": "Matches complete! Submit",
 	"提交目前的配對": "Submit current matches",

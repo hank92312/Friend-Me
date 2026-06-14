@@ -205,7 +205,13 @@ func _ready() -> void:
 	timer_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.3, 1)) # 紅橘色
 	timer_label.autowrap_mode = _get_local_autowrap_mode()
 	answering_vbox.add_child(timer_label)
-	answering_vbox.move_child(timer_label, 0) # 放到最頂端
+	# 放在題目卡下方（而非最頂端）：手機網頁打字時，置頂的可見輸入列（固定於螢幕頂端 58px）
+	# 會蓋住最上方內容，把倒數移到題目卡下方可避免被遮住。
+	var _qcard_for_timer := answering_vbox.get_node_or_null("QuestionCard")
+	if _qcard_for_timer:
+		answering_vbox.move_child(timer_label, _qcard_for_timer.get_index() + 1)
+	else:
+		answering_vbox.move_child(timer_label, 0)
 	timer_label.visible = false
 	
 	# 建立其他階段的倒數 TimerLabel
@@ -1875,45 +1881,46 @@ func _set_btn_color(btn: Button, color: Color) -> void:
 	btn.add_theme_stylebox_override("pressed", sb)
 	btn.add_theme_stylebox_override("disabled", sb)
 
+func _record_answer_history(answer_text: String) -> void:
+	# 更新本輪作答歷史。允許重送，故同一題只保留最後一次作答，避免重複多筆。
+	if game_history.size() > 0 and game_history[-1].get("question", "") == current_question:
+		game_history[-1]["answer"] = answer_text
+	else:
+		game_history.append({"question": current_question, "answer": answer_text})
+
 func _on_btn_submit_answer() -> void:
 	is_answer_submitted = true
-	answering_timer_active = false
-	if timer_label:
-		timer_label.text = tr("已提交，請稍候")
-		
+	# 不停止倒數、不鎖定輸入：允許玩家在作答階段結束前修改並重新送出，伺服器以最後一次為準。
 	var line_edit := $Phases/Phase2_Answering/VBox/AnswerArea/InputHBox/LineEdit as LineEdit
 	self_answer = line_edit.text.strip_edges()
 	if self_answer == "":
 		self_answer = "(空白)"
 	AudioManager.play_submit_answer()
-	
+
 	print("Submitting real answer: ", self_answer)
 	NetworkManager.send_game_event("answer_submitted", {"answer": self_answer})
-	
-	# 視覺回饋：進入等待狀態
+
+	# 視覺回饋：已送出，但仍可修改後再送
 	var submit_btn := $Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit
-	submit_btn.disabled = true
-	submit_btn.text = tr("已提交，等待其他玩家...")
-	_set_btn_color(submit_btn, COLOR_BTN_DISABLED)
-	game_history.append({"question": current_question, "answer": self_answer})
+	submit_btn.disabled = false
+	submit_btn.text = tr("已送出 ✓ 可修改後再送")
+	_set_btn_color(submit_btn, COLOR_BTN_NORMAL)
+	_record_answer_history(self_answer)
 
 func _on_btn_no_answer() -> void:
 	is_answer_submitted = true
-	answering_timer_active = false
-	if timer_label:
-		timer_label.text = tr("已提交，請稍候")
-		
+	# 同樣不停止倒數：選了不回答後，仍可於輸入框打字改為作答（送出鈕會自動重新啟用）。
 	self_answer = "不回答"
 	AudioManager.play_no_answer()
 	print("Submitting No Answer")
 	NetworkManager.send_game_event("answer_submitted", {"answer": self_answer})
-	
-	# 視覺回饋
+
+	# 視覺回饋：已選不回答，仍可改為作答
 	var submit_btn_no := $Phases/Phase2_Answering/VBox/AnswerArea/BtnSubmit
 	submit_btn_no.disabled = true
-	submit_btn_no.text = tr("已提交，等待其他玩家...")
+	submit_btn_no.text = tr("已選擇不回答 ✓ 可改為作答")
 	_set_btn_color(submit_btn_no, COLOR_BTN_DISABLED)
-	game_history.append({"question": current_question, "answer": self_answer})
+	_record_answer_history(self_answer)
 
 # ── 實體數據同步 ────────────────────────────────────────────────────────────
 func _setup_real_round(remote_answers: Dictionary) -> void:
@@ -2043,13 +2050,16 @@ func _generate_phase3_ui() -> void:
 
 	var self_paired := false
 	# 生成答案 pill
+	# 答案多為長句：給予接近整列的最小寬度，強制每個答案獨占一整列、文字在可讀寬度內換行
+	# 並讓按鈕高度隨內容自動長高，避免在 HFlowContainer 內被擠成「字小、往下堆的長直條」。
 	for ans_text in all_answers:
 		var btn := Button.new()
 		btn.text = tr(ans_text)
-		btn.custom_minimum_size = Vector2(0, pill_min_height)
+		btn.custom_minimum_size = Vector2(860, pill_min_height)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL # 讓它佔滿寬度
 		btn.add_theme_font_size_override("font_size", pill_font_size)
 		btn.autowrap_mode = _get_local_autowrap_mode()
+		btn.clip_text = false
 
 		if ans_text == self_ans and not self_paired:
 			_set_pill_style(btn, COLOR_AUTO_PAIRED, true)
@@ -2604,6 +2614,12 @@ func _on_network_next_round_status(ready_count: int, total: int) -> void:
 
 func _on_btn_leave_circle_pressed() -> void:
 	AudioManager.play_leave_circle()
+	# 離開圈圈即離開遊戲流程：主動通知伺服器並關閉連線，避免之後的 phase_changed
+	# 廣播把正在看個人結算的玩家硬拉回下一輪選題。個人結算所需的本地累計資料保留，
+	# 待 Phase5「確定離開」時才重置。
+	NetworkManager.send_game_event("leave_room", {})
+	NetworkManager.current_room_id = ""
+	NetworkManager.socket.close()
 	switch_phase(GamePhase.SUMMARY)
 
 # ── Phase 5：個人結算與確定離開 ──────────────────────────────────────────────
