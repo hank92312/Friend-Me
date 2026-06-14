@@ -675,6 +675,11 @@
           "id": "L4Q25",
           "tag": "Disguised Compromise",
           "text": "Which part of your current life are you \"pretending to like\" when it's actually a compromise?"
+        },
+        {
+          "id": "L4Q26",
+          "tag": "Solitude vs Loneliness",
+          "text": "In your view, what is the difference between solitude and loneliness?"
         }
       ]
     },

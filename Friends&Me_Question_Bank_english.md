@@ -163,6 +163,7 @@
 23. **Impostor Trophy**: Which achievement or advantage that others envy do you secretly feel you don't deserve?
 24. **Unspoken Words**: What is the one sentence to your family that you've kept buried and never managed to say?
 25. **Disguised Compromise**: Which part of your current life are you "pretending to like" when it's actually a compromise?
+26. **Solitude vs Loneliness**: In your view, what is the difference between solitude and loneliness?
 
 ---
 

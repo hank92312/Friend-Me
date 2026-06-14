@@ -131,9 +131,18 @@ class RoomConnectionManager:
         eligible = [n for n in active_names if n not in waiting]
 
         submitted_count = len(self.room_guesses.get(room_id, {}))
-        
+
         # 如果全員提交，結算並存入資料庫
         if submitted_count >= len(eligible):
+            # 冪等守衛：多名玩家同時送出最後一筆配對時，_persist_round_results 內含
+            # await（DB 操作）會讓出控制權，使第二個協程在 phase 尚未翻為 REVELATION 前
+            # 重新進入並二次結算，造成統計重複計分。以 round_id 標記「本輪已結算」，
+            # 並在 await 之前「同步」設旗標，關閉競態窗口。
+            state = self.room_states.setdefault(room_id, {})
+            round_id = state.get("current_round_id")
+            if round_id is not None and state.get("results_persisted_round_id") == round_id:
+                return False  # 本輪已結算，忽略重複/競態的完成判定
+            state["results_persisted_round_id"] = round_id
             await self._persist_round_results(room_id)
             return True
         return False
@@ -247,6 +256,14 @@ class RoomConnectionManager:
         if room_id in self.active_rooms:
             if websocket in self.active_rooms[room_id]:
                 self.active_rooms[room_id].remove(websocket)
+
+            # 若該玩家「目前」的對應 socket 已是另一條新連線（背景重連後，舊殭屍 socket
+            # 才延遲關閉），此 disconnect 屬於過期事件：上面已移除殭屍 socket，
+            # 此處直接返回，不可刪除新對應、也不可把已回來的玩家標記為斷線。
+            current_ws = self.room_ws_map.get(room_id, {}).get(player_name)
+            if current_ws is not None and current_ws is not websocket:
+                return
+
             if room_id in self.room_ws_map and player_name in self.room_ws_map[room_id]:
                 del self.room_ws_map[room_id][player_name]
 
