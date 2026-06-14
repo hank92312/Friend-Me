@@ -2039,14 +2039,14 @@ func _generate_phase3_ui() -> void:
 
 	# ── 自適應調整：根據人數調整按鈕大小與字體 ──
 	var player_count := all_participants.size()
-	var pill_font_size := 26
-	var pill_min_height := 70
+	var pill_font_size := 34
+	var pill_min_height := 84
 	if player_count <= 3:
-		pill_font_size = 36
-		pill_min_height = 90
+		pill_font_size = 46
+		pill_min_height = 106
 	elif player_count <= 5:
-		pill_font_size = 30
-		pill_min_height = 80
+		pill_font_size = 40
+		pill_min_height = 94
 
 	var self_paired := false
 	# 生成答案 pill
