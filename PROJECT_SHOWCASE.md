@@ -378,6 +378,8 @@ erDiagram
 
 - **伺服器權威 + 階段守衛**：所有計分與階段推進由後端決定，前端無法偽造（防作弊、防重複計分）。
 - **簽章密碼零落地**：Keystore 密碼僅透過環境變數傳入，不進 repo、不進 git 歷史。
+- **機密與識別碼隔離**：上傳憑證（`.pem`）、簽章庫（`.keystore`）、發布包（`.aab`）、本地 SQLite 皆納入 `.gitignore`；AdMob 正式廣告 ID 改由不進版控的 `ad_config.gd` 執行期注入（缺檔自動退回測試 ID），降低公開 repo 的 ad fraud 風險。
+- **版控歷史清理**：以 `git-filter-repo` 將誤入歷史的本地資料庫與發布商識別碼從**所有 commit** 中移除（改寫前先做完整 bundle 備份），避免敏感資訊殘留於 git 歷史。
 - **隱私可控**：玩家戰績公開/私有由本人設定。
 - **HTTPS / WSS 強制**：Fly.io `force_https`，前端一律使用 `wss://`。
 
