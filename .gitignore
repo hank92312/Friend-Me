@@ -19,6 +19,10 @@ export_presets.godot
 # 部署平台本地狀態
 .netlify/
 
+# AdMob 正式廣告 ID（用 ad_config.example.gd 當範本）
+friendAndme/ad_config.gd
+friendAndme/ad_config.gd.uid
+
 # Python
 **/venv/
 __pycache__/

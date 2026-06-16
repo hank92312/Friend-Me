@@ -9,17 +9,26 @@ signal ad_finished  # 廣告播放完成（或跳過）後發出
 signal purchase_state_changed  # 購買狀態變更時發出（通知 UI 更新）
 
 # ── AdMob ID ─────────────────────────────────────────────────────────────────
-# 開發測試時使用 Google 官方測試 ID，正式發布前替換為真實 ID
+# 開發測試時使用 Google 官方測試 ID；正式 ID 由不進版控的 ad_config.gd 注入。
 const USE_TEST_ADS := false
 
-# 正式 ID
-const REAL_AD_UNIT_ID := "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
-# Google 官方測試 Interstitial ID
+# Google 官方測試 Interstitial ID（公開文件 ID，可安全進版控）
 const TEST_AD_UNIT_ID := "ca-app-pub-3940256099942544/1033173712"
+
+# 正式廣告 ID 存放於 res://ad_config.gd（見 ad_config.example.gd），該檔不進版控。
+# 乾淨 clone（如公開 repo）缺此檔時自動退回測試 ID，避免外流正式 ID。
+const _AD_CONFIG_PATH := "res://ad_config.gd"
 
 var _ad_unit_id: String:
 	get:
-		return TEST_AD_UNIT_ID if USE_TEST_ADS else REAL_AD_UNIT_ID
+		if USE_TEST_ADS:
+			return TEST_AD_UNIT_ID
+		if ResourceLoader.exists(_AD_CONFIG_PATH):
+			var cfg = load(_AD_CONFIG_PATH)
+			if cfg != null:
+				return cfg.AD_UNIT_ID
+		push_warning("[AdManager] 找不到 ad_config.gd，改用測試廣告 ID。")
+		return TEST_AD_UNIT_ID
 
 # ── 狀態 ─────────────────────────────────────────────────────────────────────
 var _is_initialized := false
