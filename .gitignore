@@ -3,6 +3,21 @@
 *.import
 export_presets.godot
 *.apk
+*.aab
+
+# 簽章與發布機密（私鑰/憑證/密碼絕不進版控）
+*.pem
+*.keystore
+*.jks
+*.p12
+
+# 本地資料庫（正式環境使用 Fly.io Volume，勿提交本地 dev DB）
+*.db
+*.sqlite
+*.sqlite3
+
+# 部署平台本地狀態
+.netlify/
 
 # Python
 **/venv/
