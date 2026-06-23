@@ -75,7 +75,7 @@
 12. [多語系（i18n）](#12-多語系i18n)
 13. [安全性實踐](#13-安全性實踐)
 14. [專案結構](#14-專案結構)
-15. [面試重點摘要（Talking Points）](#15-面試重點摘要talking-points)
+15. [重點摘要（Talking Points）](#15-重點摘要talking-points)
 
 ---
 
@@ -416,7 +416,7 @@ FriendAndMe/
 
 ---
 
-## 15. 面試重點摘要（Talking Points）
+## 15. 重點摘要（Talking Points）
 
 **這個專案能展現的能力：**
 
