@@ -179,6 +179,106 @@
           "id": "L1Q35",
           "tag": "Mid-Autumn Tradition",
           "text": "During the Mid-Autumn Festival, what is the one activity that always happens with your family or friends?"
+        },
+        {
+          "id": "L1Q36",
+          "tag": "Room Scent",
+          "text": "If your bedroom could permanently smell like one specific scent, what would you choose?"
+        },
+        {
+          "id": "L1Q37",
+          "tag": "Photo Pose",
+          "text": "When taking a group photo, what is your go-to signature pose or hand gesture?"
+        },
+        {
+          "id": "L1Q38",
+          "tag": "Tap Temperature",
+          "text": "When washing your hands or face, what is your specific water temperature preference?"
+        },
+        {
+          "id": "L1Q39",
+          "tag": "Drinking Vessel",
+          "text": "What specific type of cup or vessel do you most often use to drink water at home or in the office?"
+        },
+        {
+          "id": "L1Q40",
+          "tag": "Shoe Closet",
+          "text": "Looking at your shoe closet, which specific pair of shoes is your most worn and heavily used?"
+        },
+        {
+          "id": "L1Q41",
+          "tag": "Receipt Habits",
+          "text": "How do you typically handle your receipts after buying something?"
+        },
+        {
+          "id": "L1Q42",
+          "tag": "Alarm Count",
+          "text": "How many alarms do you typically have to set to ensure you wake up on a workday morning?"
+        },
+        {
+          "id": "L1Q43",
+          "tag": "Condiment Choice",
+          "text": "What is the one absolute \"must-have\" dipping sauce or condiment when you eat dumplings, hot pot, or savory pancakes?"
+        },
+        {
+          "id": "L1Q44",
+          "tag": "Watching Speed",
+          "text": "When watching series or videos, what playback speed do you typically use, or what are your fast-forwarding habits?"
+        },
+        {
+          "id": "L1Q45",
+          "tag": "Hairstyle Rule",
+          "text": "What is the one non-negotiable rule or detail you always stick to regarding your current hairstyle?"
+        },
+        {
+          "id": "L1Q46",
+          "tag": "Drink Toppings",
+          "text": "When adding toppings to your bubble tea, what is your absolute first-choice topping?"
+        },
+        {
+          "id": "L1Q47",
+          "tag": "Loose Change",
+          "text": "How do you typically handle or store it when you accumulate a pile of loose change in your wallet or pocket?"
+        },
+        {
+          "id": "L1Q48",
+          "tag": "Microwave Meal",
+          "text": "What is your most frequently purchased, all-time favorite microwavable meal at the convenience store?"
+        },
+        {
+          "id": "L1Q49",
+          "tag": "Bedside Items",
+          "text": "What specific, non-sleeping item is currently permanently sitting on your bedside table or right next to your pillow?"
+        },
+        {
+          "id": "L1Q50",
+          "tag": "Laundry Routine",
+          "text": "On which specific day of the week or time of day do you typically do your laundry?"
+        },
+        {
+          "id": "L1Q51",
+          "tag": "AC Setting",
+          "text": "When turning on the air conditioner at home during summer, what specific temperature setting is your go-to?"
+        },
+        {
+          "id": "L1Q52",
+          "tag": "Hair Drying",
+          "text": "After washing your hair, do you blow-dry it immediately or do you tend to delay it for a while?"
+        },
+        {
+          "id": "L1Q53",
+          "tag": "Wallet Clean",
+          "text": "Aside from cash and cards, what specific \"clutter\" most commonly piles up in your wallet?"
+        },
+        {
+          "id": "L1Q54",
+          "tag": "Ketchup Preference",
+          "text": "How do you typically apply ketchup when eating french fries?"
+        },
+        {
+          "id": "L1Q55",
+          "tag": "Headphone Habit",
+          "text": "What specific moment in your daily routine is the one where you absolutely must put on headphones?"
         }
       ]
     },
@@ -361,6 +461,106 @@
           "id": "L2Q35",
           "tag": "New Year's Eve Plan",
           "text": "What is your ideal way to spend the New Year's Eve countdown?"
+        },
+        {
+          "id": "L2Q36",
+          "tag": "Photo Filter",
+          "text": "When taking photos or posting stories, what specific style of filter do you prefer?"
+        },
+        {
+          "id": "L2Q37",
+          "tag": "Repeat Song",
+          "text": "Which specific song have you had on repeat the most over the past month?"
+        },
+        {
+          "id": "L2Q38",
+          "tag": "Book Recommendation",
+          "text": "If you were to gift a book you genuinely love to a friend, which one would you choose?"
+        },
+        {
+          "id": "L2Q39",
+          "tag": "Historical Dinner",
+          "text": "If you could have dinner with any historical figure who is no longer living, who would you invite?"
+        },
+        {
+          "id": "L2Q40",
+          "tag": "First Album",
+          "text": "What was the very first music album or single you bought with your own money?"
+        },
+        {
+          "id": "L2Q41",
+          "tag": "Quirky Collection",
+          "text": "What is the most unusual or useless thing you have ever collected?"
+        },
+        {
+          "id": "L2Q42",
+          "tag": "Perfect Breakfast",
+          "text": "In your mind, what must a \"luxurious and perfect\" weekend breakfast include?"
+        },
+        {
+          "id": "L2Q43",
+          "tag": "Horror Movies",
+          "text": "What is your tolerance level for horror movies, and what specific type of horror element scares you the most?"
+        },
+        {
+          "id": "L2Q44",
+          "tag": "Board Game Style",
+          "text": "When playing board games with friends, what specific type of game do you enjoy the most?"
+        },
+        {
+          "id": "L2Q45",
+          "tag": "Disappointing Attraction",
+          "text": "What popular tourist attraction did you visit that you found to be completely overrated?"
+        },
+        {
+          "id": "L2Q46",
+          "tag": "Ideal Superpower",
+          "text": "If you could have one \"practical everyday\" superpower, what would it be?"
+        },
+        {
+          "id": "L2Q47",
+          "tag": "Concert Experience",
+          "text": "What was the single most memorable and high-energy live concert you have ever attended?"
+        },
+        {
+          "id": "L2Q48",
+          "tag": "App Uninstall",
+          "text": "If your phone ran out of space, which app that you installed but rarely open would be the first one you uninstall?"
+        },
+        {
+          "id": "L2Q49",
+          "tag": "Signature Accessory",
+          "text": "Which specific accessory or clothing item in your daily outfit makes you feel \"this is uniquely my style\"?"
+        },
+        {
+          "id": "L2Q50",
+          "tag": "Ideal Cafe",
+          "text": "What is the single most important feature or vibe that your ideal cafe must have?"
+        },
+        {
+          "id": "L2Q51",
+          "tag": "Scenic Spot",
+          "text": "Which natural landscape in Taiwan do you think is the most beautiful and worth recommending to foreigners?"
+        },
+        {
+          "id": "L2Q52",
+          "tag": "Min Nan Phrase",
+          "text": "What is the one Taiwanese Hokkien phrase you find yourself using most naturally in daily life?"
+        },
+        {
+          "id": "L2Q53",
+          "tag": "Childhood Anime",
+          "text": "What is the one anime or cartoon you absolutely had to rush home to watch after school when you were a kid?"
+        },
+        {
+          "id": "L2Q54",
+          "tag": "Running Fuel",
+          "text": "If you were to participate in a road run, what unusual or specialty food would you most hope to find at the supply station?"
+        },
+        {
+          "id": "L2Q55",
+          "tag": "Relaxation Hobby",
+          "text": "What is your favorite completely brainless hobby or entertainment to wind down after work or school?"
         }
       ]
     },
@@ -543,6 +743,106 @@
           "id": "L3Q35",
           "tag": "Holiday Burnout",
           "text": "During the big holiday season (like Lunar New Year), which part exhausts you the most?"
+        },
+        {
+          "id": "L3Q36",
+          "tag": "First Paycheck",
+          "text": "When you earned your very first paycheck or job money, what did you buy for yourself or your family?"
+        },
+        {
+          "id": "L3Q37",
+          "tag": "Social Dread",
+          "text": "What specific type of social gathering do you dread or dislike attending the most?"
+        },
+        {
+          "id": "L3Q38",
+          "tag": "Comforting Words",
+          "text": "When a friend is crying or upset, what is your go-to sentence or action to comfort them?"
+        },
+        {
+          "id": "L3Q39",
+          "tag": "Lying Motivation",
+          "text": "What is the most common reason or positive motivation behind your occasional white lies in daily life?"
+        },
+        {
+          "id": "L3Q40",
+          "tag": "Anger Warning",
+          "text": "When you begin to feel annoyed or angry, what subtle \"warning sign\" do you show that alerts others?"
+        },
+        {
+          "id": "L3Q41",
+          "tag": "Career Change",
+          "text": "What was the single most decisive factor that made you decide to leave your last job or change your career path?"
+        },
+        {
+          "id": "L3Q42",
+          "tag": "Heartwarming Text",
+          "text": "Is there a specific text message or conversation on your phone that you cherish and repeatedly read?"
+        },
+        {
+          "id": "L3Q43",
+          "tag": "Being Disliked",
+          "text": "If someone dislikes you, what specific trait or habit of yours do you think is usually the reason?"
+        },
+        {
+          "id": "L3Q44",
+          "tag": "Advice to Past Self",
+          "text": "If you could talk to your self from ten years ago for one minute, what specific advice would you give?"
+        },
+        {
+          "id": "L3Q45",
+          "tag": "Arguing Style",
+          "text": "When arguing with someone close, what is your typical communication or coping style?"
+        },
+        {
+          "id": "L3Q46",
+          "tag": "Rebuilding Trust",
+          "text": "Once someone breaks your trust, is the relationship restorable? If so, what must they do?"
+        },
+        {
+          "id": "L3Q47",
+          "tag": "Ideal City",
+          "text": "Ignoring climate and career constraints, which town or district in Taiwan would you most want to retire in?"
+        },
+        {
+          "id": "L3Q48",
+          "tag": "Sharpest Criticism",
+          "text": "What is the most painful criticism you've ever received, which you later admitted was actually very true?"
+        },
+        {
+          "id": "L3Q49",
+          "tag": "Growing Up Moment",
+          "text": "What specific moment in your life made you suddenly realize, \"I am truly an adult now\"?"
+        },
+        {
+          "id": "L3Q50",
+          "tag": "Letting Go",
+          "text": "How long does it typically take you to truly and completely let go of a relationship that has ended?"
+        },
+        {
+          "id": "L3Q51",
+          "tag": "Life Ritual",
+          "text": "Name a personal ritual in your life that you insist on keeping, even if others might find it tedious or unnecessary."
+        },
+        {
+          "id": "L3Q52",
+          "tag": "Accepting Compliments",
+          "text": "How do you typically react or feel inside when someone praises you warmly to your face?"
+        },
+        {
+          "id": "L3Q53",
+          "tag": "Limits of Conformity",
+          "text": "In a group activity, what boundary being crossed would make you refuse to cooperate, regardless of saving face?"
+        },
+        {
+          "id": "L3Q54",
+          "tag": "Nostalgic Smell",
+          "text": "What specific scent most strongly triggers your childhood memories?"
+        },
+        {
+          "id": "L3Q55",
+          "tag": "Most Passive",
+          "text": "What specific situation in a friendship or romance makes you feel the most passive or hesitant to take initiative?"
         }
       ]
     },
@@ -680,6 +980,106 @@
           "id": "L4Q26",
           "tag": "Solitude vs Loneliness",
           "text": "In your view, what is the difference between solitude and loneliness?"
+        },
+        {
+          "id": "L4Q27",
+          "tag": "Self-Doubt",
+          "text": "When you are alone late at night, what specific ability or decision of yours do you doubt the most?"
+        },
+        {
+          "id": "L4Q28",
+          "tag": "Hidden Vulnerability",
+          "text": "What specific vulnerable state or emotion do you dread showing the people closest to you?"
+        },
+        {
+          "id": "L4Q29",
+          "tag": "Youth Compromise",
+          "text": "What was the biggest compromise you made during your youth to satisfy your parents' or society's expectations?"
+        },
+        {
+          "id": "L4Q30",
+          "tag": "Irrecoverable Regret",
+          "text": "In your past relationships, which connection fading away still hurts and feels irrecoverable?"
+        },
+        {
+          "id": "L4Q31",
+          "tag": "Money Anxiety",
+          "text": "Honestly speaking, what specific savings amount do you need to accumulate to feel true financial security?"
+        },
+        {
+          "id": "L4Q32",
+          "tag": "Fear of Aging",
+          "text": "When thinking about getting older, what specific ability or physical state are you most afraid of losing?"
+        },
+        {
+          "id": "L4Q33",
+          "tag": "Invisible Escape",
+          "text": "When under extreme mental pressure and choosing to avoid it, what is your go-to method of escape?"
+        },
+        {
+          "id": "L4Q34",
+          "tag": "Unforgiven",
+          "text": "Is there something someone did to you that you said was okay, but in your heart you have never truly forgiven?"
+        },
+        {
+          "id": "L4Q35",
+          "tag": "Unspoken Grievance",
+          "text": "In the past six months, what specific event caused you major grievance that you chose to keep completely to yourself?"
+        },
+        {
+          "id": "L4Q36",
+          "tag": "Peak Solitude",
+          "text": "What is the single most extreme act of solitude you have ever done in your life?"
+        },
+        {
+          "id": "L4Q37",
+          "tag": "Envied Quality",
+          "text": "Honestly, what specific personality trait of a close friend do you envy the most?"
+        },
+        {
+          "id": "L4Q38",
+          "tag": "Weariness Under Mask",
+          "text": "What is the biggest cost you pay to maintain your outward image of being cheerful, reliable, or gentle?"
+        },
+        {
+          "id": "L4Q39",
+          "tag": "Unfinished Goodbye",
+          "text": "If you could never meet again, what final blessing or message would you send to someone who has drifted out of your life?"
+        },
+        {
+          "id": "L4Q40",
+          "tag": "Hidden Bias",
+          "text": "What private bias do you hold against a certain type of people that you know is logically wrong but still feel emotionally?"
+        },
+        {
+          "id": "L4Q41",
+          "tag": "Midnight Futility",
+          "text": "When you have insomnia, what specific thought about the meaninglessness of life hits your brain?"
+        },
+        {
+          "id": "L4Q42",
+          "tag": "Passive Giving Up",
+          "text": "What was the most passive decision you've ever made where you gave up on a romance or dream without even trying?"
+        },
+        {
+          "id": "L4Q43",
+          "tag": "Disappointment in Self",
+          "text": "When was the last time you felt deeply disappointed in your own behavior or choices, and why?"
+        },
+        {
+          "id": "L4Q44",
+          "tag": "Apology Untold",
+          "text": "Deep down, what specific apology do you most want to say to your childhood self?"
+        },
+        {
+          "id": "L4Q45",
+          "tag": "Relation Emptiness",
+          "text": "What specific moment in a relationship makes you feel utterly lonely even when you are with your partner?"
+        },
+        {
+          "id": "L4Q46",
+          "tag": "Last Defense",
+          "text": "When you are completely broken down, what specific environment or space do you need to hide in to start healing?"
         }
       ]
     },
@@ -812,6 +1212,106 @@
           "id": "L5Q25",
           "tag": "Erase One Suffering",
           "text": "If you could permanently erase one form of human suffering from the world (hunger, loneliness, illness, betrayal...), which would you erase?"
+        },
+        {
+          "id": "L5Q26",
+          "tag": "Price of Soul",
+          "text": "If selling the most precious trait of your soul (e.g., kindness) could guarantee a lifetime of health for your loved one, would you sell it?"
+        },
+        {
+          "id": "L5Q27",
+          "tag": "Limits of Humanity",
+          "text": "In an extreme survival situation where you must choose between betraying a friend and self-sacrifice, which does your instinct choose?"
+        },
+        {
+          "id": "L5Q28",
+          "tag": "Forgetfulness vs Pain",
+          "text": "Which is closer to hell for you: living with painful memories or living happily with no memories at all?"
+        },
+        {
+          "id": "L5Q29",
+          "tag": "Destiny Blindbox",
+          "text": "If you could watch a video of the end of your life but were unable to change any of it, would you choose to watch?"
+        },
+        {
+          "id": "L5Q30",
+          "tag": "Limits of Forgiveness",
+          "text": "If someone who hurt you deeply apologizes sincerely years later, is it more cruel to force yourself to forgive or to age holding onto resentment?"
+        },
+        {
+          "id": "L5Q31",
+          "tag": "Worlds Heritage",
+          "text": "If you had the power to make one human invention (e.g., money, weapons, the internet) permanently vanish from history, what would you erase?"
+        },
+        {
+          "id": "L5Q32",
+          "tag": "Cost of Love",
+          "text": "Would you be willing to sacrifice your most important current friendship or family relationship to find your lifetime soulmate?"
+        },
+        {
+          "id": "L5Q33",
+          "tag": "Reshaping Self",
+          "text": "If given the chance to completely reshape your personality, would you give up your current self-awareness to become a perfect person?"
+        },
+        {
+          "id": "L5Q34",
+          "tag": "Final Judgment",
+          "text": "If you had to stand trial before an omniscient higher being after death, what sin of your life would be the hardest to defend?"
+        },
+        {
+          "id": "L5Q35",
+          "tag": "Sacrifice Priority",
+          "text": "If saving your country or the world required sacrificing the life of someone you love, would you choose the few loved ones or the many strangers?"
+        },
+        {
+          "id": "L5Q36",
+          "tag": "Time Shackles",
+          "text": "If you could choose to freeze your physiological aging at a specific age but could never have biological children, at what age would you freeze?"
+        },
+        {
+          "id": "L5Q37",
+          "tag": "Truth and Lie",
+          "text": "If you discovered your happiest memory was actually a massive lie, would you choose to expose it or continue living in ignorance?"
+        },
+        {
+          "id": "L5Q38",
+          "tag": "Eternal Torment",
+          "text": "If the world was doomed to endless suffering and only your eternal torment could end it, would you accept that fate?"
+        },
+        {
+          "id": "L5Q39",
+          "tag": "Justifiable Selfishness",
+          "text": "At what level of pain or desperation do you think absolute human selfishness becomes entirely forgivable?"
+        },
+        {
+          "id": "L5Q40",
+          "tag": "Residual Value",
+          "text": "If your consciousness could be uploaded for digital immortality after death but you lost all physical sensory pleasure, would you upload?"
+        },
+        {
+          "id": "L5Q41",
+          "tag": "Final Post",
+          "text": "If the apocalypse was coming and you could post one final message online for all of humanity to see, what would you write?"
+        },
+        {
+          "id": "L5Q42",
+          "tag": "Virtual Happiness",
+          "text": "If you could live forever in a 100% happy but virtual Matrix-like world, would you choose to never wake up?"
+        },
+        {
+          "id": "L5Q43",
+          "tag": "Price of Talent",
+          "text": "If you could gain the highest intellect or creativity but lost the ability to feel loved or to love, would you make the trade?"
+        },
+        {
+          "id": "L5Q44",
+          "tag": "Ultimate Solitude Choice",
+          "text": "If you could explore the most beautiful unknown planet in the universe but could never return to Earth or see anyone again, would you go?"
+        },
+        {
+          "id": "L5Q45",
+          "tag": "True Colors",
+          "text": "If you stripped away your job, social status, family identity, and all possessions, what is the core essence of your soul that keeps you alive?"
         }
       ]
     }
