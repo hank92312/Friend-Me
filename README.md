@@ -80,5 +80,5 @@ build_and_patch.py   Web 匯出後處理自動化
 ---
 
 <p align="center">
-  📖 想了解完整設計、16 項跨平台工程挑戰與面試重點 → <a href="PROJECT_SHOWCASE.md"><b>PROJECT_SHOWCASE.md</b></a>
+  📖 想了解完整設計與 16 項跨平台工程挑戰 → <a href="PROJECT_SHOWCASE.md"><b>PROJECT_SHOWCASE.md</b></a>
 </p>
