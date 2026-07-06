@@ -3051,7 +3051,11 @@ func _update_localized_ui() -> void:
 	p1.get_node("BtnRandom/VBox/Title").text = tr("LV ??: 隨機")
 	p1.get_node("BtnRandom/VBox/SubTitle").text = tr("(讓命運決定話題的深度)")
 	
-	# Adjust level buttons heights dynamically based on wrapped subtitle text
+	# Adjust level buttons heights dynamically based on wrapped subtitle text.
+	# Two-pass: measure all six first, then apply the shared max so heights stay
+	# uniform without risking truncation when zh/en wrap differently (word-smart vs arbitrary).
+	var level_btns: Array[Button] = []
+	var max_min_h := 0.0
 	for btn_name in ["BtnLevel1", "BtnLevel2", "BtnLevel3", "BtnLevel4", "BtnLevel5", "BtnRandom"]:
 		var btn = p1.get_node(btn_name) as Button
 		if btn:
@@ -3065,9 +3069,13 @@ func _update_localized_ui() -> void:
 			# Determine target wrapping width: button width is 800 normally.
 			var target_width = btn.size.x - 40 if btn.size.x > 0 else 760
 			subtitle.custom_minimum_size.x = target_width
-			
-			var min_h = vbox.get_combined_minimum_size().y
-			btn.custom_minimum_size.y = max(160, min_h + 30)
+
+			max_min_h = max(max_min_h, vbox.get_combined_minimum_size().y)
+			level_btns.append(btn)
+
+	var unified_h = max(160, max_min_h + 30)
+	for btn in level_btns:
+		btn.custom_minimum_size.y = unified_h
 
 	$Phases/Phase1_Selection/BtnBack.text = tr("回首頁")
 

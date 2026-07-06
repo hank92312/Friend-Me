@@ -1193,6 +1193,7 @@ def main():
 	<meta name="google-site-verification" content="7MEfAw1kFzCexyZ8uc-XCPeyWOGw8ZLG3pNI200TN7M" />
 	<meta name="description" content="Friends & Me 是一款 2 至 6 人連線的異步社交探索桌遊，基於喬哈里視窗心理學設計。透過五大社交深度等級的開放式題目，與朋友、伴侶、家人互相猜題配對，發掘彼此的默契。免下載，瀏覽器即開即玩。" />
 	<link rel="canonical" href="https://friendandme.netlify.app/" />
+	<link rel="preconnect" href="https://friends-and-me.fly.dev" crossorigin />
 	<script type="application/ld+json">
 	{
 		"@context": "https://schema.org",
@@ -1625,10 +1626,26 @@ def main():
 							launchEngine(true);
 						}
 					} catch (e) {}
+
+					// 背景預載遊戲主資源：使用者閱讀 landing page 的同時下載，
+					// 點「開始遊戲」時大多已在 HTTP 快取（URL 與引擎請求完全相同，含 ?v=）。
+					try {
+						var conn = navigator.connection;
+						if (!(conn && conn.saveData) && sessionStorage.getItem('fm_launched') !== '1') {
+							['index.wasm?v=__BUILD_VER__', 'index.pck?v=__BUILD_VER__'].forEach(function(u) {
+								fetch(u, { priority: 'low' }).catch(function() {});
+							});
+						}
+					} catch (e) {}
+
+					// 預熱後端：提前完成 TCP+TLS 握手並喚醒可能休眠的 Fly machine，
+					// 讓使用者進遊戲後「建立/加入房間」不用等冷啟動。
+					fetch('https://friends-and-me.fly.dev/', { mode: 'no-cors' }).catch(function() {});
 				});
 			})();
 		</script>
 """
+    landing_html = landing_html.replace('__BUILD_VER__', build_ver)
     n_html = n_html.replace("<body>", f"<body>{landing_html}")
     
     with open(netlify_html_path, 'w', encoding='utf-8') as f:
@@ -1661,6 +1678,13 @@ def main():
   Cache-Control: public, max-age=31536000, immutable
 /*.pck
   Cache-Control: public, max-age=31536000, immutable
+
+# audio worklet 由引擎以固定檔名載入、無版本號，不能永久快取，
+# 否則未來 Godot 版本升級後會殘留舊 worklet。
+/index.audio.worklet.js
+  Cache-Control: public, max-age=3600
+/index.audio.position.worklet.js
+  Cache-Control: public, max-age=3600
 """
     with open(headers_path, 'w', encoding='utf-8') as f:
         f.write(headers_content)
