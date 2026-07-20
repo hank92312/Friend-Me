@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+	<meta name="google-site-verification" content="7MEfAw1kFzCexyZ8uc-XCPeyWOGw8ZLG3pNI200TN7M" />
+	<meta name="description" content="Friends & Me 是一款 2 至 6 人連線的異步社交探索桌遊，基於喬哈里視窗心理學設計。透過五大社交深度等級的開放式題目，與朋友、伴侶、家人互相猜題配對，發掘彼此的默契。免下載，瀏覽器即開即玩。" />
+	<link rel="canonical" href="https://friendandme.netlify.app/" />
+	<link rel="preconnect" href="https://friends-and-me.fly.dev" crossorigin />
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "VideoGame",
+		"name": "Friends & Me",
+		"description": "一款 2 至 6 人連線的異步社交探索桌遊，基於喬哈里視窗（Johari Window）心理學設計。透過五大社交深度等級的開放式題目互相猜題配對，發掘朋友、伴侶與家人之間的默契。",
+		"url": "https://friendandme.netlify.app/",
+		"genre": ["Party", "Social", "Casual"],
+		"playMode": "MultiPlayer",
+		"applicationCategory": "Game",
+		"operatingSystem": "Web Browser, Android",
+		"inLanguage": ["zh-TW", "en"],
+		"offers": {"@type": "Offer", "price": "0", "priceCurrency": "TWD"},
+		"author": {"@type": "Person", "name": "Hank", "email": "hank92312@gmail.com"}
+	}
+	</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+		<!-- Social Media Preview (Open Graph) -->
+		<meta property="og:title" content="Friends & Me - 異步社交探索桌遊" />
+		<meta property="og:description" content="透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。" />
+		<meta property="og:image" content="https://friendandme.netlify.app/index.icon.png" />
+		<meta property="og:url" content="https://friendandme.netlify.app/" />
+		<meta property="og:type" content="website" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="Friends & Me - 異步社交探索桌遊" />
+		<meta name="twitter:description" content="透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。" />
+		<meta name="twitter:image" content="https://friendandme.netlify.app/index.icon.png" />
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+		<title>Friend&Me</title>
+		<style>
+html, body, #canvas {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+body {
+	color: white;
+	background-color: black;
+	overflow: hidden;
+	touch-action: none;
+}
+
+#canvas {
+	display: block;
+}
+
+#canvas:focus {
+	outline: none;
+}
+
+#status, #status-splash, #status-progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
+#status, #status-splash {
+	top: 0;
+	bottom: 0;
+}
+
+#status {
+	background-color: #242424;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	visibility: hidden;
+}
+
+#status-splash {
+	max-height: 100%;
+	max-width: 100%;
+	margin: auto;
+}
+
+#status-splash.show-image--false {
+	display: none;
+}
+
+#status-splash.fullsize--true {
+	height: 100%;
+	width: 100%;
+	object-fit: contain;
+}
+
+#status-splash.use-filter--false {
+	image-rendering: pixelated;
+}
+
+#status-progress, #status-notice {
+	display: none;
+}
+
+#status-progress {
+	bottom: 10%;
+	width: 50%;
+	margin: 0 auto;
+}
+
+#status-notice {
+	background-color: #5b3943;
+	border-radius: 0.5rem;
+	border: 1px solid #9b3943;
+	color: #e0e0e0;
+	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+	line-height: 1.3;
+	margin: 0 2rem;
+	overflow: hidden;
+	padding: 1rem;
+	text-align: center;
+	z-index: 1;
+}
+		</style>
+		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+
+		<style>
+		/* Landing Page Styles */
+		#landing-page {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: radial-gradient(circle at 50% 50%, #161413 0%, #080707 100%);
+			z-index: 99990;
+			overflow-y: auto;
+			font-family: 'Outfit', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+			color: #FFF2CC;
+			padding: 40px 20px;
+			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			opacity: 1;
+			transition: opacity 0.5s ease;
+		}
+		
+		#landing-page.fade-out {
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.landing-header {
+			width: 100%;
+			max-width: 800px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 40px;
+		}
+
+		.landing-logo {
+			font-size: 28px;
+			font-weight: 700;
+			color: #D0813C;
+			letter-spacing: 1px;
+		}
+
+		.landing-lang-switch {
+			display: flex;
+			gap: 10px;
+		}
+
+		.landing-lang-btn {
+			background: rgba(255, 255, 255, 0.05);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			color: rgba(255, 242, 204, 0.7);
+			padding: 8px 16px;
+			border-radius: 20px;
+			cursor: pointer;
+			font-weight: 600;
+			font-size: 14px;
+			transition: all 0.22s ease;
+		}
+
+		.landing-lang-btn.active, .landing-lang-btn:hover {
+			background: #D0813C;
+			border-color: #D0813C;
+			color: #fff;
+			box-shadow: 0 4px 12px rgba(208, 129, 60, 0.3);
+		}
+
+		.landing-hero {
+			text-align: center;
+			max-width: 600px;
+			margin-bottom: 40px;
+		}
+
+		#landing-hero-title {
+			font-size: 38px;
+			font-weight: 700;
+			color: #E39450;
+			margin-bottom: 15px;
+			text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+		}
+
+		#landing-hero-subtitle {
+			font-size: 18px;
+			color: rgba(255, 242, 204, 0.7);
+			line-height: 1.6;
+			margin-bottom: 30px;
+		}
+
+		#landing-play-btn {
+			background: #D0813C;
+			color: #1F1C1A;
+			border: none;
+			padding: 16px 40px;
+			font-size: 1.3rem;
+			border-radius: 50px;
+			cursor: pointer;
+			font-weight: 700;
+			box-shadow: 0 8px 24px rgba(208, 129, 60, 0.4);
+			transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+		}
+
+		#landing-play-btn:hover {
+			background: #E39450;
+			transform: scale(1.05);
+			box-shadow: 0 12px 30px rgba(227, 148, 80, 0.5);
+		}
+
+		#landing-play-btn:active {
+			transform: scale(0.97);
+		}
+
+		.landing-container {
+			width: 100%;
+			max-width: 800px;
+			display: flex;
+			flex-direction: column;
+			gap: 25px;
+		}
+
+		.landing-card {
+			background: rgba(30, 26, 24, 0.6);
+			backdrop-filter: blur(12px);
+			-webkit-backdrop-filter: blur(12px);
+			border: 2px solid rgba(208, 129, 60, 0.18);
+			border-radius: 24px;
+			padding: 30px;
+			box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+		}
+
+		.landing-card h2 {
+			font-size: 22px;
+			color: #D0813C;
+			margin-bottom: 15px;
+			font-weight: 700;
+		}
+
+		.landing-card p {
+			font-size: 16px;
+			line-height: 1.7;
+			color: rgba(255, 242, 204, 0.8);
+			margin-bottom: 15px;
+		}
+
+		.landing-card p:last-child {
+			margin-bottom: 0;
+		}
+
+		.landing-card ul, .landing-card ol {
+			margin-left: 20px;
+			margin-bottom: 15px;
+			color: rgba(255, 242, 204, 0.8);
+		}
+
+		.landing-card li {
+			margin-bottom: 10px;
+			line-height: 1.6;
+		}
+
+		.landing-card li strong {
+			color: #E39450;
+		}
+
+		.landing-footer {
+			width: 100%;
+			max-width: 800px;
+			margin-top: 50px;
+			text-align: center;
+			font-size: 14px;
+			color: rgba(255, 242, 204, 0.4);
+			border-top: 1px solid rgba(208, 129, 60, 0.1);
+			padding-top: 25px;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		.landing-footer a {
+			color: #D0813C;
+			text-decoration: none;
+		}
+		.landing-footer a:hover {
+			text-decoration: underline;
+		}
+
+		@media (max-width: 600px) {
+			#landing-page {
+				padding: 30px 15px;
+			}
+			.landing-header {
+				margin-bottom: 25px;
+			}
+			.landing-logo {
+				font-size: 24px;
+			}
+			#landing-hero-title {
+				font-size: 28px;
+			}
+			#landing-hero-subtitle {
+				font-size: 16px;
+			}
+			#landing-play-btn {
+				font-size: 1.15rem;
+				padding: 14px 30px;
+			}
+			.landing-card {
+				padding: 20px;
+				border-radius: 18px;
+			}
+			.landing-card h2 {
+				font-size: 18px;
+			}
+		}
+	</style>
+</head>
+	<body>
+		<!-- Landing Page for SEO and Crawler Approval -->
+		<div id="landing-page">
+			<div class="landing-header">
+				<div class="landing-logo">Friends & Me</div>
+				<div class="landing-lang-switch">
+					<button id="landing-btn-zh" class="landing-lang-btn active" onclick="setLandingLanguage('zh')">中文</button>
+					<button id="landing-btn-en" class="landing-lang-btn" onclick="setLandingLanguage('en')">English</button>
+				</div>
+			</div>
+			
+			<div class="landing-hero">
+				<h1 id="landing-hero-title">異步社交探索桌遊</h1>
+				<p id="landing-hero-subtitle">透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。</p>
+				<button id="landing-play-btn" onclick="launchEngine()">開始遊戲 ➔</button>
+			</div>
+
+			<div class="landing-container">
+				<!-- Traditional Chinese Content -->
+				<div id="landing-content-zh">
+					<div class="landing-card">
+						<h2>🧠 遊戲設計理念</h2>
+						<p>本遊戲基於<strong>喬哈里視窗（Johari Window）</strong>心理學理論設計。透過「自我揭露」與「社交驗證」雙向互動，幫助玩家探索他人眼中的自己與真實自我之間的默契落差，開啟深度、溫馨且有意義的對話。</p>
+					</div>
+
+					<div class="landing-card">
+						<h2>🔒 心理安全與隱私保障</h2>
+						<p>我們深知揭露自我的社交焦慮，因此設計了「不回答」機制，讓玩家在不願分享特定話題時能體面拒絕，同時作為配對時的干擾項。所有對局數據僅在伺服器隨機存取記憶體 (RAM) 中暫存同步，一旦玩家離線或遊戲結束即<strong>徹底擦除</strong>，零永久儲存，保障您的絕對隱私。</p>
+					</div>
+
+					<div class="landing-card">
+						<h2>☕ 社交話題深度分級 (Level 1 - 5)</h2>
+						<p>遊戲提供 5 個不同的社交級別話題，適配各種聚會情境：</p>
+						<ul>
+							<li><strong>Level 1：閒話家常</strong> - 關於日常習慣與輕鬆偏好。</li>
+							<li><strong>Level 2：下午茶閒聊</strong> - 適合普通朋友與聚會破冰。</li>
+							<li><strong>Level 3：居酒屋微醺</strong> - 稍微深入的感情與生活交流。</li>
+							<li><strong>Level 4：深夜真心話</strong> - 屬於摯友或伴侶間的夜深小秘密。</li>
+							<li><strong>Level 5：靈魂拷問</strong> - 挑戰道德邊界或極端情境的深度思辨。</li>
+						</ul>
+					</div>
+
+					<div class="landing-card">
+						<h2>🎮 四大核心遊玩步驟</h2>
+						<ol>
+							<li><strong>創建/加入房間</strong>：快速輸入暱稱，一鍵創建 6 位數房間碼並發送給好友。</li>
+							<li><strong>選題與答題</strong>：隊長隨機選題，所有玩家在限時內填寫答案或選擇不回答。</li>
+							<li><strong>社交配對猜測</strong>：拖曳玩家大頭貼與對應的匿名答案進行配對。</li>
+							<li><strong>精彩結算揭曉</strong>：觀看精緻的猜中率百分比動畫，統計每局的默契得分。</li>
+						</ol>
+					</div>
+
+					<div class="landing-card">
+						<h2>❓ 常見問答 (FAQ)</h2>
+						<p><strong>問：這款遊戲適合多少人玩？</strong><br>答：本遊戲適合 2 至 6 人同時連線遊玩，是家庭聚會、派對或情侶互動的絕佳選擇。</p>
+						<p><strong>問：網頁版與 App 版有什麼區別？</strong><br>答：網頁版即開即玩，方便快捷；App 版效能更穩定，且支援 Google Play 應用內購買「移除廣告」方案，提供更為純淨的無廣告遊戲體驗。</p>
+					</div>
+				</div>
+
+				<!-- English Content -->
+				<div id="landing-content-en" style="display: none;">
+					<div class="landing-card">
+						<h2>🧠 Core Vision & Concept</h2>
+						<p>Designed around the psychological concept of the <strong>Johari Window</strong>. Through gameplay, players disclose aspects of themselves and verify how their friends perceive them, resolving the gap between self-perception and public-perception in a fun, meaningful way.</p>
+					</div>
+
+					<div class="landing-card">
+						<h2>🔒 Psychological Safety & Privacy</h2>
+						<p>To reduce social anxiety, players can select "Prefer Not to Answer" to skip sensitive questions. This option acts as a distractor during the matchmaking phase. All session data is cached temporarily in the server's RAM and is <strong>permanently erased</strong> once the session ends. No database records are kept.</p>
+					</div>
+
+					<div class="landing-card">
+						<h2>☕ Topics Depth Levels (Level 1 - 5)</h2>
+						<p>Features 5 progressive difficulty levels to match any social scenario:</p>
+						<ul>
+							<li><strong>Level 1: Casual Chat</strong> - Daily habits and light preferences.</li>
+							<li><strong>Level 2: Afternoon Tea</strong> - Icebreakers and casual catch-ups.</li>
+							<li><strong>Level 3: Izakaya Drunk</strong> - Relationship stories and life experiences.</li>
+							<li><strong>Level 4: Late-Night Secrets</strong> - Deep personal shares for close friends.</li>
+							<li><strong>Level 5: Soul Search</strong> - Extreme scenarios and ethical dilemmas.</li>
+						</ul>
+					</div>
+
+					<div class="landing-card">
+						<h2>🎮 Four Core Gameplay Steps</h2>
+						<ol>
+							<li><strong>Lobby Setup</strong>: Enter a nickname and generate a 6-digit room code to invite friends.</li>
+							<li><strong>Answer Questions</strong>: The leader picks a level, and players type their answers or choose to skip.</li>
+							<li><strong>Matchmaking Guess</strong>: Link player avatars with their guessed answers in a matching interface.</li>
+							<li><strong>Score Revelation</strong>: Watch real-time percentage animation counting correct guesses.</li>
+						</ol>
+					</div>
+
+					<div class="landing-card">
+						<h2>❓ Frequently Asked Questions (FAQ)</h2>
+						<p><strong>Q: How many players are supported?</strong><br>A: Best played with 2 to 6 players simultaneously, perfect for party meetups and couples.</p>
+						<p><strong>Q: What is the difference between Web and App?</strong><br>A: Web version loads instantly in browser. The App version provides offline caching and includes an optional "Remove Ads" in-app purchase (1 USD / 30 TWD) to remove all interstitial ads.</p>
+					</div>
+				</div>
+			</div>
+
+			<footer class="landing-footer">
+				<p><a href="/guide.html">遊戲攻略與題目範例 (Game Guide)</a> | <a href="/privacy.html" target="_blank">隱私權政策 (Privacy Policy)</a></p>
+				<p>&copy; 2026 Friends & Me. All Rights Reserved.</p>
+				<p>開發者聯絡信箱 (Contact): <strong>hank92312@gmail.com</strong></p>
+			</footer>
+		</div>
+
+		<script>
+			function setLandingLanguage(lang) {
+				const zhDiv = document.getElementById('landing-content-zh');
+				const enDiv = document.getElementById('landing-content-en');
+				const btnZh = document.getElementById('landing-btn-zh');
+				const btnEn = document.getElementById('landing-btn-en');
+				const heroTitle = document.getElementById('landing-hero-title');
+				const heroSubtitle = document.getElementById('landing-hero-subtitle');
+				const playBtn = document.getElementById('landing-play-btn');
+				
+				if (lang === 'zh') {
+					zhDiv.style.display = 'block';
+					enDiv.style.display = 'none';
+					btnZh.classList.add('active');
+					btnEn.classList.remove('active');
+					heroTitle.innerText = '異步社交探索桌遊';
+					heroSubtitle.innerText = '透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。';
+					playBtn.innerText = '開始遊戲 ➔';
+				} else {
+					zhDiv.style.display = 'none';
+					enDiv.style.display = 'block';
+					btnZh.classList.remove('active');
+					btnEn.classList.add('active');
+					heroTitle.innerText = 'Asynchronous Social Party Game';
+					heroSubtitle.innerText = 'Align self-perception with friends\' insights through fun, secure self-disclosure.';
+					playBtn.innerText = 'Play Game ➔';
+				}
+			}
+			
+			function launchEngine(skipFade) {
+				// 記錄本分頁已啟動過遊戲，供切換 App 後被瀏覽器重新載入時自動恢復
+				try { sessionStorage.setItem('fm_launched', '1'); } catch (e) {}
+				const lp = document.getElementById('landing-page');
+				const startEngine = () => {
+					lp.style.display = 'none';
+					if (typeof window.launchGame === 'function') {
+						window.launchGame();
+					} else {
+						// 引擎主程式尚未就緒，短暫輪詢等待（最多約 10 秒）
+						let tries = 0;
+						const iv = setInterval(() => {
+							if (typeof window.launchGame === 'function') {
+								clearInterval(iv);
+								window.launchGame();
+							} else if (++tries > 100) {
+								clearInterval(iv);
+								console.error("launchGame function not found.");
+							}
+						}, 100);
+					}
+				};
+				if (skipFade) {
+					startEngine();
+				} else {
+					lp.classList.add('fade-out');
+					setTimeout(startEngine, 500);
+				}
+			}
+			
+			// Auto detect browser language
+			(function() {
+				let defaultLang = 'zh';
+				if (navigator.language && navigator.language.startsWith('en')) {
+					defaultLang = 'en';
+				}
+				// Wait for DOM to load
+				window.addEventListener('DOMContentLoaded', () => {
+					setLandingLanguage(defaultLang);
+					// 若本分頁先前已啟動過遊戲（例如切到 LINE 後被 iOS Safari 記憶體回收而重新載入），
+					// 自動跳過登陸頁直接啟動引擎，避免「掉回入口頁」。
+					// 新訪客與爬蟲無此旗標，仍會看到登陸頁，故不影響 AdSense SEO 審核。
+					try {
+						if (sessionStorage.getItem('fm_launched') === '1') {
+							launchEngine(true);
+						}
+					} catch (e) {}
+
+					// 背景預載遊戲主資源：使用者閱讀 landing page 的同時下載，
+					// 點「開始遊戲」時大多已在 HTTP 快取（URL 與引擎請求完全相同，含 ?v=）。
+					try {
+						var conn = navigator.connection;
+						if (!(conn && conn.saveData) && sessionStorage.getItem('fm_launched') !== '1') {
+							['index.wasm?v=1783308580', 'index.pck?v=1783308580'].forEach(function(u) {
+								fetch(u, { priority: 'low' }).catch(function() {});
+							});
+						}
+					} catch (e) {}
+
+					// 預熱後端：提前完成 TCP+TLS 握手並喚醒可能休眠的 Fly machine，
+					// 讓使用者進遊戲後「建立/加入房間」不用等冷啟動。
+					fetch('https://friends-and-me.fly.dev/', { mode: 'no-cors' }).catch(function() {});
+				});
+			})();
+		</script>
+
+		<canvas id="canvas">
+			Your browser does not support the canvas tag.
+		</canvas>
+
+		<noscript>
+			Your browser does not support JavaScript.
+		</noscript>
+
+		<div id="status">
+			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="index.png" alt="">
+			<progress id="status-progress"></progress>
+			<div id="status-notice"></div>
+		</div>
+
+		<style>
+			/* 行動端輸入與長按優化補丁 */
+			input, textarea {
+				-webkit-user-select: text !important;
+				user-select: text !important;
+				touch-action: auto !important;
+				pointer-events: auto !important;
+			}
+		</style>
+		<script>
+			(function() {
+				function patchInputs() {
+					const inputs = document.querySelectorAll('input, textarea');
+					inputs.forEach(input => {
+						if (input.dataset.patched) return;
+						input.dataset.patched = "true";
+						
+						input.style.setProperty('user-select', 'text', 'important');
+						input.style.setProperty('-webkit-user-select', 'text', 'important');
+						input.style.setProperty('pointer-events', 'auto', 'important');
+						
+						input.addEventListener('focus', function() {
+							console.log("[Input Patch] Input focused:", input);
+							// 將 Godot 建立的 HTML 輸入框改為「可見」並固定在螢幕頂端（鍵盤上方），
+							// 做成符合遊戲深色風格的輸入列，讓使用者打字時看得到自己輸入的內容，
+							// 解決手機虛擬鍵盤遮擋 Godot 文字框、導致盲打的問題。
+							input.style.setProperty('opacity', '1', 'important');
+							input.style.setProperty('z-index', '99999', 'important');
+							input.style.setProperty('position', 'fixed', 'important');
+							input.style.setProperty('top', 'env(safe-area-inset-top, 0px)', 'important');
+							input.style.setProperty('left', '0', 'important');
+							input.style.setProperty('right', '0', 'important');
+							input.style.setProperty('width', '100%', 'important');
+							input.style.setProperty('height', '58px', 'important');
+							input.style.setProperty('box-sizing', 'border-box', 'important');
+							input.style.setProperty('margin', '0', 'important');
+							input.style.setProperty('padding', '10px 18px', 'important');
+							input.style.setProperty('font-size', '22px', 'important');
+							input.style.setProperty('font-family', "system-ui, -apple-system, sans-serif", 'important');
+							input.style.setProperty('color', '#FFF2CC', 'important');
+							input.style.setProperty('background', '#1F1C1A', 'important');
+							input.style.setProperty('border', 'none', 'important');
+							input.style.setProperty('border-bottom', '3px solid #D0813C', 'important');
+							input.style.setProperty('border-radius', '0', 'important');
+							input.style.setProperty('outline', 'none', 'important');
+							input.style.setProperty('caret-color', '#D0813C', 'important');
+							input.style.setProperty('box-shadow', '0 6px 16px rgba(0,0,0,0.5)', 'important');
+							// 輸入框需可接收觸控，這樣使用者能點文字中間移動游標、編輯內容。
+							// （按鈕被覆蓋層擋住的問題改由下方 visualViewport 在鍵盤收合時主動隱藏輸入框來解決。）
+							input.style.setProperty('pointer-events', 'auto', 'important');
+						});
+						
+						input.addEventListener('blur', function() {
+							input.style.setProperty('z-index', '-1', 'important');
+							input.style.setProperty('opacity', '0', 'important');
+							input.style.setProperty('pointer-events', 'none', 'important');
+							input.style.setProperty('top', '-1000px', 'important');
+						});
+					});
+				}
+				setInterval(patchInputs, 500);
+
+				// 鍵盤收合偵測（狀態機，修正先前「秒關鍵盤」誤判）：
+				// 只有當視窗高度「確實掉超過 150px」（代表鍵盤真的開過）之後，
+				// 才在高度回升到接近全高時主動 blur，讓 Godot focus_exited 執行、
+				// 隱藏輸入框，避免覆蓋層擋住按鈕。鍵盤開啟動畫期間不會誤觸發。
+				if (window.visualViewport) {
+					var vv = window.visualViewport;
+					var fmFullH = vv.height;
+					var fmKbWasOpen = false;
+					vv.addEventListener('resize', function() {
+						var h = vv.height;
+						if (h > fmFullH) fmFullH = h;
+						if (h < fmFullH - 150) {
+							fmKbWasOpen = true;            // 鍵盤已開啟
+						} else if (fmKbWasOpen && h >= fmFullH - 60) {
+							fmKbWasOpen = false;           // 鍵盤已收合
+							var ae = document.activeElement;
+							if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) {
+								ae.blur();
+							}
+						}
+					});
+				}
+			})();
+		</script>
+		<script>
+			// WebGL context lost 自動恢復：低記憶體 iOS 裝置（如 iPad 第9代）GPU 吃緊時會丟棄 WebGL context，
+			// 造成「WebGL context lost」死當。偵測到時自動重新載入（最多 2 次以避免無限循環），
+			// 多數情況重載後 GPU 已釋出即可順利進入；搭配 sessionStorage 的 fm_launched 會直接重啟遊戲。
+			(function() {
+				function attachGLGuard(canvas) {
+					if (!canvas || canvas.dataset.glLossPatched) return;
+					canvas.dataset.glLossPatched = "1";
+					canvas.addEventListener("webglcontextlost", function(e) {
+						var n = parseInt(sessionStorage.getItem("fm_gl_reloads") || "0", 10);
+						if (n < 2) {
+							sessionStorage.setItem("fm_gl_reloads", String(n + 1));
+							console.warn("[WebGL] context lost, auto-reloading (" + (n + 1) + "/2)...");
+							setTimeout(function() { window.location.reload(); }, 300);
+						} else {
+							console.error("[WebGL] context lost again after retries; showing default error.");
+						}
+					}, false);
+				}
+				var glIv = setInterval(function() {
+					var c = document.getElementById("canvas");
+					if (c) { attachGLGuard(c); }
+				}, 500);
+				// 成功穩定執行 15 秒後清除重試計數，讓日後若再發生 context lost 仍有完整重試額度
+				window.addEventListener("load", function() {
+					setTimeout(function() { try { sessionStorage.removeItem("fm_gl_reloads"); } catch (e) {} }, 15000);
+				});
+			})();
+		</script>
+		<script>
+			// 攔截 fetch 以強行對 Godot 的資源請求（如 .wasm 和 .pck 檔案）進行 Cache-Busting
+			(function() {
+				const originalFetch = window.fetch;
+				window.fetch = function (input, init) {
+					let url = (typeof input === 'string') ? input : input.url;
+					if (url.endsWith('.wasm') || url.endsWith('.pck') || url.indexOf('.wasm?') !== -1 || url.indexOf('.pck?') !== -1) {
+						if (url.indexOf('v=') === -1) {
+							const separator = url.indexOf('?') !== -1 ? '&' : '?';
+							url = url + separator + 'v=1783308580';
+						}
+					}
+					if (typeof input === 'string') {
+						input = url;
+					} else {
+						input = new Request(url, input);
+					}
+					return originalFetch(input, init);
+				};
+			})();
+		</script>
+		<script>
+			// 全局剪貼簿貼上支援（含 Prompt 備用方案）
+			window.requestClipboard = function() {
+				if (navigator.clipboard && navigator.clipboard.readText) {
+					navigator.clipboard.readText().then(function(text) {
+						if (window.godot_on_web_paste_received) {
+							window.godot_on_web_paste_received(text);
+						}
+					}).catch(function(err) {
+						console.warn("Clipboard API failed, using prompt fallback:", err);
+						var text = prompt("請貼上複製的文字 (Paste text):", "");
+						if (text !== null && window.godot_on_web_paste_received) {
+							window.godot_on_web_paste_received(text);
+						}
+					});
+				} else {
+					var text = prompt("請貼上複製的文字 (Paste text):", "");
+					if (text !== null && window.godot_on_web_paste_received) {
+						window.godot_on_web_paste_received(text);
+					}
+				}
+			};
+		</script>
+		<script>
+			// WebGL 2.0 相容性檢測與阻斷
+			window.hasWebGL2 = (function() {
+				try {
+					var canvas = document.createElement('canvas');
+					return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
+				} catch (e) {
+					return false;
+				}
+			})();
+			
+			if (window.hasWebGL2) {
+				document.write('<script src="index.js?v=1783308580"><\/script>');
+			} else {
+				console.error("WebGL 2.0 is not supported or disabled on this device/browser.");
+				window.addEventListener('DOMContentLoaded', function() {
+					// 隱藏原本的 status 載入區
+					var statusDiv = document.getElementById('status');
+					if (statusDiv) statusDiv.style.display = 'none';
+					
+					// 建立精美的 WebGL2 錯誤提示畫面
+					var errDiv = document.createElement('div');
+					errDiv.id = 'webgl2-error-overlay';
+					errDiv.innerHTML = `
+						<div class="err-card">
+							<h2>⚠️ 瀏覽器未啟用 WebGL 2.0</h2>
+							<p class="subtitle">WebGL 2.0 Disabled / Unsupported</p>
+							<div class="desc-box">
+								<p>您的裝置或瀏覽器目前未開啟 <strong>WebGL 2.0</strong> 繪圖功能，導致遊戲無法順利載入。這在蘋果 iOS / iPadOS Safari 瀏覽器上非常常見。</p>
+								<hr/>
+								<h3>🛠️ 解決步驟引導：</h3>
+								<ul>
+									<li><strong>開啟系統 WebGL 2.0 (iOS 15 以前)</strong>：請前往您 iPad/iPhone 的「設定」➔「Safari」➔「進階」➔「Experimental Features」，尋找並將 <strong>WebGL 2.0</strong> 開啟。</li>
+									<li><strong>檢查記憶體，關閉多餘分頁</strong>：Safari 會因為記憶體過高而拒絕提供繪圖環境。請關閉其他所有瀏覽器分頁，並「重新整理」此頁面。</li>
+									<li><strong>關閉「低耗電模式」</strong>：部分裝置在低耗電模式下會停用 WebGL，請關閉省電模式後重試。</li>
+									<li><strong>更新系統或更換設備</strong>：建議將 iOS 系統更新至最新版本，或嘗試使用電腦版 Chrome / Firefox 瀏覽器進行遊玩。</li>
+								</ul>
+							</div>
+							<button class="retry-btn" onclick="window.location.reload()">重新整理 ➔</button>
+						</div>
+					`;
+					
+					// 注入 CSS
+					var style = document.createElement('style');
+					style.innerHTML = `
+						#webgl2-error-overlay {
+							position: fixed;
+							top: 0;
+							left: 0;
+							width: 100%;
+							height: 100%;
+							background: #161413;
+							display: flex;
+							justify-content: center;
+							align-items: center;
+							z-index: 100000;
+							font-family: system-ui, -apple-system, sans-serif;
+							color: #FFF2CC;
+							padding: 20px;
+							box-sizing: border-box;
+							overflow-y: auto;
+						}
+						.err-card {
+							width: 95%;
+							max-width: 500px;
+							background: #1F1C1A;
+							border: 2px solid #D0813C;
+							border-radius: 24px;
+							padding: 25px;
+							box-sizing: border-box;
+							box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+							text-align: left;
+						}
+						.err-card h2 {
+							color: #E39450;
+							margin-top: 0;
+							margin-bottom: 5px;
+							font-size: 1.5rem;
+							text-align: center;
+						}
+						.err-card .subtitle {
+							color: #7C6858;
+							font-size: 0.9rem;
+							margin-top: 0;
+							margin-bottom: 20px;
+							text-align: center;
+							font-weight: bold;
+						}
+						.desc-box {
+							font-size: 0.95rem;
+							line-height: 1.5;
+							color: #E0E0E0;
+						}
+						.desc-box hr {
+							border: 0;
+							border-top: 1px dashed rgba(208, 129, 60, 0.3);
+							margin: 15px 0;
+						}
+						.desc-box h3 {
+							color: #FFF2CC;
+							font-size: 1.05rem;
+							margin-bottom: 10px;
+						}
+						.desc-box ul {
+							padding-left: 20px;
+							margin: 0;
+						}
+						.desc-box li {
+							margin-bottom: 12px;
+						}
+						.retry-btn {
+							background: #D0813C;
+							color: #1F1C1A;
+							border: none;
+							padding: 12px 20px;
+							font-size: 1.05rem;
+							border-radius: 40px;
+							cursor: pointer;
+							width: 100%;
+							margin-top: 20px;
+							font-weight: bold;
+							transition: all 0.2s ease;
+							box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+						}
+						.retry-btn:hover {
+							background: #E39450;
+							box-shadow: 0 6px 15px rgba(227, 148, 80, 0.4);
+						}
+					`;
+					document.head.appendChild(style);
+					document.body.appendChild(errDiv);
+				});
+			}
+		</script>
+		<script>
+if (window.hasWebGL2) {
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":10807684,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_THREADS_ENABLED = false;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const statusOverlay = document.getElementById('status');
+	const statusProgress = document.getElementById('status-progress');
+	const statusNotice = document.getElementById('status-notice');
+
+	let initializing = true;
+	let statusMode = '';
+
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) {
+			return;
+		}
+		if (mode === 'hidden') {
+			statusOverlay.remove();
+			initializing = false;
+			return;
+		}
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		statusMode = mode;
+	}
+
+	function setStatusNotice(text) {
+		while (statusNotice.lastChild) {
+			statusNotice.removeChild(statusNotice.lastChild);
+		}
+		const lines = text.split('\n');
+		lines.forEach((line) => {
+			statusNotice.appendChild(document.createTextNode(line));
+			statusNotice.appendChild(document.createElement('br'));
+		});
+	}
+
+	function displayFailureNotice(err) {
+		console.error(err);
+		if (err instanceof Error) {
+			setStatusNotice(err.message);
+		} else if (typeof err === 'string') {
+			setStatusNotice(err);
+		} else {
+			setStatusNotice('An unknown error occurred.');
+		}
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	const missing = Engine.getMissingFeatures({
+		threads: GODOT_THREADS_ENABLED,
+	});
+
+	if (missing.length !== 0) {
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+			let serviceWorkerRegistrationPromise;
+			try {
+				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+			} catch (err) {
+				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+			}
+			// There's a chance that installing the service worker would fix the issue
+			Promise.race([
+				serviceWorkerRegistrationPromise.then((registration) => {
+					if (registration != null) {
+						return Promise.reject(new Error('Service worker already exists.'));
+					}
+					return registration;
+				}).then(() => engine.installServiceWorker()),
+				// For some reason, `getRegistration()` can stall
+				new Promise((resolve) => {
+					setTimeout(() => resolve(), 2000);
+				}),
+			]).then(() => {
+				// Reload if there was no error.
+				window.location.reload();
+			}).catch((err) => {
+				console.error('Error while registering service worker:', err);
+			});
+		} else {
+			// Display the message as usual
+			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+			displayFailureNotice(missingMsg + missing.join('\n'));
+		}
+	} else {
+		window.launchGame = function() {
+		setStatusMode('progress');
+		engine.startGame({
+			'onProgress': function (current, total) {
+				if (current > 0 && total > 0) {
+					statusProgress.value = current;
+					statusProgress.max = total;
+				} else {
+					statusProgress.removeAttribute('value');
+					statusProgress.removeAttribute('max');
+				}
+			},
+		}).then(() => {
+			setStatusMode('hidden');
+		}, displayFailureNotice);
+	};
+	}
+}());
+}
+		</script>
+	
+		<!-- HTML Ad Overlay -->
+		<div id="web-ad-overlay">
+			<div id="web-ad-card">
+				<h2 id="web-ad-title">📢 廣告播放中</h2>
+				<div id="web-ad-media">
+					<div class="pulsing-ring"></div>
+					<div class="pulsing-ring-inner"></div>
+					<div class="ad-symbol">Ad</div>
+				</div>
+				<div id="web-ad-timer">5 秒後可跳過廣告</div>
+				<button id="web-ad-btn" onclick="closeWebAd()" disabled>請稍候...</button>
+			</div>
+		</div>
+
+		<!-- CSS Styling -->
+		<style>
+		#web-ad-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(13, 10, 10, 0.85);
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+			display: none;
+			justify-content: center;
+			align-items: center;
+			z-index: 99999;
+			font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+		}
+		#web-ad-card {
+			width: 90%;
+			max-width: 400px;
+			background: #1F1C1A;
+			border: 2px solid #D0813C;
+			border-radius: 24px;
+			padding: 30px;
+			box-sizing: border-box;
+			text-align: center;
+			color: #FFF2CC;
+			box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+			transform: scale(0.9);
+			transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+		#web-ad-overlay.active #web-ad-card {
+			transform: scale(1);
+		}
+		#web-ad-title {
+			margin: 0 0 10px 0;
+			color: #E39450;
+			font-size: 1.6rem;
+			font-weight: bold;
+			text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+		}
+		#web-ad-media {
+			width: 100%;
+			height: 180px;
+			margin: 20px 0;
+			background: #161413;
+			border-radius: 16px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border: 1px dashed rgba(208, 129, 60, 0.3);
+			overflow: hidden;
+			position: relative;
+		}
+		#web-ad-timer {
+			font-size: 1.1rem;
+			color: #FFF2CC;
+			margin: 10px 0 20px 0;
+			font-weight: 300;
+		}
+		#web-ad-btn {
+			background: #D0813C;
+			color: #1F1C1A;
+			border: none;
+			padding: 14px 20px;
+			font-size: 1.1rem;
+			border-radius: 40px;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			font-weight: bold;
+			width: 100%;
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+		}
+		#web-ad-btn:disabled {
+			background: #3A322C;
+			color: #7C6858;
+			cursor: not-allowed;
+			box-shadow: none;
+		}
+		#web-ad-btn:not(:disabled):hover {
+			background: #E39450;
+			box-shadow: 0 6px 15px rgba(227, 148, 80, 0.4);
+			color: #1F1C1A;
+		}
+		#web-ad-btn:not(:disabled):active {
+			transform: scale(0.98);
+		}
+
+		/* Pulse Animation */
+		.pulsing-ring {
+			position: absolute;
+			width: 80px;
+			height: 80px;
+			border-radius: 50%;
+			border: 3px solid #D0813C;
+			animation: pulse-ring 2s infinite ease-out;
+		}
+		.pulsing-ring-inner {
+			position: absolute;
+			width: 60px;
+			height: 60px;
+			border-radius: 50%;
+			border: 2px solid #E39450;
+			animation: pulse-ring-inner 2s infinite ease-out;
+		}
+		.ad-symbol {
+			font-size: 1.8rem;
+			color: #FFF2CC;
+			font-weight: bold;
+			z-index: 10;
+			background: #1F1C1A;
+			padding: 10px 20px;
+			border-radius: 12px;
+			border: 1px solid #D0813C;
+			box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+		}
+
+		@keyframes pulse-ring {
+			0% {
+				transform: scale(0.8);
+				opacity: 0.8;
+			}
+			100% {
+				transform: scale(1.8);
+				opacity: 0;
+			}
+		}
+		@keyframes pulse-ring-inner {
+			0% {
+				transform: scale(0.9);
+				opacity: 0.9;
+			}
+			50% {
+				transform: scale(1.4);
+				opacity: 0.3;
+			}
+			100% {
+				transform: scale(0.9);
+				opacity: 0.9;
+			}
+		}
+		</style>
+
+		<!-- JavaScript Overlay Control -->
+		<script>
+		(function() {
+			// === 廣告平台配置 ===
+			// "MOCK" (模擬廣告) | "CRAZYGAMES" (CrazyGames SDK) | "GOOGLE_H5" (Google AdSense H5 Ads)
+			const AD_PLATFORM = "GOOGLE_H5"; 
+			const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXXX"; // 替換為您的 AdSense 發布商 ID
+			
+			// === 動態載入第三方 SDK ===
+			if (AD_PLATFORM === "CRAZYGAMES") {
+				console.log("[Ad Controller] Loading CrazyGames SDK v2...");
+				const script = document.createElement("script");
+				script.src = "https://sdk.crazygames.com/crazygames-sdk-v2.js";
+				script.async = true;
+				script.onload = () => {
+					console.log("[Ad Controller] CrazyGames SDK loaded.");
+					if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.game) {
+						try {
+							window.CrazyGames.SDK.game.gameplayStart();
+							console.log("[Ad Controller] First gameplayStart triggered successfully.");
+						} catch (e) {
+							console.error("[Ad Controller] Failed to call gameplayStart:", e);
+						}
+					}
+				};
+				document.head.appendChild(script);
+			} else if (AD_PLATFORM === "GOOGLE_H5") {
+				console.log("[Ad Controller] Loading Google AdSense H5 Ads SDK with client:", GOOGLE_AD_CLIENT);
+				
+				// 1. 在載入腳本之前，初始化全域變數與 adBreak/adConfig 函數
+				window.adsbygoogle = window.adsbygoogle || [];
+				window.adBreak = window.adConfig = function(o) {
+					window.adsbygoogle.push(o);
+				};
+				
+				// 2. 進行預設配置
+				window.adConfig({
+					sound: 'on',
+					preloadAdBreaks: 'auto'
+				});
+				
+				// 3. 建立並插入 script 標籤，src 必須帶有 ?client=
+				const script = document.createElement("script");
+				script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + GOOGLE_AD_CLIENT;
+				script.async = true;
+				script.crossOrigin = "anonymous";
+				
+				// 4. 設定測試模式與廣告頻率提示屬性
+				script.setAttribute("data-ad-frequency-hint", "30s");
+				// script.setAttribute("data-ad-break-test", "on"); // 正式上線版本已註解，以播放真實廣告
+				
+				script.onload = () => {
+					console.log("[Ad Controller] Google H5 Ads script tag loaded successfully.");
+				};
+				document.head.appendChild(script);
+			}
+
+			let countdownInterval = null;
+			
+			window.showWebAd = function() {
+				console.log("[Ad Controller] showWebAd triggered. Platform:", AD_PLATFORM);
+				
+				// --- CrazyGames SDK 廣告模式 ---
+				if (AD_PLATFORM === "CRAZYGAMES") {
+					if (window.CrazyGames && window.CrazyGames.SDK) {
+						console.log("[Ad Controller] Requesting CrazyGames Midgame Ad...");
+						window.CrazyGames.SDK.ad.requestAd("midgame", {
+							adStarted: () => {
+								console.log("[CrazyGames SDK] Ad started.");
+							},
+							adFinished: () => {
+								console.log("[CrazyGames SDK] Ad finished.");
+								window.closeWebAd();
+							},
+							adError: (error) => {
+								console.warn("[CrazyGames SDK] Ad error:", error);
+								window.closeWebAd(); // 失敗也放行，避免遊戲死鎖
+							}
+						});
+					} else {
+						console.warn("[Ad Controller] CrazyGames SDK not loaded yet. Skipping.");
+						window.closeWebAd();
+					}
+					return;
+				}
+				
+				// --- Google H5 Ads 廣告模式 ---
+				if (AD_PLATFORM === "GOOGLE_H5") {
+					// 3 秒安全計時器：防範被 AdBlock 阻擋導致 callback 永遠不被呼叫而卡死
+					let adTriggered = false;
+					const adTimeout = setTimeout(() => {
+						if (!adTriggered) {
+							console.warn("[Ad Controller] Google H5 Ads callback timeout (AdBlocker or no fill). Bypassing...");
+							window.closeWebAd();
+						}
+					}, 3000);
+					
+					if (typeof window.adBreak === "function") {
+						console.log("[Ad Controller] Requesting Google H5 adBreak...");
+						window.adBreak({
+							type: "next",
+							name: "lobby_entry",
+							beforeBreak: () => { adTriggered = true; console.log("[Google H5] beforeBreak"); },
+							afterBreak: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] afterBreak"); window.closeWebAd(); },
+							adDismissed: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] adDismissed"); window.closeWebAd(); },
+							adBreakDone: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] adBreakDone"); window.closeWebAd(); }
+						});
+					} else {
+						clearTimeout(adTimeout);
+						console.warn("[Ad Controller] Google adBreak function not found. Skipping.");
+						window.closeWebAd();
+					}
+					return;
+				}
+				
+				// --- MOCK 模擬廣告模式 ---
+				const overlay = document.getElementById("web-ad-overlay");
+				const title = document.getElementById("web-ad-title");
+				const timerLabel = document.getElementById("web-ad-timer");
+				const button = document.getElementById("web-ad-btn");
+				
+				let lang = "zh";
+				if (window.godot_current_locale) {
+					lang = window.godot_current_locale;
+				} else if (navigator.language && navigator.language.startsWith("en")) {
+					lang = "en";
+				}
+				
+				const dict = {
+					"zh": {
+						title: "📢 廣告播放中",
+						timerPattern: "{sec} 秒後可跳過廣告",
+						buttonTextWaiting: "請稍候...",
+						buttonTextReady: "跳過廣告 ➔",
+						finished: "廣告播映完畢。"
+					},
+					"en": {
+						title: "📢 Ad Playing",
+						timerPattern: "Skip in {sec} seconds",
+						buttonTextWaiting: "Please wait...",
+						buttonTextReady: "Skip Ad ➔",
+						finished: "Ad finished."
+					}
+				};
+				
+				const t = dict[lang] || dict["zh"];
+				if (lang.startsWith("zh")) {
+					const dictT = dict["zh"];
+					title.innerText = dictT.title;
+					button.innerText = dictT.buttonTextWaiting;
+				} else {
+					title.innerText = t.title;
+					button.innerText = t.buttonTextWaiting;
+				}
+				
+				button.disabled = true;
+				overlay.style.display = "flex";
+				
+				setTimeout(() => { overlay.classList.add("active"); }, 20);
+				
+				let secondsRemaining = 5;
+				timerLabel.innerText = t.timerPattern.replace("{sec}", secondsRemaining);
+				
+				if (countdownInterval) clearInterval(countdownInterval);
+				countdownInterval = setInterval(() => {
+					secondsRemaining--;
+					if (secondsRemaining <= 0) {
+						clearInterval(countdownInterval);
+						timerLabel.innerText = t.finished;
+						button.innerText = t.buttonTextReady;
+						button.disabled = false;
+					} else {
+						timerLabel.innerText = t.timerPattern.replace("{sec}", secondsRemaining);
+					}
+				}, 1000);
+			};
+			
+			window.closeWebAd = function() {
+				console.log("[Ad Controller] closing Web Ad.");
+				const overlay = document.getElementById("web-ad-overlay");
+				if (overlay) {
+					overlay.classList.remove("active");
+					setTimeout(() => {
+						overlay.style.display = "none";
+					}, 300);
+				}
+				
+				if (countdownInterval) {
+					clearInterval(countdownInterval);
+					countdownInterval = null;
+				}
+				
+				if (typeof window.godot_on_web_ad_finished === "function") {
+					window.godot_on_web_ad_finished();
+				} else {
+					console.warn("[Ad Controller] window.godot_on_web_ad_finished callback not found.");
+				}
+			};
+		})();
+		</script>
+	</body>
+</html>
+
