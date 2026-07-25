@@ -13,12 +13,12 @@
   <img src="https://img.shields.io/badge/FastAPI-Python-009688?logo=fastapi&logoColor=white">
   <img src="https://img.shields.io/badge/WebSocket-即時連線-orange">
   <img src="https://img.shields.io/badge/Fly.io-Docker-8B5CF6?logo=flydotio&logoColor=white">
-  <img src="https://img.shields.io/badge/Netlify-Web-00C7B7?logo=netlify&logoColor=white">
+  <img src="https://img.shields.io/badge/GitHub%20Pages-Web-222222?logo=githubpages&logoColor=white">
   <img src="https://img.shields.io/badge/Google%20Play-Android-414141?logo=googleplay&logoColor=white">
 </p>
 
 <p align="center">
-  🎮 <a href="https://friendandme.netlify.app"><b>線上試玩（Web）</b></a> ｜ 📖 <a href="PROJECT_SHOWCASE.md"><b>完整專案說明書</b></a> ｜ 💻 <a href="https://github.com/hank92312/Friend-Me"><b>原始碼</b></a>
+  🎮 <a href="https://hank92312.github.io/Friend-Me/"><b>線上試玩（Web）</b></a> ｜ 📖 <a href="PROJECT_SHOWCASE.md"><b>完整專案說明書</b></a> ｜ 💻 <a href="https://github.com/hank92312/Friend-Me"><b>原始碼</b></a>
 </p>
 
 ---
@@ -53,7 +53,7 @@
 | 前端 | Godot 4.6 · GDScript · GL Compatibility（WebGL/GLES）|
 | 後端 | Python · FastAPI · WebSockets · uvicorn |
 | 資料 | SQLAlchemy（async）· aiosqlite · SQLite |
-| 部署 | Docker · Fly.io（Volume）· Netlify · Google Play |
+| 部署 | Docker · Fly.io（Volume）· GitHub Pages · Google Play |
 | 變現 | AdMob · AdSense · Google Play Billing |
 
 ## 遊戲畫面

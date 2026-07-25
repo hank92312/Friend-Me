@@ -3,8 +3,29 @@ import os
 import sys
 import time
 
-# Netlify 攻略內容頁（解決 Google AdSense「缺乏價值內容」審核問題）。
-# 提供可爬取的原創實質內容，於建置時寫入 build_web_netlify/guide.html。
+# --- 站台部署位址（單一事實來源）---
+# 網站於 2026-07 由 Netlify 搬遷至 GitHub Pages（Netlify 免費額度被 47MB 的
+# wasm+pck 打滿導致全帳號停站）。GitHub Pages 部署在 /Friend-Me/ 子路徑下，
+# 因此頁面內部連結一律使用「相對路徑」，不可用 href="/xxx"（會解析到網域根目錄 → 404）。
+# 換網域時只需改這一行；模板內以 {{SITE_URL}} 佔位，寫檔前由 apply_site_vars() 代換。
+SITE_URL = "https://hank92312.github.io/Friend-Me"  # 結尾不加斜線
+
+# --- 本機路徑（改由腳本位置推導，換電腦不需改碼）---
+REPO_DIR = os.path.dirname(os.path.abspath(__file__))
+# Godot 執行檔位置因機器而異，可用環境變數 GODOT_EXE 覆寫。
+GODOT_EXE = os.environ.get(
+    "GODOT_EXE",
+    r"C:\Users\花\Downloads\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe",
+)
+
+
+def apply_site_vars(text):
+    """把模板中的 {{SITE_URL}} 佔位符代換成實際站台網址。"""
+    return text.replace("{{SITE_URL}}", SITE_URL)
+
+
+# 攻略內容頁（解決 Google AdSense「缺乏價值內容」審核問題）。
+# 提供可爬取的原創實質內容，於建置時寫入 build_web_netlify/guide.html（會經過 apply_site_vars）。
 GUIDE_HTML_CONTENT = """<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -13,11 +34,11 @@ GUIDE_HTML_CONTENT = """<!DOCTYPE html>
 	<title>Friends & Me 遊戲攻略與題目範例 ｜ 異步社交探索桌遊完整指南</title>
 	<meta name="description" content="Friends & Me 完整遊戲攻略：詳解五大社交深度等級、精選題目範例、配對猜題技巧、適合的聚會情境與玩家心理學設計理念。一款基於喬哈里視窗理論的多人連線桌遊。">
 	<meta name="keywords" content="Friends and Me, 社交桌遊, 多人連線遊戲, 派對遊戲, 喬哈里視窗, 破冰遊戲, 聚會遊戲, 心理測驗, 默契遊戲">
-	<link rel="canonical" href="https://friendandme.netlify.app/guide.html">
+	<link rel="canonical" href="{{SITE_URL}}/guide.html">
 	<meta property="og:title" content="Friends & Me 遊戲攻略與題目範例" />
 	<meta property="og:description" content="詳解五大社交深度等級、精選題目範例、配對猜題技巧與適合的聚會情境。" />
 	<meta property="og:type" content="article" />
-	<meta property="og:url" content="https://friendandme.netlify.app/guide.html" />
+	<meta property="og:url" content="{{SITE_URL}}/guide.html" />
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
@@ -237,9 +258,9 @@ GUIDE_HTML_CONTENT = """<!DOCTYPE html>
 	<header>
 		<div class="logo">Friends &amp; Me</div>
 		<nav class="nav-links">
-			<a href="/">首頁</a>
-			<a href="/privacy.html">隱私權</a>
-			<a href="/" class="play-cta">開始遊戲</a>
+			<a href="./">首頁</a>
+			<a href="privacy.html">隱私權</a>
+			<a href="./" class="play-cta">開始遊戲</a>
 		</nav>
 	</header>
 
@@ -346,7 +367,7 @@ GUIDE_HTML_CONTENT = """<!DOCTYPE html>
 			<h2>🔒 隱私與心理安全設計</h2>
 			<p>因為遊戲會觸及私人話題，我們在設計上特別重視兩件事：</p>
 			<p>第一是<strong>心理安全</strong>。每一題都可以選擇「不回答」，讓你在不想分享某個話題時能體面地拒絕，不會被強迫揭露。這個機制同時也成為配對時的干擾項，一舉兩得。</p>
-			<p>第二是<strong>資料隱私</strong>。所有遊戲中的答案與配對紀錄，僅暫存於伺服器的隨機存取記憶體（RAM）中，用於遊戲進行中的即時同步。當你離開房間或遊戲結束，所有資料會立即被徹底刪除，零永久儲存，不留任何備份。詳細說明請見<a href="/privacy.html" style="color: var(--accent);">隱私權政策</a>。</p>
+			<p>第二是<strong>資料隱私</strong>。所有遊戲中的答案與配對紀錄，僅暫存於伺服器的隨機存取記憶體（RAM）中，用於遊戲進行中的即時同步。當你離開房間或遊戲結束，所有資料會立即被徹底刪除，零永久儲存，不留任何備份。詳細說明請見<a href="privacy.html" style="color: var(--accent);">隱私權政策</a>。</p>
 		</div>
 
 		<div class="card">
@@ -379,14 +400,14 @@ GUIDE_HTML_CONTENT = """<!DOCTYPE html>
 		</div>
 
 		<div class="bottom-cta">
-			<a href="/">立即開始遊戲 ➔</a>
+			<a href="./">立即開始遊戲 ➔</a>
 		</div>
 
 	</div>
 
 	<footer>
 		<p>&copy; 2026 Friends &amp; Me. All Rights Reserved.</p>
-		<p><a href="/">首頁</a> ｜ <a href="/privacy.html">隱私權政策</a> ｜ 聯絡：hank92312@gmail.com</p>
+		<p><a href="./">首頁</a> ｜ <a href="privacy.html">隱私權政策</a> ｜ 聯絡：hank92312@gmail.com</p>
 	</footer>
 
 </body>
@@ -400,9 +421,9 @@ def main():
     build_ver = str(int(time.time()))
     print(f"[Build] Version string: {build_ver}")
 
-    godot_path = r"C:\Users\hank9\Downloads\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe"
-    project_path = r"C:\FriendAndMe\friendAndme"
-    export_output = r"C:\FriendAndMe\build_web_temp\index.html"
+    godot_path = GODOT_EXE
+    project_path = os.path.join(REPO_DIR, "friendAndme")
+    export_output = os.path.join(REPO_DIR, "build_web_temp", "index.html")
     
     # 確保臨時輸出目錄存在
     os.makedirs(os.path.dirname(export_output), exist_ok=True)
@@ -1130,17 +1151,17 @@ def main():
             html = html[:start_idx] + ad_overlay_html + "</body>"
             print("Successfully updated injected web advertisement overlay in index.html.")
     
-    og_meta_tags = """
+    og_meta_tags = apply_site_vars("""
 		<!-- Social Media Preview (Open Graph) -->
 		<meta property="og:title" content="Friends & Me - 異步社交探索桌遊" />
 		<meta property="og:description" content="透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。" />
-		<meta property="og:image" content="https://friendandme.netlify.app/index.icon.png" />
-		<meta property="og:url" content="https://friendandme.netlify.app/" />
+		<meta property="og:image" content="{{SITE_URL}}/index.icon.png" />
+		<meta property="og:url" content="{{SITE_URL}}/" />
 		<meta property="og:type" content="website" />
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content="Friends & Me - 異步社交探索桌遊" />
 		<meta name="twitter:description" content="透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。" />
-		<meta name="twitter:image" content="https://friendandme.netlify.app/index.icon.png" />"""
+		<meta name="twitter:image" content="{{SITE_URL}}/index.icon.png" />""")
     
     if "<!-- Social Media Preview (Open Graph) -->" in html:
         start_idx = html.find("<!-- Social Media Preview (Open Graph) -->")
@@ -1161,9 +1182,9 @@ def main():
     print("=== Step 4: Generating Netlify and CrazyGames Releases ===")
     import shutil
     
-    netlify_dir = r"C:\FriendAndMe\build_web_netlify"
-    crazygames_dir = r"C:\FriendAndMe\build_web_crazygames"
-    temp_dir = r"C:\FriendAndMe\build_web_temp"
+    netlify_dir = os.path.join(REPO_DIR, "build_web_netlify")
+    crazygames_dir = os.path.join(REPO_DIR, "build_web_crazygames")
+    temp_dir = os.path.join(REPO_DIR, "build_web_temp")
     
     # 複製成兩個獨立的版本目錄
     for target_dir in [netlify_dir, crazygames_dir]:
@@ -1189,10 +1210,10 @@ def main():
     # - Google Search Console 所有權驗證 meta（提交 sitemap、請求重新索引用）
     # - meta description、canonical（內容品質與正規網址）
     # - VideoGame JSON-LD 結構化資料（讓 Google 辨識為具實質內容的遊戲網站）
-    seo_head_tags = """
+    seo_head_tags = apply_site_vars("""
 	<meta name="google-site-verification" content="7MEfAw1kFzCexyZ8uc-XCPeyWOGw8ZLG3pNI200TN7M" />
 	<meta name="description" content="Friends & Me 是一款 2 至 6 人連線的異步社交探索桌遊，基於喬哈里視窗心理學設計。透過五大社交深度等級的開放式題目，與朋友、伴侶、家人互相猜題配對，發掘彼此的默契。免下載，瀏覽器即開即玩。" />
-	<link rel="canonical" href="https://friendandme.netlify.app/" />
+	<link rel="canonical" href="{{SITE_URL}}/" />
 	<link rel="preconnect" href="https://friends-and-me.fly.dev" crossorigin />
 	<script type="application/ld+json">
 	{
@@ -1200,7 +1221,7 @@ def main():
 		"@type": "VideoGame",
 		"name": "Friends & Me",
 		"description": "一款 2 至 6 人連線的異步社交探索桌遊，基於喬哈里視窗（Johari Window）心理學設計。透過五大社交深度等級的開放式題目互相猜題配對，發掘朋友、伴侶與家人之間的默契。",
-		"url": "https://friendandme.netlify.app/",
+		"url": "{{SITE_URL}}/",
 		"genre": ["Party", "Social", "Casual"],
 		"playMode": "MultiPlayer",
 		"applicationCategory": "Game",
@@ -1209,7 +1230,7 @@ def main():
 		"offers": {"@type": "Offer", "price": "0", "priceCurrency": "TWD"},
 		"author": {"@type": "Person", "name": "Hank", "email": "hank92312@gmail.com"}
 	}
-	</script>"""
+	</script>""")
     if "<head>" in n_html:
         n_html = n_html.replace("<head>", "<head>" + seo_head_tags)
         
@@ -1544,7 +1565,7 @@ def main():
 			</div>
 
 			<footer class="landing-footer">
-				<p><a href="/guide.html">遊戲攻略與題目範例 (Game Guide)</a> | <a href="/privacy.html" target="_blank">隱私權政策 (Privacy Policy)</a></p>
+				<p><a href="guide.html">遊戲攻略與題目範例 (Game Guide)</a> | <a href="privacy.html" target="_blank">隱私權政策 (Privacy Policy)</a></p>
 				<p>&copy; 2026 Friends & Me. All Rights Reserved.</p>
 				<p>開發者聯絡信箱 (Contact): <strong>hank92312@gmail.com</strong></p>
 			</footer>
@@ -1958,41 +1979,41 @@ def main():
     # 提供可爬取的原創實質內容：五大社交等級、題目範例、配對技巧、FAQ）
     guide_html_path = os.path.join(netlify_dir, "guide.html")
     with open(guide_html_path, 'w', encoding='utf-8') as f:
-        f.write(GUIDE_HTML_CONTENT)
+        f.write(apply_site_vars(GUIDE_HTML_CONTENT))
     print("Successfully created guide.html file for Netlify.")
 
     # 建立 Netlify 的 sitemap.xml（讓 Googlebot 發現所有頁面）
     sitemap_path = os.path.join(netlify_dir, "sitemap.xml")
-    sitemap_content = """<?xml version="1.0" encoding="UTF-8"?>
+    sitemap_content = apply_site_vars("""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url>
-		<loc>https://friendandme.netlify.app/</loc>
+		<loc>{{SITE_URL}}/</loc>
 		<changefreq>weekly</changefreq>
 		<priority>1.0</priority>
 	</url>
 	<url>
-		<loc>https://friendandme.netlify.app/guide.html</loc>
+		<loc>{{SITE_URL}}/guide.html</loc>
 		<changefreq>monthly</changefreq>
 		<priority>0.9</priority>
 	</url>
 	<url>
-		<loc>https://friendandme.netlify.app/privacy.html</loc>
+		<loc>{{SITE_URL}}/privacy.html</loc>
 		<changefreq>yearly</changefreq>
 		<priority>0.4</priority>
 	</url>
 </urlset>
-"""
+""")
     with open(sitemap_path, 'w', encoding='utf-8') as f:
         f.write(sitemap_content)
     print("Successfully created sitemap.xml file for Netlify.")
 
     # 建立 Netlify 的 robots.txt
     robots_path = os.path.join(netlify_dir, "robots.txt")
-    robots_content = """User-agent: *
+    robots_content = apply_site_vars("""User-agent: *
 Allow: /
 
-Sitemap: https://friendandme.netlify.app/sitemap.xml
-"""
+Sitemap: {{SITE_URL}}/sitemap.xml
+""")
     with open(robots_path, 'w', encoding='utf-8') as f:
         f.write(robots_content)
     print("Successfully created robots.txt file for Netlify.")
