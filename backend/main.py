@@ -65,6 +65,19 @@ async def run_phase_timeout(room_id: str, phase: str, seconds: int):
         if current_phase != phase:
             return  # 階段已被手動推進，不再處理
 
+        # 最後防線：房內已無任何連線中的玩家就不推進，直接清除房間。
+        # 少了這道檢查，一個沒被正確清理的房間會沿著
+        # SELECTION → ANSWERING → GUESSING → REVELATION → SELECTION 無限循環，
+        # 每圈都寫入 rounds/answers 並累加 users 統計，永久佔用 CPU 與記憶體。
+        if not manager.get_active_player_names(room_id):
+            print(f"[PhaseTimeout] Room {room_id} has no active players. Cleaning up instead of advancing.")
+            phase_timeout_tasks.pop(room_id, None)  # 不能 cancel，這正是當前執行中的任務
+            countdown = countdown_tasks.pop(room_id, None)
+            if countdown and not countdown.done():
+                countdown.cancel()
+            manager.force_cleanup_room(room_id)
+            return
+
         print(f"[PhaseTimeout] Room {room_id} phase {phase} timed out after {seconds}s. Auto-advancing...")
 
         if phase == "SELECTION":

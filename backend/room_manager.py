@@ -1,4 +1,5 @@
 from fastapi import WebSocket
+import asyncio
 import json
 import time
 from database import AsyncSessionLocal
@@ -27,6 +28,22 @@ class RoomConnectionManager:
         self.waiting_for_next_round: dict[str, list[str]] = {}
         # 準備好進入下一輪的玩家：{ "room_id": set(player_name, ...) }
         self.room_ready_players: dict[str, set[str]] = {}
+        # 背景任務的強參考集合，見 _spawn()
+        self._background_tasks: set[asyncio.Task] = set()
+
+    def _spawn(self, coro) -> asyncio.Task:
+        """建立背景任務並保留強參考。
+
+        asyncio 對執行中的 task 只持有弱參考，沒有被任何地方引用的 task
+        可能在跑到一半時被 GC 回收。先前 _wait_and_kick_player 與
+        _delete_room_data_from_db 都是直接 create_task 後丟棄回傳值，
+        一旦回收，房間就永遠不會被清理，階段超時卻仍在運作
+        → 無人的房間無限循環推進、狂寫資料庫（2026-08 實際發生）。
+        """
+        task = asyncio.create_task(coro)
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+        return task
 
     def create_room_id(self, room_id: str):
         """預先註冊房間 ID，供 REST API 使用"""
@@ -292,8 +309,7 @@ class RoomConnectionManager:
             }
 
             # 啟動 45 秒斷線判定緩衝任務
-            import asyncio
-            asyncio.create_task(self._wait_and_kick_player(room_id, player_name, 45.0))
+            self._spawn(self._wait_and_kick_player(room_id, player_name, 45.0))
 
             # 若房間已無任何連線（含斷線快取均空），才清除房間
             if not self.active_rooms[room_id] and not self.disconnected_players.get(room_id):
@@ -338,6 +354,14 @@ class RoomConnectionManager:
             if not self.active_rooms.get(room_id) and not self.disconnected_players.get(room_id):
                 self._cleanup_room(room_id)
 
+    def force_cleanup_room(self, room_id: str):
+        """外部確認房間已無任何連線中的玩家時，強制清除殘留狀態。
+
+        供 main.py 的階段超時作為最後防線使用：即使清理流程因故沒跑到，
+        也不會留下一個無人卻持續自動推進的房間。
+        """
+        self._cleanup_room(room_id)
+
     def _cleanup_room(self, room_id: str):
         # 移除所有內存資料
         for d in [self.active_rooms, self.room_players, self.room_ws_map,
@@ -347,30 +371,37 @@ class RoomConnectionManager:
             d.pop(room_id, None)
         
         # 啟動非同步任務清除資料庫中的房間數據
-        import asyncio
-        asyncio.create_task(self._delete_room_data_from_db(room_id))
+        self._spawn(self._delete_room_data_from_db(room_id))
 
     async def _delete_room_data_from_db(self, room_id: str):
-        """從資料庫刪除指定房間及其所有關聯的回合、答案與猜測"""
-        async with AsyncSessionLocal() as db:
-            from sqlalchemy import delete
-            
-            # 1. 找出所有屬於該房間的 round_ids
-            res = await db.execute(select(models.Round.id).where(models.Round.room_id == room_id))
-            round_ids = res.scalars().all()
-            
-            if round_ids:
-                # 2. 刪除相關的 Guess 與 Answer
-                await db.execute(delete(models.Guess).where(models.Guess.round_id.in_(round_ids)))
-                await db.execute(delete(models.Answer).where(models.Answer.round_id.in_(round_ids)))
-                # 3. 刪除 Round
-                await db.execute(delete(models.Round).where(models.Round.id.in_(round_ids)))
-            
-            # 4. 最後刪除 Room
-            await db.execute(delete(models.Room).where(models.Room.id == room_id))
-            
-            await db.commit()
-            print(f"[Database] Room {room_id} and all related data deleted.")
+        """從資料庫刪除指定房間及其所有關聯的回合、答案與猜測。
+
+        這是隱私權政策「房間結束即徹底刪除」的實作。因為是背景任務，
+        例外若不攔截會被 asyncio 靜默吞掉（Task exception was never retrieved），
+        造成資料留在庫裡卻無人知悉 —— 所以務必記錄失敗。
+        """
+        try:
+            async with AsyncSessionLocal() as db:
+                from sqlalchemy import delete
+
+                # 1. 找出所有屬於該房間的 round_ids
+                res = await db.execute(select(models.Round.id).where(models.Round.room_id == room_id))
+                round_ids = res.scalars().all()
+
+                if round_ids:
+                    # 2. 刪除相關的 Guess 與 Answer
+                    await db.execute(delete(models.Guess).where(models.Guess.round_id.in_(round_ids)))
+                    await db.execute(delete(models.Answer).where(models.Answer.round_id.in_(round_ids)))
+                    # 3. 刪除 Round
+                    await db.execute(delete(models.Round).where(models.Round.id.in_(round_ids)))
+
+                # 4. 最後刪除 Room
+                await db.execute(delete(models.Room).where(models.Room.id == room_id))
+
+                await db.commit()
+                print(f"[Database] Room {room_id} and all related data deleted.")
+        except Exception as e:
+            print(f"[Database] ERROR: failed to delete data for room {room_id}: {e!r}")
 
     async def leave_room(self, room_id: str, player_name: str):
         """玩家主動離開房間"""
