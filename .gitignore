@@ -35,3 +35,6 @@ Thumbs.db
 chrome_debug.log
 chrome_profile/
 
+
+# Claude Code 個人設定（含本機絕對路徑，不進版控）
+.claude/settings.local.json
