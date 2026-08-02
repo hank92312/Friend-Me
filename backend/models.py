@@ -4,11 +4,18 @@ from database import Base
 import datetime
 
 class User(Base):
+    """玩家的跨場次累計統計。
+
+    這是唯一永久保存的表，因此不存明文暱稱 —— 只存 player_identity.player_key()
+    產生的雜湊值，見該模組的說明。其餘各表（Room/Round/Answer/Guess）都會在
+    房間結束時由 RoomConnectionManager._delete_room_data_from_db 清除。
+    """
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    
+    name_hash = Column(String, unique=True, index=True)
+
     # 累計數據
     total_guesses = Column(Integer, default=0)
     correct_guesses = Column(Integer, default=0)

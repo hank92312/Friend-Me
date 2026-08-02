@@ -5,6 +5,7 @@ import time
 from database import AsyncSessionLocal
 from sqlalchemy import select, update
 import models
+from player_identity import player_key
 
 class RoomConnectionManager:
     def __init__(self):
@@ -55,10 +56,10 @@ class RoomConnectionManager:
         
         # 確保玩家在資料庫中存在
         async with AsyncSessionLocal() as db:
-            result = await db.execute(select(models.User).where(models.User.name == player_name))
+            result = await db.execute(select(models.User).where(models.User.name_hash == player_key(player_name)))
             user = result.scalars().first()
             if not user:
-                user = models.User(name=player_name)
+                user = models.User(name_hash=player_key(player_name))
                 db.add(user)
                 await db.commit()
 
@@ -198,7 +199,7 @@ class RoomConnectionManager:
                 # 更新玩家的「被猜測次數」（揭露數）
                 await db.execute(
                     update(models.User)
-                    .where(models.User.name == player)
+                    .where(models.User.name_hash == player_key(player))
                     .values(total_disclosures=models.User.total_disclosures + 1)
                 )
 
@@ -220,7 +221,7 @@ class RoomConnectionManager:
                     # 更新猜測者的累計數據
                     await db.execute(
                         update(models.User)
-                        .where(models.User.name == guesser)
+                        .where(models.User.name_hash == player_key(guesser))
                         .values(
                             total_guesses=models.User.total_guesses + 1,
                             correct_guesses=models.User.correct_guesses + (1 if is_correct else 0)
@@ -231,7 +232,7 @@ class RoomConnectionManager:
                     if is_correct:
                         await db.execute(
                             update(models.User)
-                            .where(models.User.name == target_name)
+                            .where(models.User.name_hash == player_key(target_name))
                             .values(recognized_disclosures=models.User.recognized_disclosures + 1)
                         )
             

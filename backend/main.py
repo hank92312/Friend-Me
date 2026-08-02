@@ -9,6 +9,7 @@ import os
 from database import AsyncSessionLocal, init_db
 from sqlalchemy import select
 import models
+from player_identity import player_key
 from contextlib import asynccontextmanager
 
 countdown_tasks: dict[str, asyncio.Task] = {}
@@ -135,7 +136,7 @@ async def run_phase_timeout(room_id: str, phase: str, seconds: int):
             all_stats = {}
             async with AsyncSessionLocal() as db:
                 for name in active_names:
-                    res = await db.execute(select(models.User).where(models.User.name == name))
+                    res = await db.execute(select(models.User).where(models.User.name_hash == player_key(name)))
                     u = res.scalars().first()
                     if u:
                         all_stats[name] = {
@@ -236,7 +237,7 @@ async def check_room(room_id: str):
 @app.get("/player/{player_name}/stats")
 async def get_player_stats(player_name: str):
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(models.User).where(models.User.name == player_name))
+        result = await db.execute(select(models.User).where(models.User.name_hash == player_key(player_name)))
         user = result.scalars().first()
         
         if not user:
@@ -244,7 +245,8 @@ async def get_player_stats(player_name: str):
             
         return {
             "status": "success",
-            "name": user.name,
+            # 回傳呼叫端傳進來的暱稱：資料庫已不存明文，也不需要存
+            "name": player_name,
             "total_guesses": user.total_guesses,
             "correct_guesses": user.correct_guesses,
             "total_disclosures": user.total_disclosures,
@@ -416,7 +418,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_name: st
                     all_stats = {}
                     async with AsyncSessionLocal() as db:
                         for name in active_players:
-                            res = await db.execute(select(models.User).where(models.User.name == name))
+                            res = await db.execute(select(models.User).where(models.User.name_hash == player_key(name)))
                             u = res.scalars().first()
                             if u:
                                 all_stats[name] = {
@@ -558,7 +560,7 @@ async def _check_phase_progress_after_disconnect(room_id: str):
             all_stats = {}
             async with AsyncSessionLocal() as db:
                 for name in active_names:
-                    res = await db.execute(select(models.User).where(models.User.name == name))
+                    res = await db.execute(select(models.User).where(models.User.name_hash == player_key(name)))
                     u = res.scalars().first()
                     if u:
                         all_stats[name] = {
