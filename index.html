@@ -4,7 +4,7 @@
 	<meta name="google-site-verification" content="7MEfAw1kFzCexyZ8uc-XCPeyWOGw8ZLG3pNI200TN7M" />
 	<meta name="description" content="Friends & Me 是一款 2 至 6 人連線的異步社交探索桌遊，基於喬哈里視窗心理學設計。透過五大社交深度等級的開放式題目，與朋友、伴侶、家人互相猜題配對，發掘彼此的默契。免下載，瀏覽器即開即玩。" />
 	<link rel="canonical" href="https://hank92312.github.io/Friend-Me/" />
-	<link rel="preconnect" href="https://friends-and-me.fly.dev" crossorigin />
+	<link rel="preconnect" href="https://friends-and-me-backend.hank92312.workers.dev" crossorigin />
 	<script type="application/ld+json">
 	{
 		"@context": "https://schema.org",
@@ -528,7 +528,7 @@ body {
 					try {
 						var conn = navigator.connection;
 						if (!(conn && conn.saveData) && sessionStorage.getItem('fm_launched') !== '1') {
-							['index.wasm?v=1783308580', 'index.pck?v=1783308580'].forEach(function(u) {
+							['index.wasm?v=1793968373', 'index.pck?v=1793968373'].forEach(function(u) {
 								fetch(u, { priority: 'low' }).catch(function() {});
 							});
 						}
@@ -536,7 +536,7 @@ body {
 
 					// 預熱後端：提前完成 TCP+TLS 握手並喚醒可能休眠的 Fly machine，
 					// 讓使用者進遊戲後「建立/加入房間」不用等冷啟動。
-					fetch('https://friends-and-me.fly.dev/', { mode: 'no-cors' }).catch(function() {});
+					fetch('https://friends-and-me-backend.hank92312.workers.dev/', { mode: 'no-cors' }).catch(function() {});
 				});
 			})();
 		</script>
@@ -679,7 +679,7 @@ body {
 					if (url.endsWith('.wasm') || url.endsWith('.pck') || url.indexOf('.wasm?') !== -1 || url.indexOf('.pck?') !== -1) {
 						if (url.indexOf('v=') === -1) {
 							const separator = url.indexOf('?') !== -1 ? '&' : '?';
-							url = url + separator + 'v=1783308580';
+							url = url + separator + 'v=1793968373';
 						}
 					}
 					if (typeof input === 'string') {
@@ -726,7 +726,7 @@ body {
 			})();
 			
 			if (window.hasWebGL2) {
-				document.write('<script src="index.js?v=1783308580"><\/script>');
+				document.write('<script src="index.js?v=1793968373"><\/script>');
 			} else {
 				console.error("WebGL 2.0 is not supported or disabled on this device/browser.");
 				window.addEventListener('DOMContentLoaded', function() {
@@ -850,7 +850,7 @@ body {
 		</script>
 		<script>
 if (window.hasWebGL2) {
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":10807684,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":10936552,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
