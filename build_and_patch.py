@@ -1199,10 +1199,10 @@ def main():
     with open(netlify_html_path, 'r', encoding='utf-8') as f:
         n_html = f.read()
     n_html = n_html.replace('const AD_PLATFORM = "MOCK";', 'const AD_PLATFORM = "GOOGLE_H5";')
-    n_html = n_html.replace('const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXX";', 'const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXXX";')
+    n_html = n_html.replace('const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXX";', 'const GOOGLE_AD_CLIENT = "ca-pub-2975760496012521";')
     
     # 注入 AdSense 靜態驗證腳本到 <head> 中，方便 Google 驗證網站所有權
-    verification_tag = '\n\t<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>'
+    verification_tag = '\n\t<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2975760496012521" crossorigin="anonymous"></script>'
     if "<head>" in n_html:
         n_html = n_html.replace("<head>", "<head>" + verification_tag)
 
@@ -1711,12 +1711,13 @@ def main():
         f.write(headers_content)
     print("Successfully created _headers file for Netlify.")
     
-    # 建立 Netlify 的 ads.txt 檔案（宣告授權廣告賣方，防範廣告詐騙並提升廣告收益品質）
-    ads_txt_path = os.path.join(netlify_dir, "ads.txt")
-    ads_txt_content = "google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0\n"
-    with open(ads_txt_path, 'w', encoding='utf-8') as f:
-        f.write(ads_txt_content)
-    print("Successfully created ads.txt file for Netlify.")
+    # 建立授權廣告賣方檔案（ads.txt 給 Web/AdSense，app-ads.txt 給 Android/AdMob）
+    ads_txt_content = "google.com, pub-2975760496012521, DIRECT, f08c47fec0942fa0\n"
+    for fname in ["ads.txt", "app-ads.txt"]:
+        fpath = os.path.join(netlify_dir, fname)
+        with open(fpath, 'w', encoding='utf-8') as f:
+            f.write(ads_txt_content)
+        print(f"Successfully created {fname} file.")
     
     # 建立 Netlify 的 privacy.html 隱私權政策網頁 (RWD 響應式排版，中英文切換，符合 Google 商店上架政策)
     privacy_html_path = os.path.join(netlify_dir, "privacy.html")

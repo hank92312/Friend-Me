@@ -243,7 +243,7 @@ body {
 					if (url.endsWith('.wasm') || url.endsWith('.pck') || url.indexOf('.wasm?') !== -1 || url.indexOf('.pck?') !== -1) {
 						if (url.indexOf('v=') === -1) {
 							const separator = url.indexOf('?') !== -1 ? '&' : '?';
-							url = url + separator + 'v=1793968373';
+							url = url + separator + 'v=1793975085';
 						}
 					}
 					if (typeof input === 'string') {
@@ -290,7 +290,7 @@ body {
 			})();
 			
 			if (window.hasWebGL2) {
-				document.write('<script src="index.js?v=1793968373"><\/script>');
+				document.write('<script src="index.js?v=1793975085"><\/script>');
 			} else {
 				console.error("WebGL 2.0 is not supported or disabled on this device/browser.");
 				window.addEventListener('DOMContentLoaded', function() {

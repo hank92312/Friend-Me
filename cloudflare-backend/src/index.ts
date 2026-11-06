@@ -84,6 +84,16 @@ export default {
       });
     }
 
+    // app-ads.txt 與 ads.txt 授權賣方聲明 (Google AdMob / AdSense)
+    if (pathname === "/app-ads.txt" || pathname === "/ads.txt") {
+      return new Response("google.com, pub-2975760496012521, DIRECT, f08c47fec0942fa0\n", {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          ...CORS_HEADERS,
+        },
+      });
+    }
+
     // REST: 建立房間
     if (pathname === "/create_room" && request.method === "POST") {
       const playerName = url.searchParams.get("player_name") || "Player";
