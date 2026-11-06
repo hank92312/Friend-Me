@@ -34,16 +34,19 @@
   - **按鈕互動**：全域遞迴註冊按鈕懸停（Hover 放大至 `1.04` 倍）與下壓（Press 縮小至 `0.94` 倍）的 Tween 微動畫。
   - **轉場過渡**：切換 Phase 時平行執行舊畫面淡出縮小（0.18s）與新畫面淡入放大（0.22s），帶有 `Cubic` 緩和效果。
 
-### B. 後端 (Backend) - FastAPI (Python)
-- **即時通訊**：基於 WebSockets 廣播遊戲狀態、計時與同步事件。
-- **資料庫**：SQLite，透過 SQLAlchemy ORM 持久化，並在房間最後一人離開時自動清理資源。
-- **部署方式**：透過 Docker 容器部署至 Fly.io (帶有 Persistent Volume)。
+### B. 後端 (Backend) - Cloudflare Workers + Durable Objects (生產環境) & FastAPI (參考實作)
+- **生產環境（Cloudflare Workers + Durable Objects）**：
+  - **邊緣無狀態架構**：以 TypeScript 撰寫，部署於 Cloudflare 全球 Edge 節點，真正零維護成本（$0/月，無需綁定信用卡）。
+  - **即時通訊**：原生支援 WebSockets，每個遊戲房間為獨立的 Durable Object 實例（`GameRoom`），天然隔離房間狀態。
+  - **狀態守衛與自動回收**：內建五階段狀態機與逾時推進，房間最後一位玩家離開時自動銷毀實例，無需依賴傳統關聯式資料庫。
+- **參考實作（FastAPI / Python，位於 `backend/`）**：
+  - 適用本地端開發除錯，基於 FastAPI + WebSocket + SQLite (SQLAlchemy async)。原部署於 Fly.io，因計費考量已全數遷移至 Cloudflare。
 
 ### C. 關鍵技術決策與問題解法 (Crucial Solutions)
 
 #### 1. 中英文多語系動態折行與自適應 (Multi-Language Wrap)
 - **問題**：Godot Web/APK 無完整中文字庫折行資料庫，中文使用 `WORD_SMART` 會因無空格而被判定為超長單字，導致 UI 爆版。
-- **解法**：在 [translation_data.gd](file:///C:/FriendAndMe/FriendAndMe/translation_data.gd) 中動態切換：**中文語系** 強制使用 `TextServer.AUTOWRAP_ARBITRARY`；**英文語系** 使用 `TextServer.AUTOWRAP_WORD_SMART` 防止單字遭腰斬。
+- **解法**：在 [translation_data.gd](file:///C:/Friend&Me/friendAndme/translation_data.gd) 中動態切換：**中文語系** 強制使用 `TextServer.AUTOWRAP_ARBITRARY`；**英文語系** 使用 `TextServer.AUTOWRAP_WORD_SMART` 防止單字遭腰斬。
 
 #### 2. Unix 時間戳記防凍結倒數同步 (Timing Sync)
 - **問題**：手機 App 進入背景或掛起時，Godot 的 `_process` 會凍結，導致切回時本地倒數計時與伺服器不同步。
@@ -51,7 +54,7 @@
 
 #### 3. Web 端 Wasm / PCK 快取防舊版殘留 (Cache-Busting)
 - **問題**：瀏覽器會強力快取重達 37MB 的 `index.wasm` 檔案，導致後端代碼更新後，網頁端依然執行舊版而產生協議不一致或排版錯誤。
-- **解法**：透過 [build_and_patch.py](file:///C:/FriendAndMe/build_and_patch.py) 自動在 HTML 中注入攔截器，強制在 `.wasm` 與 `.pck` 請求後方補上時間戳記 `?v=timestamp`，強制載入最新代碼。
+- **解法**：透過 [build_and_patch.py](file:///C:/Friend&Me/build_and_patch.py) 自動在 HTML 中注入攔截器，強制在 `.wasm` 與 `.pck` 請求後方補上時間戳記 `?v=timestamp`，強制載入最新代碼。
 
 #### 4. 浮動模態彈窗自適應防塌陷 (Dynamic Modal Layout)
 - **問題**：`ScrollContainer` 在 `CenterContainer` 底下預設高度會縮為 0，導致說明與設定等卡片塌陷。
@@ -91,7 +94,7 @@
 
 #### 12. 題庫本地打包與超時自動選題機制 (Question Bank Local Bundle)
 - **問題**：為降低後端 API 頻寬壓力，題庫採本地打包。當選題階段逾時，後端需要能自動選題並廣播。
-- **解法**：將題庫複製到 [backend/data/](file:///C:/FriendAndMe/backend/data/) 並打包進 Docker。超時後後端加載本地 JSON 檔隨機抽取題目並廣播 question 文字給客戶端，客戶端再依據 question 文字於本地對照表進行多語系翻譯。
+- **解法**：將題庫複製到 [backend/data/](file:///C:/Friend&Me/backend/data/) 並打包進 Docker。超時後後端加載本地 JSON 檔隨機抽取題目並廣播 question 文字給客戶端，客戶端再依據 question 文字於本地對照表進行多語系翻譯。
 
 #### 14. 題庫擴充與多語系同步部署 (Question Bank Expansion)
 - **問題**：初始題庫每等級 15–25 題，重複率高，長時間遊玩容易遇到重複題目，降低遊戲新鮮感。
@@ -104,24 +107,43 @@
 #### 16. 多人 desync 階段守衛防階段倒退與重複計分 (Server-Side Phase Guard)
 - **問題**：手機端瀏覽器切至背景約 1 分鐘後返回，因進入 GUESSING/REVELATION 時前端答題倒數 `answering_timer_active` 未被關閉，殘留的 120 秒計時器在「結果揭曉」階段歸零，觸發 `_on_btn_no_answer()` 送出過期的 `answer_submitted`。伺服器處理事件時完全未驗證當前階段，照單全收後 `all_done` 成立並**強制將所有人退回 GUESSING**；重新配對後 `guesses_submitted` 再次被接受，使 `_persist_round_results` 二次寫入資料庫，導致猜對猜錯次數超過實際輪數。
 - **解法（雙層）**：
-  - **後端（權威修補）**：在 [main.py](file:///C:/FriendAndMe/backend/main.py) 的 `topic_selected`/`answer_submitted`/`guesses_submitted` 三個 WebSocket 事件各加一道階段守衛——若 `room_states[room_id]["phase"]` 與該事件對應階段不符，一律 `continue` 忽略。單一防線擋掉所有平台、所有原因的過期/重複事件。
+  - **後端（權威修補）**：在 [main.py](file:///C:/Friend&Me/backend/main.py) 的 `topic_selected`/`answer_submitted`/`guesses_submitted` 三個 WebSocket 事件各加一道階段守衛——若 `room_states[room_id]["phase"]` 與該事件對應階段不符，一律 `continue` 忽略。單一防線擋掉所有平台、所有原因的過期/重複事件。
   - **前端（輔助）**：在 `_on_network_phase_sync()` 開頭，收到任何非 ANSWERING 階段廣播時強制 `answering_timer_active = false`，從源頭避免殘留計時器送出過期事件。
 
 #### 13. 單人遊玩結果揭曉防空包機制 (Single-Player Results Resolution)
 - **問題**：當房間內只有單一玩家遊玩時，由於 Phase 3 (配對階段) 不需要配對，進入 Phase 4 (結果揭曉) 後，原有的統計與配對結果邏輯會跳過本機玩家 (`mock_self_name`)，導致 `last_round_results_data` 陣列為空，造成結果揭曉頁面空白。
 - **解法**：在 `_generate_phase4_ui()` 產生結果 UI 時，優先檢查 `round_answers.size() <= 1`。若是單人遊玩，則自動建立一筆包含玩家自身回答（`mock_self_name`）且配對正確（`is_correct = true`）的結果資料，確保在單人遊玩情境下能正常渲染自己的答案，而不會出現空白畫面。
 
+#### 17. Fly.io 退役與 Cloudflare Workers + Durable Objects 邊緣遷移 (Zero-Cost Migration)
+- **問題**：Fly.io 每月產生主機與持久磁碟帳單；若採用傳統免費雲端（如 Hugging Face / Render），又有冷啟動休眠與 48 小時無人連線睡眠導致首位玩家等候過久的 UX 痛點。
+- **解法**：全面遷移至 **Cloudflare Workers + Durable Objects**：
+  - 每個房間以 6 碼大寫代碼對應獨立的 `GameRoom` Durable Object 實例，毫秒級喚醒，全球邊緣就近連線。
+  - 將房間狀態、倒數計時器、題庫抽取與斷線寬限期整合於 TypeScript 狀態機中，零伺服器主機成本（$0/月），免綁信用卡。
+  - Durable Objects 免費方案配置 `new_sqlite_classes: ["GameRoom"]`，避免 Code 10097。
+
+#### 18. Windows 特殊路徑字元 `&` 破壞 Android Gradle 匯出 (Windows Ampersand Isolation)
+- **問題**：本專案工作目錄路徑為 `C:\Friend&Me`，其中包含 `&`。當 Godot 呼叫 Gradle 打包 AAB 時，Windows `cmd.exe` 會將 `&` 視為命令串接分隔符號，造成命令被截斷並引發 Gradle 執行崩潰。
+- **解法**：在打包腳本 `build_android.ps1` 中建立路徑隔離機制：先使用 `robocopy` 將專案鏡像同步至乾淨路徑 `C:\GodotBuild\friendAndme`（排除 build 暫存與套件），於乾淨路徑呼叫 Godot CLI 匯出 AAB，完成後再將產物簽章複製回 `C:\Friend&Me\FriendAndMe_Release.aab`。
+
 ---
 
 ## 5. 檔案與場景結構 (Project Directory & Nodes)
 
-### A. 前端檔案
-- [main.tscn](file:///C:/FriendAndMe/FriendAndMe/main.tscn)：包含 Phase 0 到 Phase 4 的 UI 節點佈局。
-- [main.gd](file:///C:/FriendAndMe/FriendAndMe/main.gd)：包含主遊戲循環、時間倒數、API 請求與動畫。
-- [translation_data.gd](file:///C:/FriendAndMe/FriendAndMe/translation_data.gd)：中英文翻譯字典檔。
-- [network_manager.gd](file:///C:/FriendAndMe/FriendAndMe/network_manager.gd)：封裝 WebSockets 及 HTTP 通訊單例。
-- [audio_manager.gd](file:///C:/FriendAndMe/FriendAndMe/audio_manager.gd)：封裝全域音效播放與音效淡入淡出、動態音高控制。
+### A. 前端檔案 (`friendAndme/`)
+- [main.tscn](file:///C:/Friend&Me/friendAndme/main.tscn)：包含 Phase 0 到 Phase 4 的 UI 節點佈局。
+- [main.gd](file:///C:/Friend&Me/friendAndme/main.gd)：包含主遊戲循環、時間倒數、API 請求與動畫。
+- [translation_data.gd](file:///C:/Friend&Me/friendAndme/translation_data.gd)：中英文翻譯字典檔。
+- [network_manager.gd](file:///C:/Friend&Me/friendAndme/network_manager.gd)：封裝 WebSockets 及 HTTP 通訊單例（已指向 Cloudflare Workers）。
+- [audio_manager.gd](file:///C:/Friend&Me/friendAndme/audio_manager.gd)：封裝全域音效播放與音效淡入淡出、動態音高控制。
 
 ### B. 後端檔案
-- [main.py](file:///C:/FriendAndMe/backend/main.py)：FastAPI 核心連線邏輯與超時自動推進任務管理。
-- [room_manager.py](file:///C:/FriendAndMe/backend/room_manager.py)：管理房間狀態、輪替隊長、同步玩家與斷線快取。
+
+#### 1. 正式生產環境 (`cloudflare-backend/`)
+- [index.ts](file:///C:/Friend&Me/cloudflare-backend/src/index.ts)：Cloudflare Worker 進入點與 `GameRoom` Durable Object 狀態機核心。
+- [question_bank.json](file:///C:/Friend&Me/cloudflare-backend/src/question_bank.json)：後端內嵌完整 155 題題庫。
+- [wrangler.jsonc](file:///C:/Friend&Me/cloudflare-backend/wrangler.jsonc)：Cloudflare 部署與 Durable Objects 遷移設定。
+- [deploy.bat](file:///C:/Friend&Me/cloudflare-backend/deploy.bat)：一鍵發布腳本。
+
+#### 2. 本地除錯與參考實作 (`backend/`)
+- [main.py](file:///C:/Friend&Me/backend/main.py)：FastAPI 核心連線邏輯與超時自動推進任務管理。
+- [room_manager.py](file:///C:/Friend&Me/backend/room_manager.py)：管理房間狀態、輪替隊長、同步玩家與斷線快取。

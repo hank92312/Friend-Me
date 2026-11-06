@@ -7,9 +7,9 @@
 | **專案類型** | 跨平台多人即時連線遊戲（Web + Android）|
 | **開發角色** | 獨立開發（全端：遊戲前端、後端伺服器、DevOps 部署、上架營運）|
 | **遊戲引擎** | Godot Engine 4.6（GDScript）|
-| **後端** | Python · FastAPI · WebSockets · SQLAlchemy（async）· SQLite |
-| **部署平台** | 後端 Fly.io（Docker + Persistent Volume）；Web 前端 Netlify / CrazyGames；Android 上架 Google Play |
-| **線上 Demo** | Web 版：`https://friendandme.netlify.app` ｜ 後端：`https://friends-and-me.fly.dev` |
+| **後端** | TypeScript · Cloudflare Workers · Durable Objects · WebSockets（亦保留 FastAPI + SQLAlchemy 參考實作）|
+| **部署平台** | 後端 Cloudflare Workers（全球 Edge）；Web 前端 GitHub Pages / CrazyGames；Android 上架 Google Play |
+| **線上 Demo** | Web 版：`https://hank92312.github.io/Friend-Me/` ｜ 後端：`https://friends-and-me-backend.hank92312.workers.dev` |
 | **原始碼** | https://github.com/hank92312/Friend-Me |
 | **變現整合** | Google AdMob（行動端廣告）、Google AdSense（Web 端）、Google Play Billing（內購）|
 
@@ -108,15 +108,14 @@
 ```mermaid
 flowchart TB
     subgraph Clients["客戶端（同一份 Godot 專案匯出）"]
-        Web["🌐 Web 版<br/>(WASM + PCK)<br/>Netlify CDN"]
+        Web["🌐 Web 版<br/>(WASM + PCK)<br/>GitHub Pages"]
         Android["📱 Android 版<br/>(APK / AAB)<br/>Google Play"]
     end
 
-    subgraph Backend["後端 (Fly.io · Tokyo nrt)"]
-        FastAPI["FastAPI App<br/>(uvicorn, port 8000)"]
-        RM["RoomManager<br/>記憶體房間狀態 / 隊長輪替 / 斷線快取"]
-        Timeout["Phase Timeout Tasks<br/>(asyncio)"]
-        DB[("SQLite<br/>(Persistent Volume /data)")]
+    subgraph Backend["後端 (Cloudflare Workers 全球邊緣節點)"]
+        WorkerRouter["Cloudflare Worker<br/>(REST API 路由 & WS 升級)"]
+        DurableObject["GameRoom Durable Object<br/>獨立房間狀態機 / 倒數計時 / 題庫"]
+        MemoryState["記憶體狀態<br/>玩家列表 / 答案字典 / 階段守衛"]
     end
 
     subgraph ThirdParty["第三方平台"]
@@ -125,12 +124,11 @@ flowchart TB
         Billing["Google Play Billing"]
     end
 
-    Web -- "REST: 建房/加入/查詢戰績" --> FastAPI
-    Web -- "WebSocket: 即時遊戲狀態" --> FastAPI
-    Android -- "REST + WebSocket" --> FastAPI
-    FastAPI <--> RM
-    FastAPI <--> Timeout
-    FastAPI <--> DB
+    Web -- "REST: 建房/加入" --> WorkerRouter
+    Web -- "WebSocket: 即時遊戲狀態" --> WorkerRouter
+    Android -- "REST + WebSocket" --> WorkerRouter
+    WorkerRouter <--> DurableObject
+    DurableObject <--> MemoryState
     Android -.-> AdMob
     Android -.-> Billing
     Web -.-> AdSense
@@ -138,8 +136,8 @@ flowchart TB
 
 **核心架構特點：**
 - **單一程式碼庫（single codebase）多平台輸出**：同一份 Godot 專案同時匯出 Web（WASM）與 Android（AAB），網路層、UI、遊戲邏輯完全共用。
-- **權威伺服器（authoritative server）**：所有階段推進與計分由後端決定並廣播，前端僅負責呈現與輸入，避免作弊與狀態分歧。
-- **記憶體即時狀態 + 資料庫持久化分離**：高頻的房間即時狀態存於記憶體（`RoomManager`），低頻的累計戰績與歷史紀錄寫入 SQLite。
+- **權威邊緣伺服器（authoritative edge server）**：所有階段推進與計分由後端 Durable Object 決定並廣播，前端僅負責呈現與輸入，避免作弊與狀態分歧。
+- **零成本邊緣運算（Zero-Cost Edge Architecture）**：每個遊戲房間為獨立的 Durable Object 實例，遊戲進行時就近在邊緣運算，房間結束後自動釋放，零固定主機費（$0/月）且無冷啟動延遲。
 
 ---
 
@@ -149,19 +147,14 @@ flowchart TB
 |---|---|---|
 | **遊戲引擎** | Godot Engine 4.6 / GDScript | 跨平台 UI、遊戲邏輯、動畫 |
 | **渲染** | GL Compatibility（OpenGL ES / WebGL）| 兼顧低階行動裝置與瀏覽器 |
-| **後端框架** | FastAPI 0.110 | REST API + WebSocket 端點 |
-| **ASGI Server** | uvicorn 0.27 | 非同步伺服器 |
-| **即時通訊** | websockets 12.0 | 雙向即時狀態廣播 |
-| **ORM** | SQLAlchemy（async）+ aiosqlite | 非同步資料庫存取 |
-| **資料庫** | SQLite | 玩家戰績、房間、輪次、答案、猜測持久化 |
-| **非同步排程** | asyncio Task | 階段超時自動推進、倒數計時 |
-| **容器化** | Docker（python:3.10-slim）| 後端打包部署 |
-| **後端託管** | Fly.io（含 Persistent Volume）| 全球邊緣部署、資料持久化 |
-| **Web 託管** | Netlify（CDN + `_headers` 快取策略）| 靜態 WASM/PCK 派送 |
-| **行動上架** | Google Play（AAB + Keystore 簽章）| Android 發行 |
+| **後端架構（正式）** | TypeScript · Cloudflare Workers | REST API 路由、WebSocket 升級與調度 |
+| **分散式狀態機** | Cloudflare Durable Objects | 邊緣隔離房間狀態、計分、倒數計時與題庫抽取 |
+| **後端參考實作** | Python · FastAPI · WebSockets | 本地開發與單元測試除錯支援 |
+| **Web 託管** | GitHub Pages（CDN + Cache-Busting）| 靜態 WASM/PCK 派送與線上試玩 |
+| **行動上架** | Google Play（AAB + Keystore 簽章）| Android 發行 (V1.4.0) |
 | **變現** | AdMob / AdSense / Google Play Billing | 廣告與內購 |
 | **推播** | NotificationScheduler 外掛 | 本地排程通知 |
-| **建置工具** | 自製 Python 腳本（`build_and_patch.py` 等）| Web 匯出後處理與自動化 |
+| **建置工具** | 自製 Python 與 PowerShell 建置管線 | Web 匯出後處理與 Android 乾淨路徑打包 |
 
 ---
 
@@ -213,24 +206,24 @@ stateDiagram-v2
 
 ---
 
-## 6. 後端設計（FastAPI）
+## 6. 後端設計（Cloudflare Workers + Durable Objects / FastAPI 參考實作）
+
+正式生產環境採用 **Cloudflare Workers + Durable Objects** 邊緣無狀態架構；本地開發與單元測試亦提供 **FastAPI** 參考實作。
 
 ### REST API
 | Method | Endpoint | 用途 |
 |---|---|---|
-| POST | `/create_room` | 產生 6 碼房號並預註冊房間 |
-| POST | `/join_room` | 驗證房號存在性並加入 |
-| GET | `/check_room/{room_id}` | 查詢房間是否存在 |
-| GET | `/player/{name}/stats` | 查詢玩家累計戰績 |
-| WS | `/ws/{room_id}/{player_name}` | 即時遊戲互動主通道 |
+| GET | `/health` | 伺服器健康狀態檢查 |
+| POST | `/create_room` | 產生 6 碼大寫房號並建立 Durable Object 房間 |
+| POST | `/join_room` | 驗證房號存在性並註冊加入 |
+| GET | `/check_room/{room_id}` | 查詢房間是否存在與當前狀態 |
+| WS | `/ws?room={room_id}&player={name}` | 即時遊戲互動主通道 (WebSocket) |
 
-### 設計要點
-- **`lifespan` 啟動鉤子**：啟動時自動建表（`init_db`）並載入本地題庫 JSON（供超時自動選題用）。
-- **`RoomManager`（記憶體狀態機）**：管理房間狀態、隊長輪替、玩家清單、答案/猜測快取、斷線重連快取，並在最後一人離開時自動清理房間資源。
-- **雙重超時保護**：
-  - `phase_timeout_tasks`：每階段獨立的 `asyncio` 超時任務。
-  - `countdown_tasks`：Revelation 階段「最後一人未 Ready」時啟動 10 秒倒數強制推進。
-- **斷線後階段重檢**：玩家斷線後重新評估當前階段是否因人數減少而可推進（`_check_phase_progress_after_disconnect`），避免其他人卡在等待。
+### Cloudflare 邊緣架構要點
+- **Durable Objects 狀態隔離**：每個房間對應獨立的 `GameRoom` 實例，狀態存放於邊緣記憶體中，天然具備並行隔離與零 desync 特性。
+- **免費方案相容性**：採用 `new_sqlite_classes: ["GameRoom"]` 遷移宣告，完全符合 Cloudflare 免費方案規範，零主機月費（$0/月），無信用卡扣款風險。
+- **無冷啟動**：Edge 節點毫秒級喚醒，解決傳統免費用戶端休眠冷啟動等待問題。
+- **房間自動回收**：房間內最後一位玩家離線時，自動清理計時器並終止房間，無殭屍實例殘留。
 
 ---
 
@@ -301,19 +294,21 @@ erDiagram
 
 ## 9. 部署與第三方平台串接
 
-### 後端 — Fly.io
-- **Docker 容器化**：`python:3.10-slim` 基底，`uvicorn` 啟動。
-- **區域**：`nrt`（東京），就近台灣玩家降低延遲。
-- **Persistent Volume**：掛載 `/data`，透過 `DB_PATH` 環境變數將 SQLite 落在持久化卷上，重新部署不丟失戰績。
-- **機器策略**：`min_machines_running = 1` + `auto_start_machines`，確保 WebSocket 長連線常駐、強制 HTTPS。
+### 後端 — Cloudflare Workers + Durable Objects
+- **邊緣運算**：TypeScript 撰寫，部署至 Cloudflare 全球 Edge 節點，玩家就近連線，超低延遲。
+- **維護與運算成本**：完全處於免費方案額度內（$0/月），無需綁定信用卡，絕無超額帳單風險。
+- **架構優勢**：無需維護實體 Linux 伺服器或 Docker 容器，無主機重啟、磁碟滿載或冷啟動問題。
+- **本地/參考後端**：保留 `backend/` 目錄的 FastAPI + SQLite 實作，可於本地容器或開發環境一鍵啟動。
 
-### Web 前端 — Netlify
-- **靜態 WASM/PCK 派送**搭配自訂 `_headers` 快取策略（見下節）。
-- 內含 `robots.txt`、`sitemap.xml`、SEO 攻略頁 `guide.html`、隱私政策 `privacy.html`，並通過 Google Search Console 所有權驗證。
+### Web 前端 — GitHub Pages
+- **靜態 WASM/PCK 派送**：部署於 GitHub Pages（分支 `gh-pages`），支援全域 CDN 快取與自適應載入。
+- **Cache-Busting**：透過 `build_and_patch.py` 注入時間戳記與預熱請求，強制更新玩家快取。
+- **SEO 與輔助頁**：內含 `robots.txt`、`sitemap.xml`、SEO 攻略頁 `guide.html`、隱私政策 `privacy.html`，並通過 Google Search Console 所有權驗證。
 
 ### Android — Google Play
-- 匯出 **AAB**（`FriendAndMe_Release.aab`）上架。
+- 匯出 **AAB**（`FriendAndMe_Release.aab`，版本 1.4.0 / Code 8）上架。
 - **Keystore 簽章安全管理**：簽章密碼不寫入任何檔案，改用環境變數 `GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD` 於匯出時傳入。
+- **Windows 路徑隔離打包**：建置腳本自動將專案同步至乾淨路徑 `C:\GodotBuild\friendAndme`，避開路徑中 `&` 破壞 Gradle 指令的問題。
 
 ### 變現整合
 | 平台 | 端 | 整合方式 |
@@ -381,37 +376,41 @@ erDiagram
 - **機密與識別碼隔離**：上傳憑證（`.pem`）、簽章庫（`.keystore`）、發布包（`.aab`）、本地 SQLite 皆納入 `.gitignore`；AdMob 正式廣告 ID 改由不進版控的 `ad_config.gd` 執行期注入（缺檔自動退回測試 ID），降低公開 repo 的 ad fraud 風險。
 - **版控歷史清理**：以 `git-filter-repo` 將誤入歷史的本地資料庫與發布商識別碼從**所有 commit** 中移除（改寫前先做完整 bundle 備份），避免敏感資訊殘留於 git 歷史。
 - **隱私可控**：玩家戰績公開/私有由本人設定。
-- **HTTPS / WSS 強制**：Fly.io `force_https`，前端一律使用 `wss://`。
+- **HTTPS / WSS 強制**：全域採用 Cloudflare Edge SSL，前端一律使用 `https://` 與 `wss://`。
 
 ---
 
 ## 14. 專案結構
 
 ```
-FriendAndMe/
+Friend&Me/
 ├── friendAndme/                 # Godot 遊戲前端（單一程式碼庫）
 │   ├── main.gd / main.tscn      # 主遊戲循環與 Phase 0–4 UI
-│   ├── network_manager.gd       # WebSocket/HTTP 通訊單例 + 重連狀態機
+│   ├── network_manager.gd       # WebSocket/HTTP 通訊單例（已切換至 Cloudflare Edge）
 │   ├── audio_manager.gd         # 音效系統
 │   ├── ad_manager.gd            # AdMob 廣告
 │   ├── notification_manager.gd  # 本地通知
 │   ├── translation_data.gd      # 中英文翻譯與折行策略
 │   ├── data/                    # 打包進 PCK 的題庫 JSON（中/英）
-│   ├── export_presets.cfg       # Android / Web 匯出設定
+│   ├── export_presets.cfg       # Android (v1.4.0) / Web 匯出設定
 │   └── addons/                  # AdMob / Billing / Notification 外掛
-├── backend/                     # FastAPI 後端
+├── cloudflare-backend/          # 【正式生產後端】Cloudflare Workers + Durable Objects
+│   ├── src/index.ts             # 5 階段即時房間狀態機、計分、斷線重連寬限期
+│   ├── src/question_bank.json   # 155 題內嵌題庫
+│   ├── wrangler.jsonc           # Durable Objects (new_sqlite_classes) 設定
+│   └── deploy.bat               # 一鍵發布腳本
+├── backend/                     # 【本地開發 / 參考後端】FastAPI
 │   ├── main.py                  # REST + WebSocket 端點、超時推進
 │   ├── room_manager.py          # 記憶體房間狀態機
 │   ├── models.py                # SQLAlchemy ORM 模型
 │   ├── database.py              # 非同步引擎與 init_db
-│   ├── data/                    # 超時自動選題用題庫 JSON
-│   ├── Dockerfile / fly.toml    # 容器化與 Fly.io 部署設定
-│   └── requirements.txt
-├── build_web_netlify/           # Netlify 部署產物（WASM/PCK + SEO 頁）
+│   └── data/                    # 超時自動選題用題庫 JSON
+├── build_web_netlify/           # Web 產物目錄（GitHub Pages 發布來源）
 ├── build_and_patch.py           # Web 匯出後處理 / 自動化核心
 ├── audit_translations.py        # 翻譯稽核工具
 ├── check_banks.py               # 題庫去重檢查
-└── APP.md                       # 開發技術筆記（問題解法全紀錄）
+├── APP.md                       # 開發技術筆記（問題解法全紀錄）
+└── HANDOFF_2026-11-06.md        # 最新架構遷移交接記錄
 ```
 
 ---
@@ -421,12 +420,13 @@ FriendAndMe/
 **技術能力總覽：**
 
 1. **全端獨立交付**：從遊戲玩法設計、前端引擎、後端伺服器、資料庫、到雲端部署與商店上架，完整走過產品生命週期。
-2. **即時系統設計**：WebSocket 權威伺服器、階段狀態機、`asyncio` 超時自動推進、斷線重連與斷線後階段重檢——處理了多人即時遊戲最棘手的「狀態一致性」問題。
-3. **跨平台疑難排查**：16 項橫跨 Godot、瀏覽器/WebGL、iOS/Android 生命週期、CDN 快取的實戰除錯，展現對「同一份程式在不同執行環境行為差異」的深刻理解。
-4. **分散式狀態一致性思維**：以「伺服器端階段守衛」一道防線根治多平台 desync 與重複計分，體現「在正確的層級用最小成本解決問題」的工程判斷。
-5. **DevOps 自動化**：自製 Python 建置 pipeline 處理 cache-busting、HTTP headers、行動鍵盤補丁、SEO 內容頁，把繁瑣的手動步驟程式化。
-6. **產品與商業敏感度**：AdMob/AdSense/Billing 變現整合、SEO 與 AdSense 審核、心理學驅動的玩法設計，不只是寫程式，而是做一個能上線營運的產品。
-7. **資安意識**：簽章密碼零落地、伺服器權威防作弊、HTTPS/WSS 全程加密。
+2. **即時系統設計**：WebSocket 權威伺服器、Durable Objects 邊緣狀態機、超時自動推進、斷線重連與斷線後階段重檢——處理了多人即時遊戲最棘手的「狀態一致性」問題。
+3. **零成本雲端架構演進**：主動根據商業成本考量將後端由付費主機遷移至 Cloudflare Workers + Durable Objects，達成「零伺服器維護費、毫秒級冷啟動、零超額帳單」的現代邊緣架構。
+4. **跨平台疑難排查**：18 項橫跨 Godot、瀏覽器/WebGL、iOS/Android 生命週期、CDN 快取與 Windows 特殊路徑的實戰除錯，展現對「同一份程式在不同執行環境行為差異」的深刻理解。
+5. **分散式狀態一致性思維**：以「伺服器端階段守衛」一道防線根治多平台 desync 與重複計分，體現「在正確的層級用最小成本解決問題」的工程判斷。
+6. **DevOps 自動化**：自製 Python/PowerShell 建置 pipeline 處理 cache-busting、HTTP headers、行動鍵盤補丁、SEO 內容頁與安全路徑建置隔離，把繁瑣的手動步驟程式化。
+7. **產品與商業敏感度**：AdMob/AdSense/Billing 變現整合、SEO 與 AdSense 審核、心理學驅動的玩法設計，不只是寫程式，而是做一個能上線營運的產品。
+8. **資安意識**：簽章密碼零落地、伺服器權威防作弊、HTTPS/WSS 全程加密。
 
 **一句話總結：**
-> 「我獨立設計並上線了一款跨 Web 與 Android 的多人即時連線桌遊：用 Godot 打造跨平台前端、FastAPI + WebSocket 建立權威即時伺服器、Docker 部署到 Fly.io、Netlify 派送 Web 版，並親手解決了 16 項跨平台即時連線與生命週期的疑難問題。」
+> 「我獨立設計並上線了一款跨 Web 與 Android 的多人即時連線桌遊：用 Godot 打造跨平台前端、Cloudflare Workers + Durable Objects 建立全球零成本邊緣即時伺服器、GitHub Pages 派送 Web 版、Google Play 發布 Android 正式版，並親手解決了 18 項跨平台即時連線與生命週期的疑難問題。」

@@ -1,3 +1,9 @@
+> 📌 **架構演進說明（2026-11 更新）**：
+> 本文為專案初期探討前後端分離與即時通訊的規劃文件。
+> 專案經歷初期以 Python FastAPI + SQLite 實作並部署於 Fly.io，後續為達成 **$0 運營成本、無冷啟動、免維護實體主機** 的目標，正式環境已全面遷移至 **Cloudflare Workers + Durable Objects (TypeScript)** 架構（詳情請見 [APP.md](file:///C:/Friend&Me/APP.md) 與 [HANDOFF_2026-11-06.md](file:///C:/Friend&Me/HANDOFF_2026-11-06.md)）。但本文所闡述的「前後端完全解耦」、「REST + WebSocket 混合狀態機」核心思想依然完全適用。
+
+---
+
 這是一個非常核心且具備前瞻性的問題。在軟體工程中，要達到「前期專注手機端，後期無縫接軌 PC 端」，最關鍵的原則就是**「前後端完全分離 (Decoupling)」**。
 
 只要你的後端只負責「資料與邏輯」，不負責「畫面渲染」，那麼未來無論是 iOS、Android 還是 PC 版的 Godot，對後端來說，都只是一個「發送請求的客戶端 (Client)」。

@@ -1,6 +1,7 @@
 # NEXT AI SESSION HANDOFF (進度交接與後續待辦)
 
-本專案為 **Friends & Me** (異步社交探索桌遊 APP)。請優先閱讀 [APP.md](file:///c:/FriendAndMe/APP.md) 了解最新的專案架構與重要機制設定。
+本專案為 **Friends & Me** (異步社交探索桌遊 APP)。
+> ⚠️ **重要**：請優先閱讀 [HANDOFF_2026-11-06.md](file:///C:/Friend&Me/HANDOFF_2026-11-06.md) 與 [APP.md](file:///C:/Friend&Me/APP.md) 了解最新的零成本 Cloudflare 邊緣架構與 Android v1.4.0 (Code 8) 建置環境。 Fly.io 服務已完全退役。
 
 ---
 
@@ -62,16 +63,15 @@
 
 ---
 
-## 📋 已知狀態 / 環境備忘
+## 📋 已知狀態 / 環境備忘 (更新至 2026-11-06)
 
 | 項目 | 狀態 |
 |---|---|
-| Netlify 方案 | 已升級 Pro（2025-06 前），新版已部署 |
-| Fly.io 後端 | 正常運行 (`friends-and-me.fly.dev`) |
-| Google Play 封閉測試 | 已通過審核，進行中（需 20 人 × 14 天） |
-| Google AdSense | 已提交複查（等待審核，約數天至兩週） |
-| Android AAB 正式版 | v1.1.0 (Code 3)，已簽章，位於 `FriendAndMe_Release.aab` |
-| Web build | `C:\FriendAndMe\build_web_netlify` (最新，build ver 1781232924) |
+| 正式後端 | Cloudflare Workers + Durable Objects 正常運行 (`friends-and-me-backend.hank92312.workers.dev`) |
+| 舊後端 (Fly.io) | 已確認完全關閉並終止計費 ($0/月 零成本達成) |
+| Web 前端 | GitHub Pages 線上試玩 (`https://hank92312.github.io/Friend-Me/`) |
+| Android AAB 正式版 | v1.4.0 (Code 8)，已簽章，位於 [FriendAndMe_Release.aab](file:///C:/Friend&Me/FriendAndMe_Release.aab) |
+| Web build 目錄 | `C:\Friend&Me\build_web_netlify` |
 | 題庫 | 155 題（L1–3 各 35 題，L4–5 各 25 題），中英文同步 |
 
 ---
