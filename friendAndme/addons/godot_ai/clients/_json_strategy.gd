@@ -24,29 +24,40 @@ static func configure(client: McpClient, server_name: String, server_url: String
 	var existing: Variant = holder.get(server_name, null)
 	holder[server_name] = build_entry(client, server_url, existing)
 
-	if not McpAtomicWrite.write(path, JSON.stringify(config, "\t")):
+	if not McpAtomicWrite.write(path, JSON.stringify(_narrow_integral_numbers(config), "\t", false)):
 		return {"status": "error", "message": "Cannot write to %s" % path}
 	return {"status": "ok", "message": "%s configured (HTTP: %s)" % [client.display_name, server_url]}
 
 
 static func check_status(client: McpClient, server_name: String, server_url: String) -> McpClient.Status:
+	return check_status_details(client, server_name, server_url).get("status", McpClient.Status.NOT_CONFIGURED)
+
+
+## Detailed variant feeding the dock's error_msg plumbing (#711): a config
+## file that EXISTS but can't be read or parsed is Status.ERROR carrying the
+## read/parse error, not NOT_CONFIGURED — the write path refuses to touch
+## such a file (see `_read_or_init`), so the status dot must say "broken
+## file", not "click Configure".
+static func check_status_details(client: McpClient, server_name: String, server_url: String) -> Dictionary:
 	var path := client.resolved_config_path()
 	if path.is_empty() or not FileAccess.file_exists(path):
-		return McpClient.Status.NOT_CONFIGURED
+		return {"status": McpClient.Status.NOT_CONFIGURED, "error_msg": ""}
 	var read := _read_or_init(path)
 	if not read["ok"]:
-		return McpClient.Status.NOT_CONFIGURED
+		return {"status": McpClient.Status.ERROR, "error_msg": String(read["error"])}
 	var config: Dictionary = read["data"]
 	var holder := _walk_path(config, client.server_key_path)
 	if not (holder is Dictionary) or not holder.has(server_name):
-		return McpClient.Status.NOT_CONFIGURED
+		return {"status": McpClient.Status.NOT_CONFIGURED, "error_msg": ""}
 	var entry = holder[server_name]
 	if not (entry is Dictionary):
-		return McpClient.Status.NOT_CONFIGURED
+		return {"status": McpClient.Status.NOT_CONFIGURED, "error_msg": ""}
 	## An entry under `server_name` exists — if the URL doesn't match,
 	## that's drift (the user changed the port and the client config is stale),
 	## not "never configured". The dock surfaces that as an amber banner.
-	return McpClient.Status.CONFIGURED if verify_entry(client, entry, server_url) else McpClient.Status.CONFIGURED_MISMATCH
+	if verify_entry(client, entry, server_url):
+		return {"status": McpClient.Status.CONFIGURED, "error_msg": ""}
+	return {"status": McpClient.Status.CONFIGURED_MISMATCH, "error_msg": ""}
 
 
 static func remove(client: McpClient, server_name: String) -> Dictionary:
@@ -60,7 +71,7 @@ static func remove(client: McpClient, server_name: String) -> Dictionary:
 	var holder := _walk_path(config, client.server_key_path)
 	if holder is Dictionary and holder.has(server_name):
 		holder.erase(server_name)
-		if not McpAtomicWrite.write(path, JSON.stringify(config, "\t")):
+		if not McpAtomicWrite.write(path, JSON.stringify(_narrow_integral_numbers(config), "\t", false)):
 			return {"status": "error", "message": "Cannot write to %s" % path}
 	return {"status": "ok", "message": "%s configuration removed" % client.display_name}
 
@@ -236,3 +247,28 @@ static func _walk_path(root: Dictionary, key_path: PackedStringArray) -> Variant
 			return null
 		cur = cur[key]
 	return cur
+
+
+## Godot's JSON.parse turns every JSON number into a float, so a later
+## JSON.stringify re-emits the user's integer fields as "8080.0" — which strict
+## consumers (Go's encoding/json into an int field, etc.) reject, and which
+## needlessly rewrites every number across the user's *other* entries. Re-narrow
+## exactly-representable integral floats back to int so they serialize without
+## the ".0". Walks dicts/arrays in place and returns the (same) value.
+##
+## Integers above 2^53 already lost precision when Godot parsed them to double,
+## so they're left as the float Godot produced rather than faking exactness —
+## byte-perfect preservation would require not parsing the file at all, and such
+## magnitudes don't occur in MCP client configs.
+static func _narrow_integral_numbers(value: Variant) -> Variant:
+	match typeof(value):
+		TYPE_FLOAT:
+			if is_finite(value) and value == floor(value) and absf(value) <= 9007199254740992.0:
+				return int(value)
+		TYPE_DICTIONARY:
+			for k in value:
+				value[k] = _narrow_integral_numbers(value[k])
+		TYPE_ARRAY:
+			for i in value.size():
+				value[i] = _narrow_integral_numbers(value[i])
+	return value

@@ -10,9 +10,9 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Godot-4.6-478CBF?logo=godotengine&logoColor=white">
+  <img src="https://img.shields.io/badge/Cloudflare_Workers-Durable_Objects-F38020?logo=cloudflare&logoColor=white">
   <img src="https://img.shields.io/badge/FastAPI-Python-009688?logo=fastapi&logoColor=white">
   <img src="https://img.shields.io/badge/WebSocket-即時連線-orange">
-  <img src="https://img.shields.io/badge/Fly.io-Docker-8B5CF6?logo=flydotio&logoColor=white">
   <img src="https://img.shields.io/badge/GitHub%20Pages-Web-222222?logo=githubpages&logoColor=white">
   <img src="https://img.shields.io/badge/Google%20Play-Android-414141?logo=googleplay&logoColor=white">
 </p>
@@ -30,9 +30,9 @@
 ## 技術亮點
 
 - **跨平台前端**：Godot 4.6（GDScript），單一程式碼庫匯出 Web（WASM）與 Android（AAB）。
-- **權威即時伺服器**：FastAPI + WebSocket，五階段狀態機，所有計分與推進由後端決定（防作弊 / 防 desync）。
-- **可靠性設計**：`asyncio` 階段超時自動推進、斷線重連狀態機、伺服器端階段守衛防重複計分。
-- **持久化**：SQLAlchemy（async）+ SQLite，部署於 Fly.io Persistent Volume。
+- **權威即時伺服器**：Cloudflare Workers + Durable Objects，五階段狀態機，所有計分與推進由後端決定（防作弊 / 防 desync），零伺服器主機成本（$0/月）。
+- **可靠性設計**：階段超時自動推進、斷線重連狀態機、伺服器端階段守衛防重複計分。
+- **無狀態與邊緣運算**：每個遊戲房間獨立為邊緣節點上的 Durable Object 實例，房間結束後自動釋放資源。
 - **DevOps 自動化**：自製 Python pipeline 處理 cache-busting、HTTP headers、行動鍵盤補丁、SEO 內容頁。
 - **商業整合**：Google AdMob / AdSense / Play Billing 變現。
 
@@ -40,9 +40,9 @@
 
 ```
 ┌──────────────┐   REST + WebSocket   ┌─────────────────────────┐
-│  Godot 客戶端 │ ───────────────────► │  FastAPI (Fly.io · 東京)  │
-│  Web / Android│ ◄─── 狀態廣播 ─────── │  RoomManager + asyncio   │
-└──────────────┘                      │  SQLAlchemy → SQLite Vol │
+│  Godot 客戶端 │ ───────────────────► │  Cloudflare Workers     │
+│  Web / Android│ ◄─── 狀態廣播 ─────── │  GameRoom State Machine │
+└──────────────┘                      │  Durable Objects (DO)   │
                                       └─────────────────────────┘
 ```
 
@@ -51,9 +51,9 @@
 | 層級 | 技術 |
 |---|---|
 | 前端 | Godot 4.6 · GDScript · GL Compatibility（WebGL/GLES）|
-| 後端 | Python · FastAPI · WebSockets · uvicorn |
-| 資料 | SQLAlchemy（async）· aiosqlite · SQLite |
-| 部署 | Docker · Fly.io（Volume）· GitHub Pages · Google Play |
+| 後端（正式環境） | TypeScript · Cloudflare Workers · Durable Objects · WebSockets |
+| 後端（參考實作） | Python · FastAPI · WebSockets · SQLAlchemy |
+| 部署 | Cloudflare Workers · GitHub Pages · Google Play |
 | 變現 | AdMob · AdSense · Google Play Billing |
 
 ## 遊戲畫面

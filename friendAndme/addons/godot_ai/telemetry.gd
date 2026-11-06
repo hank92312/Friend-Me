@@ -15,9 +15,9 @@
 ##   2. The `godot_ai/telemetry_enabled` EditorSetting — set through the
 ##      MCP dock and persisted between sessions.
 ##
-## When telemetry is disabled, events are never buffered or sent. If an env
-## var is explicitly set to a non-truthy value, telemetry is enabled even if
-## the editor setting is false.
+## When telemetry is disabled, events are never buffered or sent. Only a
+## *truthy* env var force-disables; a falsey or absent env var falls through
+## to the EditorSetting (which defaults to enabled). See McpSettings.telemetry_enabled.
 ##
 ## Buffering: events recorded before the WebSocket is connected go into
 ## a small bounded buffer and flush on the next `record_event` call once
@@ -146,12 +146,6 @@ func _send_one(name: String, data: Dictionary) -> void:
 func record_dock_startup(extra: Dictionary = {}) -> void:
 	record_event("dock_startup", extra)
 
-func record_plugin_reload(success: bool, error: String = "") -> void:
-	var data := {"success": success}
-	if error != "":
-		data["error"] = error.substr(0, 200)
-	record_event("plugin_reload", data)
-
 func record_self_update(
 	status: String,
 	from_version: String = "",
@@ -172,7 +166,12 @@ func record_dev_server_toggle(action: String) -> void:
 
 
 ## Drain a pending ``plugin_reload`` event written by the previous
-## instance before it disabled itself.
+## instance before it disabled itself. Pending events are currently
+## always success=true — ``record_pending_plugin_reload`` above is the
+## only writer and hardcodes it (a reload that fails never reaches the
+## flush anyway; there is no new instance to drain the key). The
+## error/success parsing below stays tolerant for forward compat with
+## a writer that records failures.
 func flush_pending_plugin_reload() -> void:
 	var parsed = _drain_editor_setting_dict(PENDING_PLUGIN_RELOAD_KEY)
 	if parsed == null:

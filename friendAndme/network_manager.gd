@@ -15,13 +15,16 @@ signal reconnect_status_received(data: Dictionary)
 # 設定後端網址 (測試時使用 true，準備發布時改為 false)
 var USE_LOCAL := false
 
-var BASE_URL = "http://127.0.0.1:8000" if USE_LOCAL else "https://friends-and-me.fly.dev"
-var WS_URL   = "ws://127.0.0.1:8000/ws" if USE_LOCAL else "wss://friends-and-me.fly.dev/ws"
+const CLOUD_HTTP_URL = "https://friends-and-me-backend.hank92312.workers.dev"
+const CLOUD_WS_URL   = "wss://friends-and-me-backend.hank92312.workers.dev/ws"
+
+var BASE_URL = "http://127.0.0.1:8000" if USE_LOCAL else CLOUD_HTTP_URL
+var WS_URL   = "ws://127.0.0.1:8000/ws" if USE_LOCAL else CLOUD_WS_URL
 
 func set_use_local(local: bool) -> void:
 	USE_LOCAL = local
-	BASE_URL = "http://127.0.0.1:8000" if USE_LOCAL else "https://friends-and-me.fly.dev"
-	WS_URL   = "ws://127.0.0.1:8000/ws" if USE_LOCAL else "wss://friends-and-me.fly.dev/ws"
+	BASE_URL = "http://127.0.0.1:8000" if USE_LOCAL else CLOUD_HTTP_URL
+	WS_URL   = "ws://127.0.0.1:8000/ws" if USE_LOCAL else CLOUD_WS_URL
 	print("[NetworkManager] Server environment set to: ", "LOCAL" if USE_LOCAL else "CLOUD")
 
 var socket = WebSocketPeer.new()

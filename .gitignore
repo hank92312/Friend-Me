@@ -38,3 +38,9 @@ chrome_profile/
 
 # Claude Code 個人設定（含本機絕對路徑，不進版控）
 .claude/settings.local.json
+
+# Node.js & Cloudflare Wrangler
+node_modules/
+**/node_modules/
+.wrangler/
+**/.wrangler/

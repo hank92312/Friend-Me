@@ -1214,7 +1214,7 @@ def main():
 	<meta name="google-site-verification" content="7MEfAw1kFzCexyZ8uc-XCPeyWOGw8ZLG3pNI200TN7M" />
 	<meta name="description" content="Friends & Me 是一款 2 至 6 人連線的異步社交探索桌遊，基於喬哈里視窗心理學設計。透過五大社交深度等級的開放式題目，與朋友、伴侶、家人互相猜題配對，發掘彼此的默契。免下載，瀏覽器即開即玩。" />
 	<link rel="canonical" href="{{SITE_URL}}/" />
-	<link rel="preconnect" href="https://friends-and-me.fly.dev" crossorigin />
+	<link rel="preconnect" href="https://friends-and-me-backend.hank92312.workers.dev" crossorigin />
 	<script type="application/ld+json">
 	{
 		"@context": "https://schema.org",
@@ -1661,7 +1661,7 @@ def main():
 
 					// 預熱後端：提前完成 TCP+TLS 握手並喚醒可能休眠的 Fly machine，
 					// 讓使用者進遊戲後「建立/加入房間」不用等冷啟動。
-					fetch('https://friends-and-me.fly.dev/', { mode: 'no-cors' }).catch(function() {});
+					fetch('https://friends-and-me-backend.hank92312.workers.dev/', { mode: 'no-cors' }).catch(function() {});
 				});
 			})();
 		</script>
