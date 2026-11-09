@@ -125,6 +125,13 @@
 - **問題**：本專案工作目錄路徑為 `C:\Friend&Me`，其中包含 `&`。當 Godot 呼叫 Gradle 打包 AAB 時，Windows `cmd.exe` 會將 `&` 視為命令串接分隔符號，造成命令被截斷並引發 Gradle 執行崩潰。
 - **解法**：在打包腳本 `build_android.ps1` 中建立路徑隔離機制：先使用 `robocopy` 將專案鏡像同步至乾淨路徑 `C:\GodotBuild\friendAndme`（排除 build 暫存與套件），於乾淨路徑呼叫 Godot CLI 匯出 AAB，完成後再將產物簽章複製回 `C:\Friend&Me\FriendAndMe_Release.aab`。
 
+#### 19. Google AdMob 正式廣告單元注入與 app-ads.txt 驗證 (AdMob & app-ads.txt)
+- **問題**：正式 AdMob 廣告單元 ID 與 App ID 若直接硬編碼並推上公開 Git repository，會有被惡意濫用風險；同時 Google AdMob 需透過開發人員網站的 `app-ads.txt` 驗證發布商資格。
+- **解法**：
+  - **app-ads.txt 邊緣託管**：於 Cloudflare Worker 進入點新增 `/app-ads.txt` 與 `/ads.txt` 路由，回傳 `google.com, pub-2975760496012521, DIRECT, f08c47fec0942fa0`，讓 AdMob 爬蟲直接在全球 CDN 秒級抓取驗證通過。
+  - **動態注入機制**：AdMob Application ID 設定於 `friendAndme/addons/admob/android/config.gd`（注入 AndroidManifest）；Ad Unit ID 則透過 [ad_manager.gd](file:///C:/Friend&Me/friendAndme/ad_manager.gd) 動態載入 `res://ad_config.gd`，並將 `ad_config.gd` 加入 `.gitignore` 隔離保護，若本機未建立則自動退回 Google 官方測試 ID。
+  - **發布版本**：Android 版本升級至 `1.4.1` (Version Code `9`)。
+
 ---
 
 ## 5. 檔案與場景結構 (Project Directory & Nodes)
