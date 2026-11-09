@@ -21,7 +21,6 @@
 		"author": {"@type": "Person", "name": "Hank", "email": "hank92312@gmail.com"}
 	}
 	</script>
-	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2975760496012521" crossorigin="anonymous"></script>
 		<!-- Social Media Preview (Open Graph) -->
 		<meta property="og:title" content="Friends & Me - 異步社交探索桌遊" />
 		<meta property="og:description" content="透過自我揭露與社交驗證，促進朋友間的深度連結與自我探索。" />
@@ -1122,177 +1121,12 @@ const engine = new Engine(GODOT_CONFIG);
 		<script>
 		(function() {
 			// === 廣告平台配置 ===
-			// "MOCK" (模擬廣告) | "CRAZYGAMES" (CrazyGames SDK) | "GOOGLE_H5" (Google AdSense H5 Ads)
-			const AD_PLATFORM = "GOOGLE_H5"; 
-			const GOOGLE_AD_CLIENT = "ca-pub-2975760496012521"; // 替換為您的 AdSense 發布商 ID
-			
-			// === 動態載入第三方 SDK ===
-			if (AD_PLATFORM === "CRAZYGAMES") {
-				console.log("[Ad Controller] Loading CrazyGames SDK v2...");
-				const script = document.createElement("script");
-				script.src = "https://sdk.crazygames.com/crazygames-sdk-v2.js";
-				script.async = true;
-				script.onload = () => {
-					console.log("[Ad Controller] CrazyGames SDK loaded.");
-					if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.game) {
-						try {
-							window.CrazyGames.SDK.game.gameplayStart();
-							console.log("[Ad Controller] First gameplayStart triggered successfully.");
-						} catch (e) {
-							console.error("[Ad Controller] Failed to call gameplayStart:", e);
-						}
-					}
-				};
-				document.head.appendChild(script);
-			} else if (AD_PLATFORM === "GOOGLE_H5") {
-				console.log("[Ad Controller] Loading Google AdSense H5 Ads SDK with client:", GOOGLE_AD_CLIENT);
-				
-				// 1. 在載入腳本之前，初始化全域變數與 adBreak/adConfig 函數
-				window.adsbygoogle = window.adsbygoogle || [];
-				window.adBreak = window.adConfig = function(o) {
-					window.adsbygoogle.push(o);
-				};
-				
-				// 2. 進行預設配置
-				window.adConfig({
-					sound: 'on',
-					preloadAdBreaks: 'auto'
-				});
-				
-				// 3. 建立並插入 script 標籤，src 必須帶有 ?client=
-				const script = document.createElement("script");
-				script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + GOOGLE_AD_CLIENT;
-				script.async = true;
-				script.crossOrigin = "anonymous";
-				
-				// 4. 設定測試模式與廣告頻率提示屬性
-				script.setAttribute("data-ad-frequency-hint", "30s");
-				// script.setAttribute("data-ad-break-test", "on"); // 正式上線版本已註解，以播放真實廣告
-				
-				script.onload = () => {
-					console.log("[Ad Controller] Google H5 Ads script tag loaded successfully.");
-				};
-				document.head.appendChild(script);
-			}
-
-			let countdownInterval = null;
+			// "NONE" (純淨無廣告模式)
+			const AD_PLATFORM = "NONE"; 
 			
 			window.showWebAd = function() {
-				console.log("[Ad Controller] showWebAd triggered. Platform:", AD_PLATFORM);
-				
-				// --- CrazyGames SDK 廣告模式 ---
-				if (AD_PLATFORM === "CRAZYGAMES") {
-					if (window.CrazyGames && window.CrazyGames.SDK) {
-						console.log("[Ad Controller] Requesting CrazyGames Midgame Ad...");
-						window.CrazyGames.SDK.ad.requestAd("midgame", {
-							adStarted: () => {
-								console.log("[CrazyGames SDK] Ad started.");
-							},
-							adFinished: () => {
-								console.log("[CrazyGames SDK] Ad finished.");
-								window.closeWebAd();
-							},
-							adError: (error) => {
-								console.warn("[CrazyGames SDK] Ad error:", error);
-								window.closeWebAd(); // 失敗也放行，避免遊戲死鎖
-							}
-						});
-					} else {
-						console.warn("[Ad Controller] CrazyGames SDK not loaded yet. Skipping.");
-						window.closeWebAd();
-					}
-					return;
-				}
-				
-				// --- Google H5 Ads 廣告模式 ---
-				if (AD_PLATFORM === "GOOGLE_H5") {
-					// 3 秒安全計時器：防範被 AdBlock 阻擋導致 callback 永遠不被呼叫而卡死
-					let adTriggered = false;
-					const adTimeout = setTimeout(() => {
-						if (!adTriggered) {
-							console.warn("[Ad Controller] Google H5 Ads callback timeout (AdBlocker or no fill). Bypassing...");
-							window.closeWebAd();
-						}
-					}, 3000);
-					
-					if (typeof window.adBreak === "function") {
-						console.log("[Ad Controller] Requesting Google H5 adBreak...");
-						window.adBreak({
-							type: "next",
-							name: "lobby_entry",
-							beforeBreak: () => { adTriggered = true; console.log("[Google H5] beforeBreak"); },
-							afterBreak: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] afterBreak"); window.closeWebAd(); },
-							adDismissed: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] adDismissed"); window.closeWebAd(); },
-							adBreakDone: () => { adTriggered = true; clearTimeout(adTimeout); console.log("[Google H5] adBreakDone"); window.closeWebAd(); }
-						});
-					} else {
-						clearTimeout(adTimeout);
-						console.warn("[Ad Controller] Google adBreak function not found. Skipping.");
-						window.closeWebAd();
-					}
-					return;
-				}
-				
-				// --- MOCK 模擬廣告模式 ---
-				const overlay = document.getElementById("web-ad-overlay");
-				const title = document.getElementById("web-ad-title");
-				const timerLabel = document.getElementById("web-ad-timer");
-				const button = document.getElementById("web-ad-btn");
-				
-				let lang = "zh";
-				if (window.godot_current_locale) {
-					lang = window.godot_current_locale;
-				} else if (navigator.language && navigator.language.startsWith("en")) {
-					lang = "en";
-				}
-				
-				const dict = {
-					"zh": {
-						title: "📢 廣告播放中",
-						timerPattern: "{sec} 秒後可跳過廣告",
-						buttonTextWaiting: "請稍候...",
-						buttonTextReady: "跳過廣告 ➔",
-						finished: "廣告播映完畢。"
-					},
-					"en": {
-						title: "📢 Ad Playing",
-						timerPattern: "Skip in {sec} seconds",
-						buttonTextWaiting: "Please wait...",
-						buttonTextReady: "Skip Ad ➔",
-						finished: "Ad finished."
-					}
-				};
-				
-				const t = dict[lang] || dict["zh"];
-				if (lang.startsWith("zh")) {
-					const dictT = dict["zh"];
-					title.innerText = dictT.title;
-					button.innerText = dictT.buttonTextWaiting;
-				} else {
-					title.innerText = t.title;
-					button.innerText = t.buttonTextWaiting;
-				}
-				
-				button.disabled = true;
-				overlay.style.display = "flex";
-				
-				setTimeout(() => { overlay.classList.add("active"); }, 20);
-				
-				let secondsRemaining = 5;
-				timerLabel.innerText = t.timerPattern.replace("{sec}", secondsRemaining);
-				
-				if (countdownInterval) clearInterval(countdownInterval);
-				countdownInterval = setInterval(() => {
-					secondsRemaining--;
-					if (secondsRemaining <= 0) {
-						clearInterval(countdownInterval);
-						timerLabel.innerText = t.finished;
-						button.innerText = t.buttonTextReady;
-						button.disabled = false;
-					} else {
-						timerLabel.innerText = t.timerPattern.replace("{sec}", secondsRemaining);
-					}
-				}, 1000);
+				console.log("[Ad Controller] Web is in pure ad-free mode. Bypassing immediately.");
+				window.closeWebAd();
 			};
 			
 			window.closeWebAd = function() {
@@ -1300,20 +1134,11 @@ const engine = new Engine(GODOT_CONFIG);
 				const overlay = document.getElementById("web-ad-overlay");
 				if (overlay) {
 					overlay.classList.remove("active");
-					setTimeout(() => {
-						overlay.style.display = "none";
-					}, 300);
-				}
-				
-				if (countdownInterval) {
-					clearInterval(countdownInterval);
-					countdownInterval = null;
+					overlay.style.display = "none";
 				}
 				
 				if (typeof window.godot_on_web_ad_finished === "function") {
 					window.godot_on_web_ad_finished();
-				} else {
-					console.warn("[Ad Controller] window.godot_on_web_ad_finished callback not found.");
 				}
 			};
 		})();
