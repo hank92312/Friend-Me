@@ -1194,17 +1194,12 @@ def main():
         print(f"Cloning files to: {target_dir}")
         shutil.copytree(temp_dir, target_dir)
         
-    # 補丁 Netlify 版本的 index.html（設置為 GOOGLE_H5 平台與真實 Publisher ID，並加上 AdSense 驗證腳本）
+    # 補丁 Netlify 版本的 index.html（設置為純淨無廣告模式 NONE，不載入 AdSense 腳本）
     netlify_html_path = os.path.join(netlify_dir, "index.html")
     with open(netlify_html_path, 'r', encoding='utf-8') as f:
         n_html = f.read()
-    n_html = n_html.replace('const AD_PLATFORM = "MOCK";', 'const AD_PLATFORM = "GOOGLE_H5";')
-    n_html = n_html.replace('const GOOGLE_AD_CLIENT = "ca-pub-XXXXXXXXXXXXXXX";', 'const GOOGLE_AD_CLIENT = "ca-pub-2975760496012521";')
-    
-    # 注入 AdSense 靜態驗證腳本到 <head> 中，方便 Google 驗證網站所有權
-    verification_tag = '\n\t<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2975760496012521" crossorigin="anonymous"></script>'
-    if "<head>" in n_html:
-        n_html = n_html.replace("<head>", "<head>" + verification_tag)
+    n_html = n_html.replace('const AD_PLATFORM = "MOCK";', 'const AD_PLATFORM = "NONE";')
+    n_html = n_html.replace('const AD_PLATFORM = "GOOGLE_H5";', 'const AD_PLATFORM = "NONE";')
 
     # 注入 SEO / AdSense 審核所需的 head 標籤：
     # - Google Search Console 所有權驗證 meta（提交 sitemap、請求重新索引用）

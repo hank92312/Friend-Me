@@ -63,10 +63,8 @@ func _ready() -> void:
 	if OS.get_name() == "Android":
 		_initialize_admob()
 		_initialize_billing()
-	elif OS.has_feature("web"):
-		_initialize_web_ads()
 	else:
-		print("[AdManager] Non-Android/Web platform — AdMob/Web Ads disabled.")
+		print("[AdManager] Non-Android platform — AdMob disabled (Web/Desktop pure ad-free).")
 
 # ── 初始化 Google Play Billing ───────────────────────────────────────────────
 func _initialize_billing() -> void:
@@ -262,17 +260,10 @@ func show_interstitial() -> void:
 		ad_finished.emit.call_deferred()
 		return
 
-	# Web 平台 → 呼叫 JavaScript 播放廣告
+	# Web 平台 → 純淨無廣告體驗，立即放行（0ms 延遲）
 	if OS.has_feature("web"):
-		_is_showing_ad = true
-		_safety_timer.start()
-		var window = JavaScriptBridge.get_interface("window")
-		if window and window.showWebAd != null:
-			print("[AdManager] Requesting Web Ad via JS...")
-			window.showWebAd()
-		else:
-			print("[AdManager] showWebAd JS function not found or is null! Skipping ad.")
-			_finish_ad()
+		print("[AdManager] Web platform — skipping ad (pure ad-free mode).")
+		ad_finished.emit.call_deferred()
 		return
 
 	# 非 Android 平台 → 直接跳過
